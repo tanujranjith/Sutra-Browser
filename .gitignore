@@ -1,0 +1,13 @@
+.dotnet/
+.vs/
+**/bin/
+**/obj/
+artifacts/
+native/Zephyr.CefHost/build/
+third_party/cef/*.tar.bz2
+third_party/cef/cef_binary_*/
+*.user
+*.suo
+*.db
+*.db-shm
+*.db-wal

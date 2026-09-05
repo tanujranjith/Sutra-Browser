@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>net8.0-windows10.0.19041.0</TargetFramework><EnableWindowsTargeting>true</EnableWindowsTargeting><WebView2EnableCsWinRTProjection>true</WebView2EnableCsWinRTProjection></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Browser.Core\Browser.Core.csproj" />
+    <ProjectReference Include="..\Browser.Data\Browser.Data.csproj" />
+    <PackageReference Include="Microsoft.Web.WebView2" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" />
+  </ItemGroup>
+</Project>

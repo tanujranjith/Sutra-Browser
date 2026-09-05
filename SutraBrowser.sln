@@ -1,0 +1,49 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35327.3
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Browser.Core", "src\Browser.Core\Browser.Core.csproj", "{0A34A036-7692-4F99-B8C6-B4996A317767}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Browser.Data", "src\Browser.Data\Browser.Data.csproj", "{A78CA668-F6B0-4563-906D-A1F07619644F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Browser.AI", "src\Browser.AI\Browser.AI.csproj", "{FD1D9EED-3B0A-43A7-A7BB-0DA0A1690DA6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Browser.Platform.Windows", "src\Browser.Platform.Windows\Browser.Platform.Windows.csproj", "{DFD24975-F37B-4113-BB62-7A7E154A10DE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Browser.App", "src\Browser.App\Browser.App.csproj", "{C5BED450-FDA1-4E82-84B6-BD72345D079A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Browser.Core.Tests", "tests\Browser.Core.Tests\Browser.Core.Tests.csproj", "{4AD3608A-C803-413C-86CE-79C9F747E703}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Browser.Data.Tests", "tests\Browser.Data.Tests\Browser.Data.Tests.csproj", "{9C50E66C-952F-414B-BD5A-9F319E3CC4DA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Browser.AI.Tests", "tests\Browser.AI.Tests\Browser.AI.Tests.csproj", "{FE8F16E8-63B1-426D-A3D3-F5CCED721615}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Browser.Platform.Windows.Tests", "tests\Browser.Platform.Windows.Tests\Browser.Platform.Windows.Tests.csproj", "{70A3527D-D2AC-4EF4-86CE-D1CF9B7CD82B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0A34A036-7692-4F99-B8C6-B4996A317767}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0A34A036-7692-4F99-B8C6-B4996A317767}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A78CA668-F6B0-4563-906D-A1F07619644F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A78CA668-F6B0-4563-906D-A1F07619644F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FD1D9EED-3B0A-43A7-A7BB-0DA0A1690DA6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FD1D9EED-3B0A-43A7-A7BB-0DA0A1690DA6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DFD24975-F37B-4113-BB62-7A7E154A10DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DFD24975-F37B-4113-BB62-7A7E154A10DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C5BED450-FDA1-4E82-84B6-BD72345D079A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C5BED450-FDA1-4E82-84B6-BD72345D079A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4AD3608A-C803-413C-86CE-79C9F747E703}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4AD3608A-C803-413C-86CE-79C9F747E703}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9C50E66C-952F-414B-BD5A-9F319E3CC4DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9C50E66C-952F-414B-BD5A-9F319E3CC4DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FE8F16E8-63B1-426D-A3D3-F5CCED721615}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FE8F16E8-63B1-426D-A3D3-F5CCED721615}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{70A3527D-D2AC-4EF4-86CE-D1CF9B7CD82B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{70A3527D-D2AC-4EF4-86CE-D1CF9B7CD82B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+	EndGlobalSection
+EndGlobal

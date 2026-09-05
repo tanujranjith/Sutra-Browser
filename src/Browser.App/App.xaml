@@ -1,0 +1,29 @@
+<Application
+    x:Class="Browser.App.App"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
+            </ResourceDictionary.MergedDictionaries>
+            <CornerRadius x:Key="SutraControlCornerRadius">8</CornerRadius>
+            <Thickness x:Key="SutraPagePadding">24</Thickness>
+            <x:Double x:Key="SutraToolbarHeight">52</x:Double>
+            <Color x:Key="SutraChromeColor">#0B0D0F</Color>
+            <Color x:Key="SutraToolbarColor">#101316</Color>
+            <Color x:Key="SutraSurfaceColor">#15191D</Color>
+            <Color x:Key="SutraTextColor">#F4F4F2</Color>
+            <Color x:Key="SutraTextSecondaryColor">#A7ADB2</Color>
+            <Color x:Key="SutraAccentColor">#F47A22</Color>
+            <Color x:Key="SutraBorderColor">#1CFFFFFF</Color>
+            <SolidColorBrush x:Key="SutraChromeBrush" Color="{StaticResource SutraChromeColor}" />
+            <SolidColorBrush x:Key="SutraToolbarBrush" Color="{StaticResource SutraToolbarColor}" />
+            <SolidColorBrush x:Key="SutraSurfaceBrush" Color="{StaticResource SutraSurfaceColor}" />
+            <SolidColorBrush x:Key="SutraTextBrush" Color="{StaticResource SutraTextColor}" />
+            <SolidColorBrush x:Key="SutraTextSecondaryBrush" Color="{StaticResource SutraTextSecondaryColor}" />
+            <SolidColorBrush x:Key="SutraAccentBrush" Color="{StaticResource SutraAccentColor}" />
+            <SolidColorBrush x:Key="SutraBorderBrush" Color="{StaticResource SutraBorderColor}" />
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>
