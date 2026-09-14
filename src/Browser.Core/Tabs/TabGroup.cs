@@ -13,16 +13,20 @@ public sealed class TabGroup
 
     public TabGroupSnapshot ToSnapshot() => new(Id, Name, Color, IsCollapsed, NeverHibernate, SortOrder, Note);
 
-    public static TabGroup FromSnapshot(TabGroupSnapshot item) => new()
+    public static TabGroup FromSnapshot(TabGroupSnapshot? item)
     {
-        Id = item.Id == Guid.Empty ? Guid.NewGuid() : item.Id,
-        Name = NormalizeName(item.Name),
-        Color = NormalizeColor(item.Color),
-        IsCollapsed = item.IsCollapsed,
-        NeverHibernate = item.NeverHibernate,
-        Note = NormalizeNote(item.Note),
-        SortOrder = Math.Max(0, item.SortOrder)
-    };
+        if (item is null) return new();
+        return new()
+        {
+            Id = item.Id == Guid.Empty ? Guid.NewGuid() : item.Id,
+            Name = NormalizeName(item.Name),
+            Color = NormalizeColor(item.Color),
+            IsCollapsed = item.IsCollapsed,
+            NeverHibernate = item.NeverHibernate,
+            Note = NormalizeNote(item.Note),
+            SortOrder = Math.Max(0, item.SortOrder)
+        };
+    }
 
     public static string NormalizeName(string? value) => string.IsNullOrWhiteSpace(value) ? "New group" : value.Trim()[..Math.Min(40, value.Trim().Length)];
     public static string NormalizeNote(string? value) => string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim()[..Math.Min(240, value.Trim().Length)];

@@ -3,6 +3,9 @@
 **/bin/
 **/obj/
 artifacts/
+_verify/
+.build-sidebar.err
+.build-sidebar.out
 native/Zephyr.CefHost/build/
 third_party/cef/*.tar.bz2
 third_party/cef/cef_binary_*/

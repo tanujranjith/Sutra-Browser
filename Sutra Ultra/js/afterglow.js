@@ -90,5 +90,27 @@
   });
 
   applySettings(readSettings());
+  const dateLabel = document.querySelector('#canvas-date');
+  if (dateLabel) dateLabel.textContent = new Intl.DateTimeFormat(undefined, { weekday: 'long', month: 'long', day: 'numeric' }).format(new Date());
+  if (window.chrome?.webview) chrome.webview.addEventListener('message', event => {
+    const context = event.data;
+    if (!context || context.kind !== 'sutra-context') return;
+    document.documentElement.dataset.theme = context.theme === 'light' ? 'light' : 'dark';
+    if (/^#[0-9a-f]{6}$/i.test(context.accent || '')) document.documentElement.style.setProperty('--accent', context.accent);
+    const eyebrow = document.querySelector('.eyebrow');
+    if (eyebrow && context.privateWindow) eyebrow.textContent = '◆ PRIVATE WINDOW';
+    else if (eyebrow && typeof context.profile === 'string' && context.profile !== 'Default') eyebrow.textContent = '◆ ' + context.profile.toUpperCase();
+    if (context.privateWindow) {
+      document.querySelector('.welcome-description').textContent = 'Your history and session are not saved in this window.';
+      for (const action of ['history','notes','workspaces']) {
+        const button = document.querySelector('[data-action="' + action + '"]');
+        if (button) { button.disabled = true; button.title = 'Unavailable in private browsing'; }
+      }
+    }
+  });
+  document.querySelectorAll('[data-action]').forEach(button => button.addEventListener('click', () => {
+    if (window.chrome?.webview) chrome.webview.postMessage({ kind: 'new-tab-action', action: button.dataset.action });
+    else announce('Open this page in Sutra Browser to use your ' + button.textContent.trim().replace(/\s+/g, ' ') + '.');
+  }));
   window.setTimeout(() => input.focus(), 80);
 })();

@@ -59,20 +59,37 @@ public sealed partial class MainWindow
             e.ResultFilePath = destination;
             var id = Guid.NewGuid();
             var operation = e.DownloadOperation;
+            var startedAt = DateTimeOffset.UtcNow;
             _activeDownloads[id] = operation;
+            _downloadTabIds[id] = tab.Id;
             tab.HasActiveDownload = true;
+            var saveGate = new SemaphoreSlim(1, 1);
+            string? lastNotifiedState = null;
             async Task Save()
             {
-                var state = operation.State.ToString();
-                tab.HasActiveDownload = operation.State == CoreWebView2DownloadState.InProgress;
-                if (!tab.HasActiveDownload) _activeDownloads.Remove(id);
-                var error = operation.State == CoreWebView2DownloadState.Interrupted ? operation.InterruptReason.ToString() : null;
-                var record = new DownloadRecord(id, file, operation.Uri, operation.ResultFilePath, DateTimeOffset.UtcNow, state, (long)operation.BytesReceived, (long?)operation.TotalBytesToReceive, error);
+                await saveGate.WaitAsync();
+                try
+                {
+                if (operation.State != CoreWebView2DownloadState.Interrupted) _pausedDownloads.Remove(id);
+                var state = _pausedDownloads.Contains(id) ? "Paused" : operation.State.ToString();
+                if (operation.State == CoreWebView2DownloadState.InProgress) _activeDownloads[id] = operation;
+                else _activeDownloads.Remove(id);
+                if (operation.State == CoreWebView2DownloadState.Interrupted && operation.CanResume) _resumableDownloads[id] = operation;
+                else _resumableDownloads.Remove(id);
+                if (!_activeDownloads.ContainsKey(id) && !_resumableDownloads.ContainsKey(id)) { _downloadTabIds.Remove(id); _pausedDownloads.Remove(id); }
+                tab.HasActiveDownload = _downloadTabIds.Any(item => item.Value == tab.Id && (_activeDownloads.ContainsKey(item.Key) || _pausedDownloads.Contains(item.Key)));
+                var error = state == "Paused" ? "UserPaused" : operation.State == CoreWebView2DownloadState.Interrupted ? operation.InterruptReason.ToString() : null;
+                var record = new DownloadRecord(id, file, operation.Uri, operation.ResultFilePath, startedAt, state, (long)operation.BytesReceived, (long?)operation.TotalBytesToReceive, error);
                 if (_isPrivate) _privateDownloads[id] = record; else await _downloads.UpsertAsync(record);
+                if (_isWindowClosed) return;
                 ShowDownloadShelf(record);
-                if (state == "Completed") ShowStatus($"Downloaded {file}", InfoBarSeverity.Success);
-                else if (state == "Interrupted") ShowStatus($"Download failed: {error}", InfoBarSeverity.Error, 7000);
+                if (lastNotifiedState != state && state == "Completed") ShowStatus($"Downloaded {file}", InfoBarSeverity.Success);
+                else if (lastNotifiedState != state && state == "Interrupted" && error != "UserCanceled") { var explanation = Browser.Core.Downloads.DownloadStatus.Describe(state, error); ShowStatus($"{explanation.Label}: {explanation.Guidance}", InfoBarSeverity.Warning, 7000); }
+                lastNotifiedState = state;
                 RefreshTabLists();
+                }
+                catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Download metadata update: {ex.GetType().Name}"); }
+                finally { saveGate.Release(); }
             }
             operation.BytesReceivedChanged += async (_, _) => await Save();
             operation.StateChanged += async (_, _) => await Save();
@@ -398,10 +415,32 @@ public sealed partial class MainWindow
     private async Task ShowDownloadsAsync()
     {
         var list = new ListView { SelectionMode = ListViewSelectionMode.Single };
+        var search = new TextBox { PlaceholderText = "Search downloads", MaxLength = 160, MinWidth = 240 };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(search, "Search downloads");
+        string?[] states = [null, "InProgress", "Paused", "Completed", "Interrupted"];
+        var filter = new ComboBox { ItemsSource = new[] { "All downloads", "Downloading", "Paused", "Completed", "Interrupted" }, SelectedIndex = 0, MinWidth = 140 };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(filter, "Download status");
+        var generation = 0; var page = 0; var closed = false;
+        var previous = new Button { Content = "Previous", IsEnabled = false };
+        var next = new Button { Content = "Next", IsEnabled = false };
+        var pageLabel = new TextBlock { VerticalAlignment = VerticalAlignment.Center, Opacity = .7 };
         async Task Load()
         {
+            var current = ++generation;
+            var selectedId = ((list.SelectedItem as ListViewItem)?.Tag as DownloadRecord)?.Id;
+            await Task.Delay(100, _windowLifetimeCts.Token);
+            if (closed || current != generation) return;
+            var state = states[Math.Max(0, filter.SelectedIndex)];
+            var query = search.Text.Trim();
+            var records = _isPrivate ? _privateDownloads.Values.Where(x => (query.Length == 0 || x.FileName.Contains(query, StringComparison.OrdinalIgnoreCase) || x.SourceUrl.Contains(query, StringComparison.OrdinalIgnoreCase)) && (state is null || x.State == state))
+                .OrderByDescending(x => x.StartedAt).ThenBy(x => x.Id).Skip(page * 50).Take(51).ToList()
+                : (await _downloads.SearchAsync(query, state, page * 50, 51, _windowLifetimeCts.Token)).ToList();
+            if (closed || current != generation || _isWindowClosed) return;
+            if (records.Count == 0 && page > 0) { page--; await Load(); return; }
+            previous.IsEnabled = page > 0; next.IsEnabled = records.Count > 50;
+            records = records.Take(50).ToList();
+            pageLabel.Text = records.Count == 0 ? "No results" : $"{page * 50 + 1}–{page * 50 + records.Count}";
             list.Items.Clear();
-            var records = _isPrivate ? _privateDownloads.Values.OrderByDescending(x => x.StartedAt).ToList() : (await _downloads.ListAsync()).ToList();
             DateTime? lastDate = null;
             foreach (var download in records)
             {
@@ -412,23 +451,56 @@ public sealed partial class MainWindow
                     lastDate = date;
                 }
                 var total = download.TotalBytes is > 0 ? $"{download.BytesReceived * 100d / download.TotalBytes.Value:0}%" : $"{download.BytesReceived / 1024d:0} KB";
-                list.Items.Add(new ListViewItem { Tag = download, Content = ManagerRow(download.FileName, $"{download.State}  ·  {total}\n{download.Destination}{(download.Error is null ? "" : $"\n{download.Error}")}") });
+                var status = Browser.Core.Downloads.DownloadStatus.Describe(download.State, download.Error);
+                if (download.State is "InProgress" or "Paused" && FindDownloadOwner(download.Id) is null)
+                    status = new("Transfer unavailable here", "Check the original browser process, or open the source to restart the download.");
+                var item = new ListViewItem { Tag = download, Content = ManagerRow(download.FileName, $"{status.Label} · {total}\n{(status.Guidance.Length > 0 ? status.Guidance : download.Destination)}") };
+                ToolTipService.SetToolTip(item, download.Destination); list.Items.Add(item);
+                if (download.Id == selectedId) list.SelectedItem = item;
             }
+            if (records.Count == 0) list.Items.Add(EmptyState(Symbol.Download, "No downloads match this view. Files you download will appear here."));
         }
+        search.TextChanged += async (_, _) => { page = 0; await Load(); };
+        filter.SelectionChanged += async (_, _) => { page = 0; await Load(); };
+        previous.Click += async (_, _) => { page = Math.Max(0, page - 1); await Load(); };
+        next.Click += async (_, _) => { page++; await Load(); };
         var open = ActionButton("Open file", Symbol.OpenFile, async () => { if (list.SelectedItem is ListViewItem item && item.Tag is DownloadRecord download && File.Exists(download.Destination)) await Launcher.LaunchFileAsync(await StorageFile.GetFileFromPathAsync(download.Destination)); });
         var folder = ActionButton("Open folder", Symbol.Folder, async () => { if (list.SelectedItem is ListViewItem item && item.Tag is DownloadRecord download && Directory.Exists(Path.GetDirectoryName(download.Destination))) await Launcher.LaunchFolderAsync(await StorageFolder.GetFolderFromPathAsync(Path.GetDirectoryName(download.Destination)!)); });
-        var cancel = ActionButton("Cancel", Symbol.Cancel, () => { if (list.SelectedItem is ListViewItem item && item.Tag is DownloadRecord download && _activeDownloads.TryGetValue(download.Id, out var operation)) operation.Cancel(); });
+        var cancel = ActionButton("Cancel", Symbol.Cancel, async () => { if (list.SelectedItem is ListViewItem { Tag: DownloadRecord download }) { ControlDownload(download.Id, "cancel"); await Load(); } });
         var retry = ActionButton("Retry source", Symbol.Refresh, () => { if (list.SelectedItem is ListViewItem item && item.Tag is DownloadRecord download) NewTab(download.SourceUrl, activate: !_vm.Settings.OpenLinksInBackground); });
+        var pause = ActionButton("Pause", Symbol.Pause, async () => { if (list.SelectedItem is ListViewItem { Tag: DownloadRecord download }) { ControlDownload(download.Id, "pause"); await Load(); } });
+        var resume = ActionButton("Resume", Symbol.Play, async () =>
+        {
+            if (list.SelectedItem is not ListViewItem { Tag: DownloadRecord download }) return;
+            ControlDownload(download.Id, "resume"); await Load();
+        });
+        var checksum = ActionButton("Verify SHA-256", Symbol.ProtectedDocument, async () => { if (list.SelectedItem is ListViewItem { Tag: DownloadRecord download }) await ShowDownloadChecksumAsync(download); });
+        var refresh = ActionButton("Refresh", Symbol.Refresh, async () => await Load());
         var remove = ActionButton("Remove", Symbol.Delete, async () =>
         {
-            if (list.SelectedItem is not ListViewItem item || item.Tag is not DownloadRecord download || download.State == "InProgress") return;
+            if (list.SelectedItem is not ListViewItem item || item.Tag is not DownloadRecord download || FindDownloadOwner(download.Id) is not null) return;
             if (_isPrivate) _privateDownloads.Remove(download.Id); else await _downloads.DeleteAsync(download.Id);
             await Load();
         });
-        var toolbar = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 }; toolbar.Children.Add(open); toolbar.Children.Add(folder); toolbar.Children.Add(cancel); toolbar.Children.Add(retry); toolbar.Children.Add(remove);
+        foreach (var button in new[] { open, folder, cancel, retry, remove, pause, resume, checksum }) button.IsEnabled = false;
+        list.SelectionChanged += (_, _) =>
+        {
+            var download = (list.SelectedItem as ListViewItem)?.Tag as DownloadRecord;
+            open.IsEnabled = checksum.IsEnabled = download?.State == "Completed";
+            folder.IsEnabled = retry.IsEnabled = download is not null;
+            var owner = download is null ? null : FindDownloadOwner(download.Id);
+            remove.IsEnabled = download is not null && owner is null;
+            cancel.IsEnabled = owner is not null;
+            pause.IsEnabled = download is not null && owner?._activeDownloads.ContainsKey(download.Id) == true;
+            resume.IsEnabled = download is not null && owner?._resumableDownloads.TryGetValue(download.Id, out var op) == true && op.CanResume;
+        };
+        var toolbar = new StackPanel { Spacing = 10 };
+        toolbar.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Children = { search, filter, refresh } });
+        toolbar.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Children = { open, folder, pause, resume, cancel, retry, checksum, remove } });
+        toolbar.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, Children = { previous, pageLabel, next } });
         var body = PageBody(toolbar, list);
         await Load();
-        ShowPage("Downloads", _isPrivate ? "Private download files remain on disk, but Sutra does not add them to normal download history." : "Files downloaded through Sutra.", body);
+        ShowPage("Downloads", _isPrivate ? "Private download files remain on disk, but Sutra does not add them to normal download history." : "Browse files and manage transfers across this profile's windows. Resume works within the current browser session.", body, () => { closed = true; generation++; });
     }
 
     private async Task ShowPasswordsAsync()
@@ -509,7 +581,7 @@ public sealed partial class MainWindow
         var dialog = new ContentDialog
         {
             Title = existing is null ? "Save login?" : "Update saved password?",
-            Content = $"{origin}\nUsername: {username}\n\nThe password will be encrypted with Windows secure storage and will never be shared with Copilot.",
+            Content = $"{origin}\nUsername: {username}\n\nThe password will be encrypted with Windows secure storage and will never be shared with {Browser.Core.Branding.AppBrand.AssistantName}.",
             PrimaryButtonText = existing is null ? "Save" : "Update",
             CloseButtonText = "Not now",
             DefaultButton = ContentDialogButton.Primary,
@@ -571,12 +643,7 @@ public sealed partial class MainWindow
         });
         var duplicates = ActionButton("Close duplicates", Symbol.Copy, async () =>
         {
-            var duplicateTabs = _vm.Tabs.Where(x => x.Url != "browser://newtab")
-                .GroupBy(x => x.Url.TrimEnd('/'), StringComparer.OrdinalIgnoreCase)
-                .SelectMany(group => group.Skip(1)).Where(x => !IsProtectedTab(x)).ToList();
-            if (duplicateTabs.Count == 0) { ShowStatus("No unprotected duplicate tabs found"); return; }
-            if (!await ConfirmAsync("Close duplicate tabs?", $"Close {duplicateTabs.Count} duplicate tab{(duplicateTabs.Count == 1 ? "" : "s")}? Pinned and protected tabs will remain open.", "Close duplicates")) return;
-            foreach (var tab in duplicateTabs) CloseTab(tab);
+            await PreviewDuplicateCleanupAsync();
             Load();
         });
         var toolbar = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 }; toolbar.Children.Add(search); toolbar.Children.Add(open); toolbar.Children.Add(sleep); toolbar.Children.Add(close); toolbar.Children.Add(duplicates);
@@ -652,7 +719,7 @@ public sealed partial class MainWindow
         stack.Children.Add(SettingsSection("New-tab content", "All sections are generated only from local bookmarks, history, and recently closed tabs.", pinned, frequent, closed));
         stack.Children.Add(SettingsSection("Toolbar buttons", "Keep the controls you use and hide the rest.", home, bookmark, ai, split, media));
         stack.Children.Add(SettingsSection("Toolbar order", "Select an item and move it. The address bar remains flexible wherever you place it.", toolbarOrder, orderActions));
-        var scroll = new ScrollViewer { Content = stack, Padding = new(0, 0, 12, 24) };
+        var scroll = BuildSettingsBrowser(stack);
 
         var save = new Button { Content = "Apply customization", CornerRadius = new(8) };
         save.Click += async (_, _) =>
@@ -733,6 +800,7 @@ public sealed partial class MainWindow
         var suggestGroups = new ToggleSwitch { Header = "Suggest grouping ungrouped tabs from the same site", IsOn = _vm.Settings.SuggestTabGroupsByDomain };
         var protectedClose = new ToggleSwitch { Header = "Confirm before closing protected tabs", IsOn = _vm.Settings.ConfirmClosingProtectedTabs };
         var history = new ToggleSwitch { Header = "Record local history", IsOn = _vm.Settings.HistoryEnabled };
+        var retention = new NumberBox { Header = "Keep history for days (0 = until I delete it)", Value = _vm.Settings.HistoryRetentionDays, Minimum = 0, Maximum = 3650, SmallChange = 30, SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Compact };
         var adBlocking = new ToggleSwitch { Header = "Block ads and trackers", IsOn = _vm.Settings.AdBlockingEnabled };
         var cosmeticBlocking = new ToggleSwitch { Header = "Hide blocked ad containers", IsOn = _vm.Settings.CosmeticFilteringEnabled };
         var adAllowlist = new TextBox { Header = "Sites where protection is disabled", PlaceholderText = "example.com, trusted.example.org", Text = string.Join(", ", _vm.Settings.AdBlockAllowlist) };
@@ -761,9 +829,9 @@ public sealed partial class MainWindow
         stack.Children.Add(SettingsSection("Appearance", "Choose the theme, density, accent, and toolbar controls that fit your desktop.", theme, scheduledTheme, darkHour, lightHour, layout, sidebarCollapsed, sidebarAutoHide, sidebarWidth, density, accent, bookmarkBar, showHome, showBookmark, showAi, showSplit, showMedia));
         stack.Children.Add(SettingsSection("Startup and search", "Control the first page and address-bar search provider. Use an alias followed by a space and your query (for example, yt lofi).", engine, searchAliases, home, restore));
         stack.Children.Add(SettingsSection("Tabs and performance", "The New tab button and Ctrl+T always switch to the new tab. Link-created tabs can stay in the background. Sleeping tabs release their WebView memory conservatively.", backgroundLinkTabs, preventDuplicates, suggestGroups, protectedClose, hibernate, minutes, exclusions));
-        stack.Children.Add(SettingsSection("Downloads and history", "These settings apply to normal windows. Private windows do not write history.", downloadFolder, history));
+        stack.Children.Add(SettingsSection("Downloads and history", "An optional retention period removes older history on startup and hourly while Sutra is open. Zero keeps history until you delete it. Private windows never apply retention.", downloadFolder, history, retention));
         stack.Children.Add(SettingsSection("Privacy protection", "Network requests are checked locally. Filter lists update only when you request it from the site-information panel.", adBlocking, cosmeticBlocking, adAllowlist, filterUrls, cleanLinks));
-        stack.Children.Add(SettingsSection("AI provider", "Page content is shared only after you invoke Copilot. Remote provider keys are encrypted with Windows DPAPI.", provider, endpoint, model, apiKey));
+        stack.Children.Add(SettingsSection("AI provider", $"Page content is shared only after you invoke {Browser.Core.Branding.AppBrand.AssistantName}. Remote provider keys are encrypted with Windows DPAPI.", provider, endpoint, model, apiKey));
         stack.Children.Add(SettingsSection("Clear browser data", "Choose exactly which locally stored data to remove.", dataActions));
         var scroll = new ScrollViewer { Content = stack, Padding = new(0, 0, 12, 24) };
         var save = new Button { Content = "Save settings", CornerRadius = new(8) };
@@ -774,6 +842,9 @@ public sealed partial class MainWindow
             Enum.TryParse<ToolbarDensity>(density.SelectedItem?.ToString(), out var selectedDensity);
             Enum.TryParse<SearchEngine>(engine.SelectedItem?.ToString(), out var selectedEngine);
             Enum.TryParse<AiProviderKind>(provider.SelectedItem?.ToString(), out var selectedProvider);
+            var retentionDays = double.IsFinite(retention.Value) ? Math.Clamp((int)retention.Value, 0, 3650) : 0;
+            if (retentionDays > 0 && (_vm.Settings.HistoryRetentionDays == 0 || retentionDays < _vm.Settings.HistoryRetentionDays) &&
+                !await ConfirmAsync("Automatically remove older history?", $"History last visited more than {retentionDays} days ago will be permanently removed on startup and during hourly cleanup. Bookmarks and saved articles are kept.", "Enable retention")) return;
             _vm.Settings = SettingsValidator.Validate(_vm.Settings with
             {
                 Theme = selectedTheme,
@@ -802,6 +873,7 @@ public sealed partial class MainWindow
                 SuggestTabGroupsByDomain = suggestGroups.IsOn,
                 ConfirmClosingProtectedTabs = protectedClose.IsOn,
                 HistoryEnabled = history.IsOn,
+                HistoryRetentionDays = retentionDays,
                 AdBlockingEnabled = adBlocking.IsOn,
                 CosmeticFilteringEnabled = cosmeticBlocking.IsOn,
                 AdBlockAllowlist = adAllowlist.Text.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
@@ -872,7 +944,7 @@ public sealed partial class MainWindow
         body.Children.Add(new Image { Source = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage(new Uri("ms-appx:///Assets/sutra-icon.png")), Width = 72, Height = 72, HorizontalAlignment = HorizontalAlignment.Left });
         body.Children.Add(new TextBlock { Text = $"{Browser.Core.Branding.AppBrand.Name} {Browser.Core.Branding.AppBrand.Version}", FontSize = 22, FontWeight = FontWeights.SemiBold });
         body.Children.Add(new TextBlock { Text = "A focused Windows browser built with WinUI 3, WebView2, C#, and SQLite.", TextWrapping = TextWrapping.Wrap });
-        body.Children.Add(new TextBlock { Text = "Browser data stays local. Page text is shared with an AI provider only after you invoke Copilot. Private windows use WebView2 InPrivate mode and do not write history or sessions.", TextWrapping = TextWrapping.Wrap, Opacity = .72 });
+        body.Children.Add(new TextBlock { Text = $"Browser data stays local. Page text is shared with an AI provider only after you invoke {Browser.Core.Branding.AppBrand.AssistantName}. Private windows use WebView2 InPrivate mode and do not write history or sessions.", TextWrapping = TextWrapping.Wrap, Opacity = .72 });
         body.Children.Add(new TextBlock { Text = "The current build is unpackaged and uses the Evergreen WebView2 Runtime.", TextWrapping = TextWrapping.Wrap, Opacity = .72 });
         ShowPage("About", "Application and privacy information.", body);
         return Task.CompletedTask;
@@ -883,13 +955,7 @@ public sealed partial class MainWindow
 
     private void ShowPage(string title, string subtitle, FrameworkElement body, Action? onClosed, params Button[] actions)
     {
-        var page = new Grid { Padding = new(28, 22, 28, 24), RowSpacing = 16 };
-        page.RowDefinitions.Add(new() { Height = GridLength.Auto }); page.RowDefinitions.Add(new() { Height = new(1, GridUnitType.Star) }); page.RowDefinitions.Add(new() { Height = actions.Length == 0 ? new(0) : GridLength.Auto });
-        var header = new Grid(); header.ColumnDefinitions.Add(new() { Width = new(1, GridUnitType.Star) }); header.ColumnDefinitions.Add(new() { Width = GridLength.Auto });
-        var heading = new StackPanel { Spacing = 3 }; heading.Children.Add(new TextBlock { Text = title, FontSize = 24, FontWeight = FontWeights.SemiBold }); heading.Children.Add(new TextBlock { Text = subtitle, Opacity = .62, TextWrapping = TextWrapping.Wrap }); header.Children.Add(heading);
-        var close = IconButton(Symbol.Cancel, "Close"); close.Click += (_, _) => HidePage(); Grid.SetColumn(close, 1); header.Children.Add(close); page.Children.Add(header);
-        Grid.SetRow(body, 1); page.Children.Add(body);
-        if (actions.Length > 0) { var actionRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, HorizontalAlignment = HorizontalAlignment.Right }; foreach (var action in actions) actionRow.Children.Add(action); Grid.SetRow(actionRow, 2); page.Children.Add(actionRow); }
+        var page = BuildManagerPage(title, subtitle, body, actions);
         // Large browser-owned surfaces behave as real, transient tabs. Reuse a
         // page's tab when it is already open, just like a browser settings tab.
         // The page visual is still native WinUI, but is only visible for its tab.
@@ -952,30 +1018,31 @@ public sealed partial class MainWindow
         var isLight = _root.ActualTheme == ElementTheme.Light;
         return new SolidColorBrush(isLight
             ? Windows.UI.Color.FromArgb(255, 243, 243, 243)
-            : Windows.UI.Color.FromArgb(255, 32, 32, 32));
+            : Windows.UI.Color.FromArgb(255, 18, 21, 25));
     }
 
     private static Grid PageBody(FrameworkElement toolbar, FrameworkElement content)
     {
         var body = new Grid { RowSpacing = 12 }; body.RowDefinitions.Add(new() { Height = GridLength.Auto }); body.RowDefinitions.Add(new() { Height = new(1, GridUnitType.Star) });
-        body.Children.Add(new ScrollViewer{Content=toolbar,HorizontalScrollMode=ScrollMode.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Hidden});Grid.SetRow(content, 1); body.Children.Add(content); return body;
+        body.Children.Add(new ScrollViewer { Content = toolbar, HorizontalScrollMode = ScrollMode.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Auto, VerticalScrollBarVisibility = ScrollBarVisibility.Disabled, Padding = new(0, 0, 0, 8) }); Grid.SetRow(content, 1); body.Children.Add(content); return body;
     }
 
     private static StackPanel ManagerRow(string title, string detail)
     {
-        var row = new StackPanel { Spacing = 3, Padding = new(6, 8, 6, 8) }; row.Children.Add(new TextBlock { Text = title, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis }); row.Children.Add(new TextBlock { Text = detail, FontSize = 12, Opacity = .6, TextWrapping = TextWrapping.Wrap }); return row;
+        var row = new StackPanel { Spacing = 5, Padding = new(10, 12, 10, 12) }; row.Children.Add(new TextBlock { Text = title, FontSize = 14, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis }); row.Children.Add(new TextBlock { Text = detail, FontSize = 12, Opacity = .72, TextTrimming = TextTrimming.CharacterEllipsis, MaxLines = 2, TextWrapping = TextWrapping.Wrap }); return row;
     }
 
     private static Button ActionButton(string text, Symbol symbol, Action action)
     {
-        var button = new Button { Content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Children = { new SymbolIcon(symbol), new TextBlock { Text = text } } }, CornerRadius = new(8) };
+        var button = new Button { Content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Children = { new SymbolIcon(symbol) { Width = 16, Height = 16 }, new TextBlock { Text = text, FontSize = 13, VerticalAlignment = VerticalAlignment.Center } } }, CornerRadius = new(9), MinHeight = 36, Padding = new(12, 8, 12, 8) };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(button, text);
         button.Click += (_, _) => action(); return button;
     }
 
     private static Border SettingsSection(string title, string description, params UIElement[] controls)
     {
         var stack = new StackPanel { Spacing = 10 }; stack.Children.Add(new TextBlock { Text = title, FontSize = 17, FontWeight = FontWeights.SemiBold }); stack.Children.Add(new TextBlock { Text = description, Opacity = .62, TextWrapping = TextWrapping.Wrap }); foreach (var control in controls) stack.Children.Add(control);
-        return new Border { Child = stack, Padding = new(18), CornerRadius = new(10), BorderThickness = new(1), BorderBrush = ResourceBrush("CardStrokeColorDefaultBrush"), Background = ResourceBrush("CardBackgroundFillColorDefaultBrush") };
+        return new Border { Tag = new SettingsSectionInfo(title, description, controls), Child = stack, Padding = new(24), CornerRadius = new(14), BorderThickness = new(1), BorderBrush = ResourceBrush("CardStrokeColorDefaultBrush"), Background = ResourceBrush("CardBackgroundFillColorDefaultBrush") };
     }
 
     private static FrameworkElement EmptyState(Symbol symbol, string message)

@@ -27,34 +27,63 @@ namespace Browser.App;
 
 public sealed partial class MainWindow
 {
+    private BrowserSession? _previousSession;
+    private bool _previousSessionRestored;
+    private bool _isReplacingTabs;
+    private bool _startupNeedsReview;
+
     private async Task InitializeAsync()
     {
+        var boot = System.Diagnostics.Stopwatch.StartNew();
+        void Phase(string name)
+        {
+            try { _startupTimings.Add(new(name, boot.ElapsedMilliseconds - _startupTimings.Sum(p => p.Milliseconds))); } catch { }
+        }
         var previousCleanShutdown = _isPrivate || !_restoreSession ? "true" : await _appState.GetAsync("browser.cleanShutdown");
+        Phase("state");
+        if (!_isPrivate && _restoreSession)
+        {
+            var recovery = StartupRecoveryPolicy.Begin(await _appState.GetAsync(StartupRecoveryPolicy.StorageKey), previousCleanShutdown != "false", DateTimeOffset.UtcNow);
+            _startupNeedsReview = recovery.NeedsReview;
+            await _appState.SetAsync(StartupRecoveryPolicy.StorageKey, JsonSerializer.Serialize(recovery));
+        }
         if (!_isPrivate && _restoreSession) await _appState.SetAsync("browser.cleanShutdown", "false");
         var existingSettings = !_isPrivate && _restoreSession ? await _appState.GetAsync("browser.settings") : null;
         var existingSession = !_isPrivate && _restoreSession ? await _appState.GetAsync("browser.session") : null;
         OnboardingState.TryDeserialize(!_isPrivate ? await _appState.GetAsync(OnboardingState.StorageKey) : null, out var onboardingState);
         _vm.Settings = await _settingsRepository.LoadAsync();
+        Phase("settings");
+        if (_isWindowClosed) return;
+        if (!_isPrivate && _vm.Settings.HistoryRetentionDays > 0)
+            await _history.DeleteOlderThanAsync(DateTimeOffset.UtcNow.AddDays(-_vm.Settings.HistoryRetentionDays));
         RestoreWindowPlacement();
         await LoadContentBlockRulesAsync();
+        Phase("filters");
         _ = EnsureContentFiltersAvailableAsync();
         ApplyTheme();
         ApplyCustomization();
         ApplyTabLayout();
         var session = _isPrivate
             ? new BrowserSession([], null, DateTimeOffset.UtcNow)
-            : await _sessions.LoadAsync();
+            : _launchSession ?? await _sessions.LoadAsync();
+        Phase("session");
+        if (_isWindowClosed) return;
+        _previousSession = !_isPrivate && _restoreSession && (session.Tabs?.Count ?? 0) > 0 ? session : null;
         foreach (var snapshot in session.Groups ?? [])
         {
+            if (snapshot is null) continue;
             var group = TabGroup.FromSnapshot(snapshot);
             _tabGroups[group.Id] = group;
         }
-        if (!_isPrivate && _restoreSession && _vm.Settings.StartupBehavior == StartupBehavior.RestorePreviousSession)
-            foreach (var snapshot in session.Tabs) _vm.Add(BrowserTab.FromSnapshot(snapshot), false);
+        if (!_isPrivate && !_startupNeedsReview && (_launchSession is not null || _restoreSession && _vm.Settings.StartupBehavior == StartupBehavior.RestorePreviousSession))
+        {
+            _previousSessionRestored = true;
+            foreach (var snapshot in session.Tabs ?? []) _vm.Add(BrowserTab.FromSnapshot(snapshot), false);
+        }
         MigrateLegacyTabGroups();
         // A normal launch should always feel like opening a browser: land on a
         // ready-to-use new tab. Restored session tabs remain available behind it.
-        var opensDefaultNewTab = !_isPrivate && string.IsNullOrWhiteSpace(_initialUrl);
+        var opensDefaultNewTab = !_isPrivate && _launchSession is null && string.IsNullOrWhiteSpace(_initialUrl);
         BrowserTab? launchTab = null;
         if (opensDefaultNewTab)
         {
@@ -70,22 +99,49 @@ public sealed partial class MainWindow
             launchTab = new BrowserTab { Url = _initialUrl ?? "browser://newtab", Title = _initialUrl ?? AppBrand.NewTabTitle };
             _vm.Add(launchTab, false);
         }
-        if (!_isPrivate && _restoreSession && _vm.Settings.StartupBehavior == StartupBehavior.RestorePreviousSession)
+        if (!_isPrivate && !_startupNeedsReview && (_launchSession is not null || _restoreSession && _vm.Settings.StartupBehavior == StartupBehavior.RestorePreviousSession))
             foreach (var id in session.SplitTabIds ?? [])
                 if (_vm.Tabs.Any(tab => tab.Id == id)) _splitTabIds.Add(id);
-        if (_splitTabIds.Count < 2) _splitTabIds.Clear();
-        var initial = launchTab ?? _vm.Tabs.FirstOrDefault(x => x.Id == session.ActiveTabId) ?? _vm.Tabs[0];
+        if (_splitTabIds.Count < 2) { _splitTabIds.Clear(); _splitColumnFractions = null; _splitRowFractions = null; }
+        else
+        {
+            _splitColumnFractions = session.SplitColumnFractions;
+            _splitRowFractions = session.SplitRowFractions;
+        }
+        _splitLayout = session.SplitLayout;
+        var initial = launchTab ?? _vm.Tabs.FirstOrDefault(x => x.Id == session.ActiveTabId) ?? _vm.Tabs.FirstOrDefault();
+        if (initial is null)
+        {
+            // Session data guarantees at least one tab above, but never let a
+            // corrupt/empty session leave startup with nothing to activate.
+            initial = new BrowserTab { Url = "browser://newtab", Title = AppBrand.NewTabTitle };
+            _vm.Add(initial, false);
+        }
         RefreshTabLists();
         await RefreshBookmarkBarAsync();
+        Phase("chrome");
         await ActivateTabAsync(initial);
+        Phase("first-tab");
+        try
+        {
+            var normalized = Browser.Core.Diagnostics.StartupPerformancePolicy.Normalize(_startupTimings);
+            _startupTimings.Clear();
+            _startupTimings.AddRange(normalized);
+            if (Browser.Core.Diagnostics.StartupPerformancePolicy.IsSlowColdStart(_startupTimings))
+                System.Diagnostics.Debug.WriteLine(Browser.Core.Diagnostics.StartupPerformancePolicy.Summarize(_startupTimings));
+        }
+        catch { }
+        if (_isWindowClosed) return;
         if (OnboardingEligibility.ShouldShow(_isPrivate, _initialUrl is not null, _restoreSession, existingSettings is not null, existingSession is not null, onboardingState))
             await ShowOnboardingAsync(restart: true);
         _ = RefreshTabMemoryUsageAsync();
         if (previousCleanShutdown == "false")
         {
-            ShowStatus("Sutra recovered your last saved session after an unexpected shutdown.", InfoBarSeverity.Warning, 9000);
-            var review = new Button { Content = "Browser health", CornerRadius = new(7) };
-            review.Click += async (_, _) => await ShowPerformanceDashboardAsync();
+            ShowStatus(_startupNeedsReview
+                ? "Sutra opened a fresh tab after repeated unexpected shutdowns. Review saved tabs before reopening them."
+                : "Sutra previously closed unexpectedly. Your saved tabs are available in session recovery.", InfoBarSeverity.Warning, 12000);
+            var review = new Button { Content = "Review saved tabs", CornerRadius = new(7) };
+            review.Click += async (_, _) => await ShowSessionRecoveryAsync();
             _notification.ActionButton = review;
         }
         _maintenanceTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(1) };
@@ -103,6 +159,16 @@ public sealed partial class MainWindow
         if (_isPrivate) ShowStatus("Private browsing is active. History and site data from this window are not saved.", InfoBarSeverity.Informational, 7000);
     }
 
+    private void EnsureEmergencyTab()
+    {
+        // Last-resort startup containment: guarantee a usable tab without touching
+        // WebView2 or async work that could throw again.
+        if (_vm.Tabs.Count == 0)
+            _vm.Add(new BrowserTab { Url = "browser://newtab", Title = AppBrand.NewTabTitle }, true);
+        if (_vm.SelectedTab is null) _vm.SelectedTab = _vm.Tabs[0];
+        RefreshTabLists();
+    }
+
     private async Task RunMaintenancePassAsync(CancellationToken lifetimeToken)
     {
         try
@@ -113,7 +179,12 @@ public sealed partial class MainWindow
             if (_isWindowClosed || lifetimeToken.IsCancellationRequested) return;
             _ = RefreshTabMemoryUsageAsync(lifetimeToken);
             ApplyTheme();
-            if (++_maintenanceTicks % 60 == 0) PurgeStaleFavicons();
+            if (++_maintenanceTicks % 60 == 0)
+            {
+                PurgeStaleFavicons();
+                if (!_isPrivate && _vm.Settings.HistoryRetentionDays > 0)
+                    await _history.DeleteOlderThanAsync(DateTimeOffset.UtcNow.AddDays(-_vm.Settings.HistoryRetentionDays), lifetimeToken);
+            }
             await SaveSessionAsync();
         }
         catch (OperationCanceledException)
@@ -126,18 +197,22 @@ public sealed partial class MainWindow
         }
     }
 
-    private BrowserTab NewTab(string url = "browser://newtab", bool activate = true)
+    private BrowserTab NewTab(string url = "browser://newtab", bool activate = true, bool isTemporary = false, Guid? parentId = null)
     {
-        if (_vm.Settings.PreventDuplicateTabs && url != "browser://newtab" && _vm.Tabs.FirstOrDefault(x => x.Url.Equals(url, StringComparison.OrdinalIgnoreCase)) is { } existing)
+        if (!isTemporary && _vm.Settings.PreventDuplicateTabs && url != "browser://newtab" && _vm.Tabs.FirstOrDefault(x => !x.IsTemporary && x.Url.Equals(url, StringComparison.OrdinalIgnoreCase)) is { } existing)
         {
             if (activate) _ = ActivateTabAsync(existing);
             ShowStatus("That page is already open");
             return existing;
         }
-        var tab = new BrowserTab { Url = url, Title = url == "browser://newtab" ? AppBrand.NewTabTitle : url };
+        var tab = new BrowserTab { Url = url, Title = url == "browser://newtab" ? AppBrand.NewTabTitle : url, IsTemporary = isTemporary };
+        if (parentId is { } parent && parent != Guid.Empty && _vm.Tabs.Any(x => x.Id == parent && x.Id != tab.Id))
+            tab.ParentId = parent;
         _vm.Add(tab, activate);
         RefreshTabLists();
         if (activate) _ = ActivateTabAsync(tab);
+        if (isTemporary) ShowStatus("Temporary tab — it closes with this window and is never saved.", InfoBarSeverity.Informational, 4000);
+        else _ = SaveSessionAsync();
         return tab;
     }
 
@@ -165,7 +240,9 @@ public sealed partial class MainWindow
             FaviconPath = source.FaviconPath,
             IsMuted = source.IsMuted,
             GroupId = source.GroupId,
-            GroupName = source.GroupName
+            GroupName = source.GroupName,
+            IsTemporary = source.IsTemporary,
+            ParentId = source.ParentId is { } parent && _vm.Tabs.Any(x => x.Id == parent) ? parent : null,
         };
         _vm.Add(duplicate, true);
         RefreshTabLists();
@@ -175,9 +252,32 @@ public sealed partial class MainWindow
     private void ReopenClosed()
     {
         var tab = _vm.Reopen();
-        if (tab is null) return;
-        RefreshTabLists();
-        _ = ActivateTabAsync(tab);
+        if (tab is not null)
+        {
+            RefreshTabLists();
+            _ = ActivateTabAsync(tab);
+            return;
+        }
+
+        // When the whole browser was closed, the last normal session is kept in
+        // browser.session. Ctrl+Shift+T can restore it on the next launch.
+        if (!_isPrivate && !_previousSessionRestored && _previousSession is { Tabs.Count: > 0 })
+            _ = RestorePreviousSessionFromShortcutAsync(_previousSession);
+    }
+
+    private async Task RestorePreviousSessionFromShortcutAsync(BrowserSession session)
+    {
+        _previousSessionRestored = true;
+        try
+        {
+            await ReplaceTabsWithSessionAsync(session);
+            ShowStatus($"Restored {session.Tabs.Count} tabs from the previous session.", InfoBarSeverity.Success);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Previous-session restore failed: {ex.GetType().Name}");
+            if (!_isWindowClosed) ShowStatus("The previous session could not be restored.", InfoBarSeverity.Error);
+        }
     }
 
     private async Task ActivateTabAsync(BrowserTab tab)
@@ -196,7 +296,9 @@ public sealed partial class MainWindow
         }
         HideNativePageVisual();
         if (!_webViews.TryGetValue(tab.Id, out var web)) web = await CreateWebViewAsync(tab);
-        if (activation != _activationVersion || _vm.SelectedTab?.Id != tab.Id) return;
+        // The window may have closed while the WebView was being created; never
+        // touch released visuals after that point.
+        if (_isWindowClosed || activation != _activationVersion || _vm.SelectedTab?.Id != tab.Id) return;
         if (IsSplitViewActive)
         {
             if (!_splitTabIds.Contains(tab.Id)) ReplaceActiveSplitPane(tab.Id, previousSelectedTabId);
@@ -221,6 +323,7 @@ public sealed partial class MainWindow
     {
         var web = new WebView2 { HorizontalAlignment = HorizontalAlignment.Stretch, VerticalAlignment = VerticalAlignment.Stretch };
         var environment = await _environment.GetAsync();
+        if (_isWindowClosed) { try { web.Close(); } catch { } throw new OperationCanceledException(); }
         if (_isPrivate)
         {
             var options = environment.CreateCoreWebView2ControllerOptions();
@@ -231,10 +334,11 @@ public sealed partial class MainWindow
         else if (!_profileName.Equals("Default", StringComparison.OrdinalIgnoreCase))
         {
             var options = environment.CreateCoreWebView2ControllerOptions();
-            options.ProfileName = "Sutra-" + new string(_profileName.Where(char.IsLetterOrDigit).Take(50).ToArray());
+            options.ProfileName = Browser.Core.Profiles.ProfileIdentity.WebViewName(_profileName);
             await web.EnsureCoreWebView2Async(environment, options);
         }
         else await web.EnsureCoreWebView2Async(environment);
+        if (_isWindowClosed) { try { web.Close(); } catch { } throw new OperationCanceledException(); }
 
         var core = web.CoreWebView2;
         core.Settings.AreDefaultContextMenusEnabled = true;
@@ -250,6 +354,7 @@ public sealed partial class MainWindow
         core.NavigationCompleted += async (_, e) => await OnNavigationCompletedAsync(tab, web, e);
         core.SourceChanged += (_, _) =>
         {
+            if (_isWindowClosed) return;
             var source = core.Source;
             var internalPage = tab.Url == "browser://newtab" && (source.StartsWith("data:", StringComparison.OrdinalIgnoreCase) || source == "about:blank" || source.Equals(_newTabFileUri, StringComparison.OrdinalIgnoreCase));
             var errorPage = tab.Error is not null && (source.StartsWith("data:", StringComparison.OrdinalIgnoreCase) || source == "about:blank");
@@ -258,6 +363,7 @@ public sealed partial class MainWindow
         };
         core.DocumentTitleChanged += (_, _) =>
         {
+            if (_isWindowClosed) return;
             if (tab.Url != "browser://newtab") tab.Title = string.IsNullOrWhiteSpace(core.DocumentTitle) ? tab.Url : core.DocumentTitle;
             RefreshTabLists();
         };
@@ -270,6 +376,7 @@ public sealed partial class MainWindow
         });
         core.IsDocumentPlayingAudioChanged += (_, _) =>
         {
+            if (_isWindowClosed) return;
             tab.IsMediaPlaying = core.IsDocumentPlayingAudio;
             _media.Opacity = _vm.Tabs.Any(item => item.IsMediaPlaying) ? 1 : .72;
             RefreshTabLists();
@@ -296,10 +403,10 @@ public sealed partial class MainWindow
         {
             // Closing an intentionally hibernated WebView can raise a process event.
             // It is not a crash and must not overwrite the sleeping placeholder.
-            if (tab.IsHibernated) return;
+            if (_isWindowClosed || tab.IsHibernated) return;
             tab.Error = $"WebView process failure: {e.ProcessFailedKind}";
             tab.IsLoading = false;
-            ShowErrorPage(web, tab.Error);
+            try { ShowErrorPage(web, tab.Error); } catch { }
             ShowStatus("This tab stopped responding. Reload it to continue.", InfoBarSeverity.Error, 7000);
             RefreshTabLists();
         };
@@ -359,12 +466,15 @@ public sealed partial class MainWindow
                 XamlRoot = _root.XamlRoot
             };
 
-            if (await dialog.ShowAsync() == ContentDialogResult.Primary &&
+            ContentDialogResult choice;
+            try { choice = await dialog.ShowAsync(); }
+            catch (Exception ex) { Debug.WriteLine($"Redirect prompt failed: {ex.GetType().Name}"); return; }
+            if (choice == ContentDialogResult.Primary &&
                 !_isWindowClosed &&
                 _webViews.TryGetValue(tab.Id, out var web) &&
                 web.CoreWebView2 is not null)
             {
-                web.CoreWebView2.Navigate(uri.AbsoluteUri);
+                try { web.CoreWebView2.Navigate(uri.AbsoluteUri); } catch (Exception ex) { Debug.WriteLine($"Redirect navigation failed: {ex.GetType().Name}"); }
             }
             return;
         }
@@ -380,7 +490,8 @@ public sealed partial class MainWindow
                 CloseButtonText = "Cancel",
                 XamlRoot = _root.XamlRoot
             };
-            if (await dialog.ShowAsync() == ContentDialogResult.Primary) await Launcher.LaunchUriAsync(uri);
+            try { if (await dialog.ShowAsync() == ContentDialogResult.Primary) await Launcher.LaunchUriAsync(uri); }
+            catch (Exception ex) { Debug.WriteLine($"External protocol prompt failed: {ex.GetType().Name}"); }
         }
         tab.IsLoading = true;
         tab.Error = null;
@@ -431,7 +542,7 @@ public sealed partial class MainWindow
             }
 
             tab.Error = $"Navigation failed: {e.WebErrorStatus}";
-            ShowErrorPage(web, tab.Error);
+            try { ShowErrorPage(web, tab.Error); } catch (Exception ex) { Debug.WriteLine($"Error page failed: {ex.GetType().Name}"); }
             ShowStatus(tab.Error, InfoBarSeverity.Error, 7000);
             RefreshTabLists();
             return;
@@ -449,19 +560,26 @@ public sealed partial class MainWindow
         {
             tab.Title = AppBrand.NewTabTitle;
             tab.Error = null;
+            if (completedSource.Equals(_newTabFileUri, StringComparison.OrdinalIgnoreCase))
+                web.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(new { kind = "sutra-context", theme = _root.ActualTheme == ElementTheme.Light ? "light" : "dark", accent = _vm.Settings.AccentColor, profile = _profileName, privateWindow = _isPrivate }));
         }
         else
         {
             tab.Url = completedSource;
-            tab.Title = string.IsNullOrWhiteSpace(web.CoreWebView2.DocumentTitle) ? tab.Url : web.CoreWebView2.DocumentTitle;
+            try { tab.Title = string.IsNullOrWhiteSpace(web.CoreWebView2?.DocumentTitle) ? tab.Url : web.CoreWebView2.DocumentTitle; }
+            catch { tab.Title = tab.Url; }
         }
-        await ApplyStoredSiteZoomAsync(tab, web);
-        await ApplyCosmeticFiltersAsync(tab, web);
+        try { await ApplyStoredSiteZoomAsync(tab, web); } catch (Exception ex) { Debug.WriteLine($"Site zoom apply failed: {ex.GetType().Name}"); }
+        try { await ApplyCosmeticFiltersAsync(tab, web); } catch (Exception ex) { Debug.WriteLine($"Cosmetic filters failed: {ex.GetType().Name}"); }
         // The window can close while those awaits are in flight; stop before any
         // further model mutation or UI refresh.
         if (_isWindowClosed) return;
-        if (!_isPrivate && _vm.Settings.HistoryEnabled && Uri.TryCreate(tab.Url, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https")
-            await _history.RecordVisitAsync(tab.Url, tab.Title, _pendingTypedQuery);
+        try
+        {
+            if (!_isPrivate && _vm.Settings.HistoryEnabled && Uri.TryCreate(tab.Url, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https")
+                await _history.RecordVisitAsync(tab.Url, tab.Title, _pendingTypedQuery);
+        }
+        catch (Exception ex) { Debug.WriteLine($"History record failed: {ex.GetType().Name}"); }
         _pendingTypedQuery = null;
         RefreshTabLists();
         UpdateNavigationState(web, tab);
@@ -473,7 +591,8 @@ public sealed partial class MainWindow
         {
             var y = tab.ScrollPosition;
             tab.ScrollPosition = 0;
-            await web.ExecuteScriptAsync($"window.scrollTo(0,{y.ToString(System.Globalization.CultureInfo.InvariantCulture)})");
+            try { await web.ExecuteScriptAsync($"window.scrollTo(0,{y.ToString(System.Globalization.CultureInfo.InvariantCulture)})"); }
+            catch (Exception ex) { Debug.WriteLine($"Scroll restore failed: {ex.GetType().Name}"); }
         }
     }
 
@@ -524,15 +643,40 @@ public sealed partial class MainWindow
             if (!json.RootElement.TryGetProperty("kind", out var kind)) return;
             if (kind.GetString() == "dirty-form") { tab.MayHaveUnsavedFormInput = true; return; }
             if (kind.GetString() == "credential-submitted") { tab.MayHaveUnsavedFormInput = false; await HandleCredentialSubmittedAsync(tab, e.Source, json.RootElement); return; }
-            if (kind.GetString() == "new-tab-search" && json.RootElement.TryGetProperty("query", out var query)) { Navigate(query.GetString() ?? ""); return; }
-            if (kind.GetString() == "open-url" && json.RootElement.TryGetProperty("url", out var url)) { Navigate(url.GetString() ?? ""); return; }
-            if (kind.GetString() == "open-customization") { await ShowCustomizationAsync(); return; }
-            if (kind.GetString() == "open-bookmarks") { await ShowBookmarksAsync(); return; }
+            var trustedNewTab = BrowserOwnedMessagePolicy.IsTrustedNewTab(tab.Url, e.Source,
+                _webViews.TryGetValue(tab.Id, out var sourceView) ? sourceView.CoreWebView2?.Source : null,
+                _newTabFileUri, tab.Id == _vm.SelectedTab?.Id);
+            if (kind.GetString() is "new-tab-search" or "open-url" or "open-customization" or "open-bookmarks" or "new-tab-action")
+            {
+                if (!trustedNewTab) return;
+                if (kind.GetString() == "new-tab-search" && json.RootElement.TryGetProperty("query", out var query) && query.ValueKind == JsonValueKind.String && query.GetString() is { Length: > 0 and <= 2048 } input) { Navigate(input); return; }
+                if (kind.GetString() == "open-url" && json.RootElement.TryGetProperty("url", out var url) && url.ValueKind == JsonValueKind.String && url.GetString() is { Length: > 0 and <= 2048 } target) { Navigate(target); return; }
+                if (kind.GetString() == "open-customization") { await ShowCustomizationAsync(); return; }
+                if (kind.GetString() == "open-bookmarks") { await ShowBookmarksAsync(); return; }
+                if (kind.GetString() == "new-tab-action" && json.RootElement.TryGetProperty("action", out var action) && action.ValueKind == JsonValueKind.String)
+                {
+                    switch (action.GetString())
+                    {
+                        case "library": await ShowLibrarySearchAsync(); break;
+                        case "bookmarks": await ShowBookmarksAsync(); break;
+                        case "history": await ShowHistoryAsync(); break;
+                        case "reading": await ShowReadingListAsync(); break;
+                        case "offline": await ShowOfflineLibraryAsync(); break;
+                        case "notes": await ShowNotesManagerAsync(); break;
+                        case "workspaces": await ShowWorkspacesAsync(); break;
+                        case "downloads": await ShowDownloadsAsync(); break;
+                        case "settings": await ShowSettingsAsync(); break;
+                        case "commands": await ShowCommandPaletteAsync(); break;
+                    }
+                }
+                return;
+            }
             if (kind.GetString() == "retry-tab") { await RecoverTabAsync(tab); return; }
-            if (kind.GetString() == "error-go-back") { if (_webViews.TryGetValue(tab.Id, out var failed) && failed.CoreWebView2.CanGoBack) failed.CoreWebView2.GoBack(); else Navigate(_vm.Settings.HomePage); return; }
+            if (kind.GetString() == "error-go-back") { if (_webViews.TryGetValue(tab.Id, out var failed) && failed.CoreWebView2 is not null && failed.CoreWebView2.CanGoBack) failed.CoreWebView2.GoBack(); else Navigate(_vm.Settings.HomePage); return; }
             if (kind.GetString() == "browser-shortcut" && json.RootElement.TryGetProperty("shortcut", out var shortcut)) HandleBrowserShortcut(shortcut.GetString());
         }
-        catch (JsonException) { }
+        catch (OperationCanceledException) { }
+        catch (Exception ex) { Debug.WriteLine($"Web message handling failed: {ex.GetType().Name}"); }
     }
 
     private void HandleBrowserShortcut(string? shortcut)
@@ -554,8 +698,8 @@ public sealed partial class MainWindow
             case "downloads": _ = ShowDownloadsAsync(); break;
             case "sutra-save": _ = SutraSaveAsync(); break;
             case "reload": ReloadOrStop(); break;
-            case "back": CurrentWebView()?.GoBack(); break;
-            case "forward": CurrentWebView()?.GoForward(); break;
+            case "back": SafeGoBack(); break;
+            case "forward": SafeGoForward(); break;
             case "zoom-in": Zoom(.1); break;
             case "zoom-out": Zoom(-.1); break;
             case "zoom-reset": SetZoom(1); break;
@@ -565,28 +709,33 @@ public sealed partial class MainWindow
 
     private async void Navigate(string input)
     {
-        var target = AddressResolver.Resolve(input, _vm.Settings.SearchEngine, _vm.Settings.SearchAliases);
-        _pendingTypedQuery = _isPrivate ? null : target.SearchQuery;
-        var tab = _vm.SelectedTab ?? NewTab(activate: false);
-        if (IsNativePageTab(tab))
+        try
         {
-            var destination = NewTab(target.Uri.Scheme == "browser" ? "browser://newtab" : target.Uri.AbsoluteUri, activate: false);
-            CloseTab(tab);
-            await ActivateTabAsync(destination);
-            return;
+            var target = AddressResolver.Resolve(input, _vm.Settings.SearchEngine, _vm.Settings.SearchAliases);
+            _pendingTypedQuery = _isPrivate ? null : target.SearchQuery;
+            var tab = _vm.SelectedTab ?? NewTab(activate: false);
+            if (IsNativePageTab(tab))
+            {
+                var destination = NewTab(target.Uri.Scheme == "browser" ? "browser://newtab" : target.Uri.AbsoluteUri, activate: false);
+                CloseTab(tab);
+                await ActivateTabAsync(destination);
+                return;
+            }
+            if (target.Uri.Scheme == "browser")
+            {
+                tab.Url = "browser://newtab";
+                tab.Title = AppBrand.NewTabTitle;
+                tab.Error = null;
+                if (_webViews.TryGetValue(tab.Id, out var newTabWeb)) await ShowNewTabPageAsync(newTabWeb);
+                _address.Text = string.Empty;
+                RefreshTabLists();
+                return;
+            }
+            if (!_webViews.TryGetValue(tab.Id, out var web) || web.CoreWebView2 is null) { tab.Url = target.Uri.AbsoluteUri; await ActivateTabAsync(tab); }
+            else web.CoreWebView2.Navigate(target.Uri.AbsoluteUri);
         }
-        if (target.Uri.Scheme == "browser")
-        {
-            tab.Url = "browser://newtab";
-            tab.Title = AppBrand.NewTabTitle;
-            tab.Error = null;
-            if (_webViews.TryGetValue(tab.Id, out var newTabWeb)) await ShowNewTabPageAsync(newTabWeb);
-            _address.Text = string.Empty;
-            RefreshTabLists();
-            return;
-        }
-        if (!_webViews.TryGetValue(tab.Id, out var web)) { tab.Url = target.Uri.AbsoluteUri; await ActivateTabAsync(tab); }
-        else web.CoreWebView2.Navigate(target.Uri.AbsoluteUri);
+        catch (OperationCanceledException) { }
+        catch (Exception ex) { Debug.WriteLine($"Navigate failed: {ex.GetType().Name}"); }
     }
 
     private void AddressTextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs e)
@@ -622,20 +771,27 @@ public sealed partial class MainWindow
 
     private WebView2? CurrentWebView() => _vm.SelectedTab is not null && _webViews.TryGetValue(_vm.SelectedTab.Id, out var web) ? web : null;
     private void ReloadOrStop() { var web = CurrentWebView(); if (web?.CoreWebView2 is null) return; if (_vm.SelectedTab?.IsLoading == true) web.CoreWebView2.Stop(); else web.CoreWebView2.Reload(); }
+    private void SafeGoBack() { try { var web = CurrentWebView(); if (web?.CoreWebView2 is { } core && core.CanGoBack) web.GoBack(); } catch { } }
+    private void SafeGoForward() { try { var web = CurrentWebView(); if (web?.CoreWebView2 is { } core && core.CanGoForward) web.GoForward(); } catch { } }
     private void Zoom(double delta) { if (_vm.SelectedTab is null) return; SetZoom(_zoomFactors.GetValueOrDefault(_vm.SelectedTab.Id, 1) + delta); }
     private async void SetZoom(double value)
     {
-        if (_vm.SelectedTab is null || CurrentWebView() is not { } web) return;
-        value = Math.Clamp(value, .25, 5);
-        _zoomFactors[_vm.SelectedTab.Id] = value;
-        if (SiteZoomKey(_vm.SelectedTab.Url) is { } key)
+        if (_vm.SelectedTab is null || CurrentWebView() is not { } web || web.CoreWebView2 is null) return;
+        try
         {
-            var factors = new Dictionary<string, double>(_vm.Settings.SiteZoomFactors, StringComparer.OrdinalIgnoreCase) { [key] = value };
-            _vm.Settings = _vm.Settings with { SiteZoomFactors = factors };
-            if (!_isPrivate) await SaveSettingsSafeAsync();
+            value = Math.Clamp(value, .25, 5);
+            _zoomFactors[_vm.SelectedTab.Id] = value;
+            if (SiteZoomKey(_vm.SelectedTab.Url) is { } key)
+            {
+                var factors = new Dictionary<string, double>(_vm.Settings.SiteZoomFactors, StringComparer.OrdinalIgnoreCase) { [key] = value };
+                _vm.Settings = _vm.Settings with { SiteZoomFactors = factors };
+                if (!_isPrivate) await SaveSettingsSafeAsync();
+            }
+            await web.ExecuteScriptAsync($"document.documentElement.style.zoom='{value.ToString(System.Globalization.CultureInfo.InvariantCulture)}'");
+            ShowStatus($"Zoom {value:P0}");
         }
-        await web.ExecuteScriptAsync($"document.documentElement.style.zoom='{value.ToString(System.Globalization.CultureInfo.InvariantCulture)}'");
-        ShowStatus($"Zoom {value:P0}");
+        catch (OperationCanceledException) { }
+        catch (Exception ex) { Debug.WriteLine($"SetZoom failed: {ex.GetType().Name}"); }
     }
 
     private async Task ApplyStoredSiteZoomAsync(BrowserTab tab, WebView2 web)
@@ -656,41 +812,52 @@ public sealed partial class MainWindow
     private async void CloseTab(BrowserTab? tab)
     {
         if (tab is null) return;
-        if (_vm.Settings.ConfirmClosingProtectedTabs && IsProtectedTab(tab))
+        try
         {
-            var reasons = new List<string>();
-            if (tab.IsPinned) reasons.Add("it is pinned");
-            if (tab.MayHaveUnsavedFormInput) reasons.Add("it may contain unsaved form input");
-            if (tab.HasActiveDownload) reasons.Add("it has an active download");
-            if (tab.IsMediaPlaying) reasons.Add("it is playing media");
-            var dialog = new ContentDialog
+            if (_vm.Settings.ConfirmClosingProtectedTabs && IsProtectedTab(tab))
             {
-                Title = "Close protected tab?",
-                Content = $"{tab.Title} is protected because {string.Join(" and ", reasons)}.",
-                PrimaryButtonText = "Close tab",
-                CloseButtonText = "Keep open",
-                DefaultButton = ContentDialogButton.Close,
-                XamlRoot = _root.XamlRoot
-            };
-            if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+                var reasons = new List<string>();
+                if (tab.IsPinned) reasons.Add("it is pinned");
+                if (tab.MayHaveUnsavedFormInput) reasons.Add("it may contain unsaved form input");
+                if (tab.HasActiveDownload) reasons.Add("it has an active download");
+                if (tab.IsMediaPlaying) reasons.Add("it is playing media");
+                var dialog = new ContentDialog
+                {
+                    Title = "Close protected tab?",
+                    Content = $"{tab.Title} is protected because {string.Join(" and ", reasons)}.",
+                    PrimaryButtonText = "Close tab",
+                    CloseButtonText = "Keep open",
+                    DefaultButton = ContentDialogButton.Close,
+                    XamlRoot = _root.XamlRoot
+                };
+                if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Close confirmation failed: {ex.GetType().Name}");
+            return;
         }
         var wasNativePage = _nativePageTabs.Remove(tab.Id);
         if (wasNativePage)
         {
             // Retire this exact page instance's lifecycle callback (feature code
             // validates its own identity inside) before the visual disappears.
-            if (_nativePageClosedHandlers.Remove(tab.Id, out var pageClosed)) pageClosed();
-            HideNativePageVisual();
+            if (_nativePageClosedHandlers.Remove(tab.Id, out var pageClosed)) { try { pageClosed(); } catch { } }
+            try { HideNativePageVisual(); } catch { }
         }
-        CloseMiniPlayersForTab(tab.Id);
+        try { CloseMiniPlayersForTab(tab.Id); } catch { }
         _activeNavigationIds.Remove(tab.Id);
         _readerTabs.Remove(tab.Id);
         _translationOfferedTabs.Remove(tab.Id);
         _splitTabIds.Remove(tab.Id);
-        if (_splitTabIds.Count < 2) _splitTabIds.Clear();
-        if (_webViews.Remove(tab.Id, out var web)) { DetachWebView(web); web.Close(); }
-        var next = wasNativePage ? _vm.RemoveTransient(tab) : _vm.Close(tab);
-        if (!wasNativePage) ShowUndoStatus($"Closed {tab.Title}", () => { ReopenClosed(); return Task.CompletedTask; });
+        if (_splitTabIds.Count < 2) { _splitTabIds.Clear(); _splitColumnFractions = null; _splitRowFractions = null; }
+        if (_webViews.Remove(tab.Id, out var web)) { try { DetachWebView(web); web.Close(); } catch (Exception ex) { Debug.WriteLine($"WebView close failed: {ex.GetType().Name}"); } }
+        // Tree children are orphaned, never cascade-closed: closing a parent must not destroy research.
+        foreach (var child in _vm.Tabs.Where(x => x.ParentId == tab.Id).ToList()) child.ParentId = null;
+        var isTemporary = tab.IsTemporary;
+        var next = wasNativePage ? _vm.RemoveTransient(tab) : isTemporary ? _vm.RemoveWithoutHistory(tab) : _vm.Close(tab);
+        if (!wasNativePage && !isTemporary) ShowUndoStatus($"Closed {tab.Title}", () => { ReopenClosed(); return Task.CompletedTask; });
         if (_vm.Tabs.Count == 0) next = NewTab(activate: false);
         RefreshTabLists();
         if (next is not null) _ = ActivateTabAsync(next);
@@ -735,6 +902,9 @@ public sealed partial class MainWindow
         // The window may have closed (or lifetime work been cancelled) while the
         // script result was in flight; never continue against released controls.
         if (_isWindowClosed || lifetimeToken.IsCancellationRequested) return;
+        if (!_vm.Tabs.Contains(tab) || tab == _vm.SelectedTab || ManualHibernateBlocked(tab) || tab.IsLoading ||
+            !_webViews.TryGetValue(tab.Id, out var currentView) || !ReferenceEquals(web, currentView)) return;
+        if (quiet && (IsProtectedTab(tab) || IsInNeverHibernateGroup(tab))) return;
         // Set the state before closing WebView2: Close can synchronously produce a
         // process-lifecycle callback, and the UI must never briefly show a closed tab as ready.
         MarkTabSleeping(tab);
@@ -766,7 +936,9 @@ public sealed partial class MainWindow
     private async Task HibernateInactiveTabsAsync(bool quiet = false, CancellationToken lifetimeToken = default)
     {
         if (_isWindowClosed || lifetimeToken.IsCancellationRequested) return;
-        var settings = new HibernationSettings(_vm.Settings.AutomaticHibernationEnabled, _vm.Settings.HibernationMinutes, _vm.Settings.NeverHibernatePinnedTabs, new HashSet<string>(_vm.Settings.HibernationExclusions, StringComparer.OrdinalIgnoreCase));
+        var snapshot = Browser.Platform.Windows.Storage.SystemResourceSnapshotProvider.Capture();
+        var minutes = Browser.Core.Diagnostics.AdaptiveMemoryPolicy.EffectiveInactivityMinutes(_vm.Settings.HibernationMinutes, snapshot);
+        var settings = new HibernationSettings(_vm.Settings.AutomaticHibernationEnabled, minutes, _vm.Settings.NeverHibernatePinnedTabs, new HashSet<string>(_vm.Settings.HibernationExclusions, StringComparer.OrdinalIgnoreCase));
         foreach (var tab in _vm.Tabs.ToList())
         {
             if (_isWindowClosed || lifetimeToken.IsCancellationRequested) return;
@@ -780,10 +952,12 @@ public sealed partial class MainWindow
     {
         if (_isWindowClosed || lifetimeToken.IsCancellationRequested) return;
         var live = _vm.Tabs.Where(tab => _webViews.ContainsKey(tab.Id) && tab.Id != _vm.SelectedTab?.Id && !_splitTabIds.Contains(tab.Id) && !IsProtectedTab(tab) && !IsInNeverHibernateGroup(tab)).ToList();
-        var permitted = _vm.Settings.MemorySaverTabLimit;
+        var snapshot = Browser.Platform.Windows.Storage.SystemResourceSnapshotProvider.Capture();
+        var permitted = Browser.Core.Diagnostics.AdaptiveMemoryPolicy.EffectiveTabLimit(_vm.Settings.MemorySaverTabLimit, snapshot);
         if (_vm.Settings.MemorySaverMode == MemorySaverMode.Balanced && live.Count <= permitted) return;
         if (_vm.Settings.MemorySaverMode == MemorySaverMode.Aggressive) permitted = Math.Max(3, permitted / 2);
         if (_vm.Settings.MemorySaverMode == MemorySaverMode.Maximum) permitted = 1;
+        permitted = Browser.Core.Diagnostics.AdaptiveMemoryPolicy.EffectiveTabLimit(permitted, snapshot);
         foreach (var tab in live.OrderByDescending(tab => tab.RendererMemoryBytes ?? 0).ThenBy(tab => tab.LastActivatedAt).Skip(Math.Max(0, permitted - 1)).ToList())
         {
             if (_isWindowClosed || lifetimeToken.IsCancellationRequested) return;
@@ -815,6 +989,9 @@ public sealed partial class MainWindow
         try
         {
             var liveIds = _vm.Tabs.Select(x => x.Id).ToHashSet();
+            _workspaceIdentity.Text = _vm.SelectedTab?.WorkspaceName ?? "";
+            _workspaceIdentity.Visibility = string.IsNullOrWhiteSpace(_workspaceIdentity.Text) ? Visibility.Collapsed : Visibility.Visible;
+            ToolTipService.SetToolTip(_workspaceIdentity, $"Workspace: {_workspaceIdentity.Text}");
             foreach (var id in _horizontalTabItems.Keys.Where(x => !liveIds.Contains(x)).ToList()) _horizontalTabItems.Remove(id);
             foreach (var tab in _vm.Tabs)
             {
@@ -835,7 +1012,7 @@ public sealed partial class MainWindow
                     ? new SolidColorBrush(Windows.UI.Color.FromArgb(255, 21, 25, 29))
                     : new SolidColorBrush(Windows.UI.Color.FromArgb(0, 0, 0, 0));
                 item.BorderBrush = tab.Id == _vm.SelectedTab?.Id
-                    ? ResourceBrush("SutraBorderBrush")
+                    ? ChromeBrush("SutraBorderBrush")
                     : new SolidColorBrush(Windows.UI.Color.FromArgb(0, 0, 0, 0));
                 item.BorderThickness = new(1);
                 item.MinWidth = tab.IsPinned ? 44 : 132;
@@ -847,7 +1024,7 @@ public sealed partial class MainWindow
             var modelOrder = _vm.Tabs.Select(x => x.Id).ToList();
             var horizontalOrder = _horizontalTabs.TabItems.OfType<TabViewItem>().Select(x => ((BrowserTab)x.Tag).Id);
             if (!horizontalOrder.SequenceEqual(modelOrder)) { _horizontalTabs.TabItems.Clear(); foreach (var tab in _vm.Tabs) _horizontalTabs.TabItems.Add(_horizontalTabItems[tab.Id]); }
-            if (_vm.SelectedTab is not null) _horizontalTabs.SelectedItem = _horizontalTabItems[_vm.SelectedTab.Id];
+            if (_vm.SelectedTab is not null && _horizontalTabItems.TryGetValue(_vm.SelectedTab.Id, out var selectedItem)) _horizontalTabs.SelectedItem = selectedItem;
             RefreshVerticalSidebar();
             RefreshTabGroupBar();
             RefreshSplitPaneChrome();
@@ -856,7 +1033,7 @@ public sealed partial class MainWindow
     }
 
     private static string TabHeader(BrowserTab tab) => tab.Title;
-    private static string TabToolTip(BrowserTab tab) => $"{tab.Title}\n{tab.Url}{(tab.IsHibernated ? "\nSleeping" : tab.IsMuted ? "\nMuted" : tab.IsMediaPlaying ? "\nPlaying audio" : string.Empty)}";
+    private static string TabToolTip(BrowserTab tab) => $"{tab.Title}\n{tab.Url}{(tab.IsHibernated ? "\nSleeping" : tab.IsMuted ? "\nMuted" : tab.IsMediaPlaying ? "\nPlaying audio" : string.Empty)}{(tab.IsTemporary ? "\nTemporary — closes with this window" : string.Empty)}{(tab.ParentId is not null ? "\nChild tab" : string.Empty)}";
 
     private FrameworkElement BuildTabPreview(BrowserTab tab)
     {
@@ -870,6 +1047,8 @@ public sealed partial class MainWindow
         panel.Children.Add(heading);
         panel.Children.Add(new TextBlock { Text = tab.Url, FontSize = 11, Opacity = .65, TextWrapping = TextWrapping.Wrap, MaxHeight = 44 });
         var state = tab.IsHibernated ? "Sleeping" : tab.IsLoading ? "Loading" : tab.HasActiveDownload ? "Downloading" : tab.IsMuted ? "Muted" : tab.IsMediaPlaying ? "Playing media" : "Ready";
+        if (tab.IsTemporary) state += " · Temporary";
+        if (tab.ParentId is not null) state += " · Child tab";
         panel.Children.Add(new TextBlock { Text = string.IsNullOrWhiteSpace(tab.GroupName) ? state : $"{tab.GroupName}  ·  {state}", FontSize = 11, Opacity = .72 });
         panel.Children.Add(new TextBlock { Text = TabMemorySummary(tab), FontSize = 11, Opacity = .72 });
         return panel;
@@ -974,10 +1153,12 @@ public sealed partial class MainWindow
 
     private FrameworkElement BuildHorizontalTabHeader(BrowserTab tab)
     {
-        var panel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, VerticalAlignment = VerticalAlignment.Center };
+        var panel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, VerticalAlignment = VerticalAlignment.Center, Opacity = tab.IsTemporary ? 0.82 : 1 };
         if (!tab.IsPinned && tab.Url == "browser://newtab")
-            panel.Children.Add(new TextBlock { Text = "◆", Foreground = ResourceBrush("SutraAccentBrush"), FontSize = 11, VerticalAlignment = VerticalAlignment.Center });
-        if (!tab.IsPinned) panel.Children.Add(new TextBlock { Text = tab.Title, TextTrimming = TextTrimming.CharacterEllipsis, MaxWidth = 170, VerticalAlignment = VerticalAlignment.Center });
+            panel.Children.Add(new TextBlock { Text = "◆", Foreground = ChromeBrush("SutraAccentBrush"), FontSize = 11, VerticalAlignment = VerticalAlignment.Center });
+        if (!tab.IsPinned && tab.ParentId is not null)
+            panel.Children.Add(new TextBlock { Text = "↳", FontSize = 11, Opacity = 0.7, VerticalAlignment = VerticalAlignment.Center });
+        if (!tab.IsPinned) panel.Children.Add(new TextBlock { Text = tab.Title + (tab.IsTemporary ? " · Temp" : string.Empty), TextTrimming = TextTrimming.CharacterEllipsis, MaxWidth = 170, VerticalAlignment = VerticalAlignment.Center });
         if (!tab.IsPinned && !string.IsNullOrWhiteSpace(tab.GroupName))
             panel.Children.Insert(0, new Border { Padding = new(5, 1, 5, 1), CornerRadius = new(6), Background = ResourceBrush("AccentFillColorSecondaryBrush"), Child = new TextBlock { Text = tab.GroupName, FontSize = 10, MaxWidth = 72, TextTrimming = TextTrimming.CharacterEllipsis } });
         if (tab.IsLoading) panel.Children.Add(new ProgressRing { IsActive = true, Width = 12, Height = 12 });
@@ -1041,15 +1222,18 @@ public sealed partial class MainWindow
         }
 
         var represented = new HashSet<Guid>();
+        var treeSnapshots = _vm.Tabs.Select(x => x.ToSnapshot()).ToList();
         foreach (var group in _tabGroups.Values.OrderBy(x => x.SortOrder).ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase).ToList())
         {
-            var tabs = _vm.Tabs.Where(x => !x.IsPinned && x.GroupId == group.Id).ToList();
+            var tabs = _vm.Tabs.Where(x => !x.IsPinned && x.GroupId == group.Id)
+                .Where(x => !Browser.Core.Tabs.TreeTabPolicy.IsHiddenByCollapse(treeSnapshots, x.Id)).ToList();
             if (tabs.Count == 0) continue;
             represented.Add(group.Id);
             _verticalGroupHost.Children.Add(BuildGroupSection(group, tabs, collapsed));
         }
 
-        var ungrouped = _vm.Tabs.Where(x => !x.IsPinned && (x.GroupId is null || !represented.Contains(x.GroupId.Value))).ToList();
+        var ungrouped = _vm.Tabs.Where(x => !x.IsPinned && (x.GroupId is null || !represented.Contains(x.GroupId.Value)))
+            .Where(x => !Browser.Core.Tabs.TreeTabPolicy.IsHiddenByCollapse(treeSnapshots, x.Id)).ToList();
         if (ungrouped.Count > 0)
         {
             if (!collapsed) _verticalGroupHost.Children.Add(SidebarLabel("Other tabs", ungrouped.Count));
@@ -1070,7 +1254,16 @@ public sealed partial class MainWindow
         };
         target.Drop += async (_, e) =>
         {
-            if (!e.Data.Properties.TryGetValue(DragTabKey, out var idText) || idText is not string text || !Guid.TryParse(text, out var id) || _vm.Tabs.FirstOrDefault(x => x.Id == id) is not { } tab) return;
+            if (!e.Data.Properties.TryGetValue(DragTabKey, out var idText) || idText is not string text || !Guid.TryParse(text, out var id)) return;
+            var tab = _vm.Tabs.FirstOrDefault(x => x.Id == id);
+            if (tab is null)
+            {
+                var source = TabTransferTargets().FirstOrDefault(window => window._vm.Tabs.Any(x => x.Id == id));
+                var sourceTab = source?._vm.Tabs.FirstOrDefault(x => x.Id == id);
+                if (source is null || sourceTab is null) return;
+                tab = await source.MoveTabToWindowAsync(sourceTab, this);
+                if (tab is null) return;
+            }
             apply(tab);
             RefreshTabLists();
             if (!_isPrivate) await SaveSessionAsync();
@@ -1242,7 +1435,12 @@ public sealed partial class MainWindow
         var background = selected
             ? grouped ? new SolidColorBrush(ColorFromHex(groupColor!, 46)) : ResourceBrush("SubtleFillColorSecondaryBrush")
             : new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
-        var button = new Button { Height = 36, Margin = grouped ? new Thickness(0) : new Thickness(2, 0, 2, 0), Padding = new(7, 2, 5, 2), HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Stretch, CornerRadius = new(7), ContextFlyout = BuildTabMenu(tab), Tag = tab, Background = background };
+        // Tree indent (#13): children shift right; temporary tabs (#19) get a dotted hint via opacity.
+        var snapshots = _vm.Tabs.Select(x => x.ToSnapshot()).ToList();
+        var depth = Math.Min(Browser.Core.Tabs.TreeTabPolicy.GetDepth(snapshots, tab.Id), Browser.Core.Tabs.TreeTabPolicy.MaximumDepth);
+        var indent = sidebarCollapsed ? 0 : depth * 16;
+        var hasChildren = _vm.Tabs.Any(x => x.ParentId == tab.Id);
+        var button = new Button { Height = 36, Margin = grouped ? new Thickness(indent, 0, 0, 0) : new Thickness(2 + indent, 0, 2, 0), Padding = new(7, 2, 5, 2), HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Stretch, CornerRadius = new(7), ContextFlyout = BuildTabMenu(tab), Tag = tab, Background = background, Opacity = tab.IsTemporary ? 0.78 : 1 };
         button.Click += async (_, _) => await ActivateTabAsync(tab);
         button.PointerPressed += (_, e) => { if (e.GetCurrentPoint(button).Properties.IsMiddleButtonPressed) { e.Handled = true; CloseTab(tab); } };
         button.PointerEntered += (_, _) => _ = RefreshTabMemoryUsageAsync();
@@ -1259,7 +1457,8 @@ public sealed partial class MainWindow
         if (!sidebarCollapsed)
         {
             var text = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-            text.Children.Add(new TextBlock { Text = tab.Title, TextTrimming = TextTrimming.CharacterEllipsis, FontSize = 12 });
+            var title = (depth > 0 ? "↳ " : string.Empty) + tab.Title + (tab.IsTemporary ? " · Temporary" : string.Empty) + (hasChildren ? (tab.IsTreeCollapsed ? " (+)" : " (–)") : string.Empty);
+            text.Children.Add(new TextBlock { Text = title, TextTrimming = TextTrimming.CharacterEllipsis, FontSize = 12, Opacity = tab.IsTemporary ? 0.85 : 1 });
             Grid.SetColumn(text, 2); row.Children.Add(text);
         }
         if (tab.IsLoading || tab.IsHibernated || tab.IsMediaPlaying || tab.IsMuted || tab.HasActiveDownload)
@@ -1309,8 +1508,13 @@ public sealed partial class MainWindow
         AddMenu(flyout, tab.IsPinned ? "Unpin tab" : "Pin tab", () => TogglePin(tab), null, Symbol.Pin);
         AddMenu(flyout, tab.IsMuted ? "Unmute tab" : "Mute tab", () => ToggleMute(tab), null, tab.IsMuted ? Symbol.Volume : Symbol.Mute);
         AddMenu(flyout, "Duplicate tab", async () => await DuplicateTabAsync(tab), null, Symbol.Copy);
+        AddMenu(flyout, tab.IsTemporary ? "Keep tab (make permanent)" : "Make temporary (discard on close)", () => ToggleTemporary(tab), null, Symbol.Clock);
+        AddMenu(flyout, "Open child tab (tree)", () => NewTab("browser://newtab", true, tab.IsTemporary, tab.Id), null, Symbol.Add);
+        if (tab.ParentId is not null) AddMenu(flyout, "Move out to top level", () => DetachTreeTab(tab), null, Symbol.BackToWindow);
+        if (_vm.Tabs.Any(x => x.ParentId == tab.Id)) AddMenu(flyout, tab.IsTreeCollapsed ? "Expand child tabs" : "Collapse child tabs", () => ToggleTreeCollapsed(tab), null, Symbol.Forward);
         AddMenu(flyout, "Add to reading list", async () => { if (_vm.SelectedTab?.Id != tab.Id) await ActivateTabAsync(tab); await AddCurrentToReadingListAsync(); }, null, Symbol.Document);
         AddMenu(flyout, "Move tab to new window", async () => await MoveTabToNewWindowAsync(tab), null, Symbol.NewWindow);
+        flyout.Items.Add(BuildWindowTransferMenu(tab));
         AddMenu(flyout, tab.GroupId is null ? "Add to tab group" : "Move or edit tab group", async () => await SetTabGroupAsync(tab), null, Symbol.Tag);
         if (tab.GroupId is { } groupId && _tabGroups.TryGetValue(groupId, out var group)) AddMenu(flyout, "Manage tab group", () => BuildGroupMenu(group).ShowAt(_more), null, Symbol.Tag);
         AddMenu(flyout, _splitTabIds.Contains(tab.Id) ? "Remove from split screen" : "Show in split screen", async () => await ToggleTabInSplitAsync(tab), null, Symbol.View);
@@ -1325,6 +1529,24 @@ public sealed partial class MainWindow
         return flyout;
     }
 
+    private void ToggleTemporary(BrowserTab tab)
+    {
+        tab.IsTemporary = !tab.IsTemporary;
+        if (tab.IsTemporary)
+        {
+            // Temporary tabs never sit in split screen and never enter recently-closed.
+            _splitTabIds.Remove(tab.Id);
+            if (_splitTabIds.Count < 2) { _splitTabIds.Clear(); _splitColumnFractions = null; _splitRowFractions = null; }
+        }
+        RefreshTabLists();
+        _ = SaveSessionAsync();
+        ShowStatus(tab.IsTemporary ? "Temporary tab — it closes with this window and is never saved." : "Tab will now persist across restarts.");
+    }
+
+    private void DetachTreeTab(BrowserTab tab) { tab.ParentId = null; RefreshTabLists(); _ = SaveSessionAsync(); }
+
+    private void ToggleTreeCollapsed(BrowserTab tab) { tab.IsTreeCollapsed = !tab.IsTreeCollapsed; RefreshTabLists(); _ = SaveSessionAsync(); }
+
     private void TogglePin(BrowserTab tab) { tab.IsPinned = !tab.IsPinned; var ordered = TabOrdering.PinnedFirst(_vm.Tabs).ToList(); _vm.Tabs.Clear(); foreach (var item in ordered) _vm.Tabs.Add(item); RefreshTabLists(); }
     private void SynchronizeTabOrder(IEnumerable<BrowserTab> visualOrder)
     {
@@ -1336,7 +1558,7 @@ public sealed partial class MainWindow
         RefreshTabLists();
         _ = SaveSessionAsync();
     }
-    private void ToggleMute(BrowserTab tab) { tab.IsMuted = !tab.IsMuted; if (_webViews.TryGetValue(tab.Id, out var web)) web.CoreWebView2.IsMuted = tab.IsMuted; RefreshTabLists(); }
+    private void ToggleMute(BrowserTab tab) { tab.IsMuted = !tab.IsMuted; if (_webViews.TryGetValue(tab.Id, out var web) && web.CoreWebView2 is not null) { try { web.CoreWebView2.IsMuted = tab.IsMuted; } catch { } } RefreshTabLists(); }
     private async Task SetTabGroupAsync(BrowserTab tab)
     {
         var groups = _tabGroups.Values.OrderBy(x => x.SortOrder).ThenBy(x => x.Name).ToList();
@@ -1461,7 +1683,8 @@ public sealed partial class MainWindow
         RefreshTabLists();
         if (!_isPrivate) await SaveSessionAsync();
         ShowStatus($"Duplicated {source.Count} tab{(source.Count == 1 ? "" : "s")} into {copy.Name}", InfoBarSeverity.Success);
-        await ActivateTabAsync(_vm.Tabs.FirstOrDefault(x => x.GroupId == copy.Id) ?? _vm.SelectedTab!);
+        var fallback = _vm.Tabs.FirstOrDefault(x => x.GroupId == copy.Id) ?? _vm.SelectedTab;
+        if (fallback is not null) await ActivateTabAsync(fallback);
     }
 
     private async Task WakeAllSleepingGroupsAsync()
@@ -1543,12 +1766,12 @@ public sealed partial class MainWindow
             var closed = candidates.Select(x => (x.Title, x.Url, x.FaviconPath, x.IsPinned)).ToList();
             foreach (var candidate in candidates)
             {
-                CloseMiniPlayersForTab(candidate.Id);
+                try { CloseMiniPlayersForTab(candidate.Id); } catch { }
                 _activeNavigationIds.Remove(candidate.Id);
                 _readerTabs.Remove(candidate.Id);
                 _translationOfferedTabs.Remove(candidate.Id);
                 _splitTabIds.Remove(candidate.Id);
-                if (_webViews.Remove(candidate.Id, out var web)) { DetachWebView(web); web.Close(); }
+                if (_webViews.Remove(candidate.Id, out var web)) { try { DetachWebView(web); web.Close(); } catch { } }
                 _vm.Close(candidate);
             }
             if (_splitTabIds.Count < 2) _splitTabIds.Clear();
@@ -1604,7 +1827,7 @@ public sealed partial class MainWindow
             ShowStatus("Could not save this tab group. The tabs are still open.", InfoBarSeverity.Error);
         }
     }
-    private static bool IsProtectedTab(BrowserTab tab) => tab.IsPinned || tab.MayHaveUnsavedFormInput || tab.HasActiveDownload || tab.IsMediaPlaying;
+    private static bool IsProtectedTab(BrowserTab tab) => TabCleanupPolicy.IsProtected(tab);
     private async Task SutraSaveAsync()
     {
         // Keep one clean replacement tab so the command never leaves the window
@@ -1616,15 +1839,15 @@ public sealed partial class MainWindow
             var wasNativePage = _nativePageTabs.Remove(tab.Id);
             if (wasNativePage)
             {
-                if (_nativePageClosedHandlers.Remove(tab.Id, out var pageClosed)) pageClosed();
-                HideNativePageVisual();
+                if (_nativePageClosedHandlers.Remove(tab.Id, out var pageClosed)) { try { pageClosed(); } catch { } }
+                try { HideNativePageVisual(); } catch { }
             }
-            CloseMiniPlayersForTab(tab.Id);
+            try { CloseMiniPlayersForTab(tab.Id); } catch { }
             _activeNavigationIds.Remove(tab.Id);
             _readerTabs.Remove(tab.Id);
             _translationOfferedTabs.Remove(tab.Id);
             _splitTabIds.Remove(tab.Id);
-            if (_webViews.Remove(tab.Id, out var web)) { DetachWebView(web); web.Close(); }
+            if (_webViews.Remove(tab.Id, out var web)) { try { DetachWebView(web); web.Close(); } catch { } }
             _vm.RemoveWithoutHistory(tab);
         }
         if (_splitTabIds.Count < 2) _splitTabIds.Clear();
@@ -1705,17 +1928,21 @@ public sealed partial class MainWindow
     {
         try
         {
-            if (!_restoreSession)
-            {
-                await _settingsRepository.SaveAsync(_vm.Settings);
-                return true;
-            }
+            if (_isPrivate || _suppressPersistence) return true;
             RemoveEmptyGroups();
             var groups = _tabGroups.Values.OrderBy(x => x.SortOrder).Select(x => x.ToSnapshot()).ToList();
-            var persistedTabs = _vm.Tabs.Where(tab => !IsNativePageTab(tab)).ToList();
-            Guid? activeTabId = _vm.SelectedTab is { } selected && !IsNativePageTab(selected) ? selected.Id : null;
-            var session = new BrowserSession(persistedTabs.Select(x => x.ToSnapshot()).ToList(), activeTabId, DateTimeOffset.UtcNow, _splitTabIds.Where(id => persistedTabs.Any(tab => tab.Id == id)).ToList(), groups);
-            await _sessions.SaveAsync(session);
+            var persistedTabs = _vm.Tabs.Where(tab => !IsNativePageTab(tab) && !tab.IsTemporary).ToList();
+            Guid? activeTabId = _vm.SelectedTab is { } selected && !IsNativePageTab(selected) && !selected.IsTemporary ? selected.Id : persistedTabs.FirstOrDefault()?.Id;
+            var splitIds = _splitTabIds.Where(id => persistedTabs.Any(tab => tab.Id == id)).ToList();
+            if (splitIds.Count < 2) splitIds.Clear();
+            var (columns, rows) = CaptureSplitFractions(splitIds.Count);
+            var session = new BrowserSession(persistedTabs.Select(x => x.ToSnapshot()).ToList(), activeTabId, DateTimeOffset.UtcNow, splitIds, groups, _splitLayout, columns, rows);
+            // Temporary tabs never reach the database: WithoutTemporary is enforced here and again inside
+            // the repositories, so a future caller cannot accidentally persist a preview tab.
+            session = Browser.Core.Sessions.MultiWindowSessionPolicy.WithoutTemporary(session);
+            await _sessionSnapshots.SaveAsync(_sessionWindowId, _profileName, session);
+            await _windowSessions.SaveAsync(_sessionWindowId, _profileName, session);
+            if (_restoreSession && (!_startupNeedsReview || _previousSessionRestored)) await _sessions.SaveAsync(session);
             await _settingsRepository.SaveAsync(_vm.Settings);
             return true;
         }
@@ -1726,6 +1953,41 @@ public sealed partial class MainWindow
             Debug.WriteLine($"Sutra session save failed: {ex.GetType().Name}");
             return false;
         }
+    }
+
+    private (IReadOnlyList<double>? Columns, IReadOnlyList<double>? Rows) CaptureSplitFractions(int paneCount)
+    {
+        try
+        {
+            if (!IsSplitViewActive || paneCount < 2) return (null, null);
+            var layout = Browser.Core.Tabs.SplitLayout.Create(paneCount, _splitLayout);
+            // Content definitions live at even indices; odd indices are 4px separators.
+            var widths = new List<double>();
+            for (var i = 0; i < _browserHost.ColumnDefinitions.Count; i += 2)
+            {
+                var actual = _browserHost.ColumnDefinitions[i].ActualWidth;
+                if (!double.IsFinite(actual) || actual <= 0) return (null, null);
+                widths.Add(actual);
+            }
+            var heights = new List<double>();
+            for (var i = 0; i < _browserHost.RowDefinitions.Count; i += 2)
+            {
+                var actual = _browserHost.RowDefinitions[i].ActualHeight;
+                if (!double.IsFinite(actual) || actual <= 0) return (null, null);
+                heights.Add(actual);
+            }
+            IReadOnlyList<double>? columns = widths.Count == layout.Columns
+                ? Browser.Core.Tabs.SplitRatioPolicy.FromPixels(widths) : null;
+            IReadOnlyList<double>? rows = heights.Count == layout.Rows && layout.Rows > 1
+                ? Browser.Core.Tabs.SplitRatioPolicy.FromPixels(heights) : null;
+            // Only persist genuinely custom ratios; even splits are the default and need no storage.
+            if (columns is not null && !Browser.Core.Tabs.SplitRatioPolicy.IsCustom(columns, columns.Count)) columns = null;
+            if (rows is not null && !Browser.Core.Tabs.SplitRatioPolicy.IsCustom(rows, rows.Count)) rows = null;
+            _splitColumnFractions = columns;
+            _splitRowFractions = rows;
+            return (columns, rows);
+        }
+        catch { return (null, null); }
     }
 
     /// <summary>
@@ -1920,6 +2182,7 @@ public sealed partial class MainWindow
             content.Children.Add(new TextBlock { Text = folder.Name, TextTrimming = TextTrimming.CharacterEllipsis, MaxWidth = 150 });
             var button = new Button { Content = content, Padding = new(9, 4, 9, 4), MaxWidth = 205, CornerRadius = new(6) };
             ToolTipService.SetToolTip(button, $"Bookmark folder • {folderItems.Count} item{(folderItems.Count == 1 ? "" : "s")}");
+            EnableBookmarkReordering(button, folder.Id, folder: true);
             var menu = BuildBookmarkFolderMenu(folder, folders, items);
             button.Click += (_, _) => menu.ShowAt(button);
             _bookmarkBarItems.Children.Add(button);
@@ -1935,6 +2198,7 @@ public sealed partial class MainWindow
             content.Children.Add(new TextBlock{Text=bookmark.Title,TextTrimming=TextTrimming.CharacterEllipsis,MaxWidth=140});
             var button = new Button { Content = content, Padding = new(9, 4, 9, 4), MaxWidth = 190, CornerRadius = new(6) };
             ToolTipService.SetToolTip(button, bookmark.Url);
+            EnableBookmarkReordering(button, bookmark.Id, folder: false);
             button.Click += (_, _) => Navigate(bookmark.Url);
             var menu = new MenuFlyout(); AddMenu(menu, "Open in new tab", () => NewTab(bookmark.Url, !_vm.Settings.OpenLinksInBackground), null, Symbol.OpenFile); button.ContextFlyout = menu;
             _bookmarkBarItems.Children.Add(button);
@@ -1968,11 +2232,16 @@ public sealed partial class MainWindow
             };
             var sleeping = tabs.Count(tab => tab.IsHibernated);
             ToolTipService.SetToolTip(button, $"{group.Name}: {tabs.Count} tab{(tabs.Count == 1 ? string.Empty : "s")}{(sleeping == 0 ? string.Empty : $", {sleeping} sleeping")}");
+            var groupId = group.Id;
             button.Click += async (_, _) =>
             {
                 group.IsCollapsed = false;
                 RefreshTabLists();
-                var target = tabs.FirstOrDefault(tab => !tab.IsHibernated) ?? tabs[0];
+                // Re-query live tabs: the group may have been emptied between menu
+                // build and click, and the captured list would be stale.
+                var live = _vm.Tabs.Where(tab => tab.GroupId == groupId).ToList();
+                if (live.Count == 0) return;
+                var target = live.FirstOrDefault(tab => !tab.IsHibernated) ?? live[0];
                 await ActivateTabAsync(target);
             };
             _bookmarkBarGroups.Children.Add(button);

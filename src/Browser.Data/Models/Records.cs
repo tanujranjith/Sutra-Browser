@@ -7,6 +7,7 @@ public sealed record DownloadRecord(Guid Id, string FileName, string SourceUrl, 
 public sealed record PasswordMetadataRecord(Guid Id, string Origin, string Username, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt);
 public sealed record PermissionRecord(string Origin, string Kind, string Decision, DateTimeOffset UpdatedAt);
 public sealed record AiActionLogRecord(long Id, string ActionType, string Domain, DateTimeOffset Timestamp, string Result, bool ConfirmationRequired);
-public sealed record WorkspaceRecord(long Id, string Name, string SessionJson, DateTimeOffset UpdatedAt);
+public sealed record WorkspaceRecord(long Id, string Name, string SessionJson, DateTimeOffset UpdatedAt, string Color = "#F47A22", string Icon = "Folder", bool IsTemplate = false);
+public sealed record WorkspaceVersion(long Id, long WorkspaceId, string Name, string SessionJson, string Color, string Icon, bool IsTemplate, string Reason, DateTimeOffset SavedAt);
 public sealed record ReadingListRecord(long Id, string Title, string Url, bool IsRead, DateTimeOffset AddedAt);
 public sealed record PageNoteRecord(long Id, string Url, string Quote, string Note, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt);

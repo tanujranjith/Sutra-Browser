@@ -23,6 +23,13 @@ public sealed class AuthenticationWindow : Window
     private readonly WebView2 _webView = new();
     private readonly WebViewEnvironmentManager _environment = App.Services.GetRequiredService<WebViewEnvironmentManager>();
     private bool _initialized;
+    private bool _closed;
+
+    internal void PreparePrivacyShutdown()
+    {
+        _closed = true;
+        try { _webView.Close(); } catch { }
+    }
 
     public AuthenticationWindow(bool isPrivate, string initialUrl, string profileName, bool isPopup = false)
     {
@@ -56,9 +63,10 @@ public sealed class AuthenticationWindow : Window
         root.Children.Add(header);
         root.Children.Add(_webView);
         Content = root;
+        Closed += (_, _) => PreparePrivacyShutdown();
         Activated += async (_, _) =>
         {
-            if (_initialized || _isPopup) return;
+            if (_initialized || _isPopup || _closed) return;
             _initialized = true;
             await InitializeAsync();
         };
@@ -71,6 +79,7 @@ public sealed class AuthenticationWindow : Window
         try
         {
             await InitializeCoreAsync();
+            if (_closed) { request.Handled = true; return; }
             request.NewWindow = _webView.CoreWebView2;
         }
         catch
@@ -85,10 +94,12 @@ public sealed class AuthenticationWindow : Window
         try
         {
             await InitializeCoreAsync();
+            if (_closed) return;
             _webView.CoreWebView2.Navigate(_initialUrl);
         }
         catch
         {
+            if (_closed) return;
             Content = new TextBlock
             {
                 Text = "Sutra could not open this sign-in window. Close it and try again.",
@@ -101,6 +112,7 @@ public sealed class AuthenticationWindow : Window
     private async Task InitializeCoreAsync()
     {
             var environment = await _environment.GetAsync();
+            if (_closed) throw new OperationCanceledException();
             if (_isPrivate)
             {
                 var options = environment.CreateCoreWebView2ControllerOptions();
@@ -111,10 +123,12 @@ public sealed class AuthenticationWindow : Window
             else if (!_profileName.Equals("Default", StringComparison.OrdinalIgnoreCase))
             {
                 var options = environment.CreateCoreWebView2ControllerOptions();
-                options.ProfileName = "Sutra-" + new string(_profileName.Where(char.IsLetterOrDigit).Take(50).ToArray());
+                options.ProfileName = Browser.Core.Profiles.ProfileIdentity.WebViewName(_profileName);
                 await _webView.EnsureCoreWebView2Async(environment, options);
             }
             else await _webView.EnsureCoreWebView2Async(environment);
+
+            if (_closed) { try { _webView.Close(); } catch { } throw new OperationCanceledException(); }
 
             var core = _webView.CoreWebView2;
             core.Settings.AreBrowserAcceleratorKeysEnabled = false;

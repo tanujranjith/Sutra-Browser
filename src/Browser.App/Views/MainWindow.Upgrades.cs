@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text.Json;
+using Microsoft.Extensions.DependencyInjection;
 using Browser.Core.Bookmarks;
 using Browser.Core.Search;
 using Browser.Core.Sessions;
@@ -206,11 +207,16 @@ public sealed partial class MainWindow
         new("New window", "Ctrl+N", Symbol.NewWindow, () => { OpenNewWindow(); return Task.CompletedTask; }),
         new("New private window", "Ctrl+Shift+N", Symbol.ProtectedDocument, () => { OpenPrivateWindow(); return Task.CompletedTask; }),
         new("Sutra Save", "Ctrl+Alt+Z · keep a fresh tab and close the rest", Symbol.Save, SutraSaveAsync),
+        new(Browser.Core.Privacy.KillSwitchPolicy.Command, "Ctrl+Alt+Shift+K · close all windows and clear history immediately", Symbol.Cancel, () => ((App)Application.Current).RunKillSwitchAsync()),
         new("Reopen closed tab", "Ctrl+Shift+T", Symbol.OpenFile, () => { ReopenClosed(); return Task.CompletedTask; }),
         new("Search open tabs", "Titles and URLs", Symbol.Find, SearchTabsAsync),
         new("Organize tabs by site", "Create tab groups after approval", Symbol.Tag, () => SuggestDomainGroupsAsync(true)),
         new("Search across page text", "Awake tabs only; remains local", Symbol.Find, SearchAcrossTabsAsync),
         new("Workspaces", "Save and restore tab sets", Symbol.Library, ShowWorkspacesAsync),
+        new("Library", "Search tabs, history, bookmarks, notes, and saved articles", Symbol.Library, ShowLibrarySearchAsync),
+        new("Save for offline reading", "Save this article's readable text on this device", Symbol.SaveLocal, SaveOfflineArticleAsync),
+        new("Offline library", "Read saved articles without a connection", Symbol.SaveLocal, ShowOfflineLibraryAsync),
+        new("Session recovery", "Reopen a saved window without replacing current tabs", Symbol.Undo, ShowSessionRecoveryAsync),
         new("Reading list", "Pages saved for later", Symbol.Document, ShowReadingListAsync),
         new("Add page note", "Attach an optional quotation and note to this page", Symbol.Edit, () => { _ = ShowPageNoteDialogAsync(null); return Task.CompletedTask; }),
         new("Page notes", "Search and edit notes saved on pages", Symbol.Document, ShowNotesManagerAsync),
@@ -231,96 +237,58 @@ public sealed partial class MainWindow
 
     private async Task CleanUpTabsAsync()
     {
-        var candidates = _vm.Tabs.Where(tab => tab.Id != _vm.SelectedTab?.Id && _webViews.ContainsKey(tab.Id) && !IsProtectedTab(tab) && !_splitTabIds.Contains(tab.Id) && !IsInNeverHibernateGroup(tab)).OrderByDescending(tab => tab.RendererMemoryBytes ?? 0).ThenBy(tab => tab.LastActivatedAt).ToList();
-        foreach (var tab in candidates) await HibernateTabAsync(tab);
+        var candidates = _vm.Tabs.Where(tab => !IsNativePageTab(tab)).OrderBy(tab => CleanupSleepReason(tab) is not null).ThenBy(tab => tab.LastActivatedAt).ToList();
+        var selected = await PreviewTabCleanupAsync("Review tab cleanup", "Sleeping tabs stay in your tab list and reload when you select them. Choose what to put to sleep; protected tabs stay awake.", candidates, "Sleep selected", CleanupSleepReason);
+        var slept = 0;
+        foreach (var tab in selected)
+        {
+            if (_isWindowClosed) return;
+            if (!_vm.Tabs.Contains(tab) || CleanupSleepReason(tab) is not null) continue;
+            await HibernateTabAsync(tab, quiet: true, _windowLifetimeCts.Token);
+            if (tab.IsHibernated) slept++;
+        }
         RefreshTabLists();
-        ShowStatus(candidates.Count == 0 ? "No safe inactive tabs to clean up" : $"Put {candidates.Count} inactive tab{(candidates.Count == 1 ? string.Empty : "s")} to sleep", InfoBarSeverity.Success);
+        if (selected.Count > 0) ShowStatus($"Put {slept} tabs to sleep · {selected.Count - slept} kept awake after their state changed", InfoBarSeverity.Success);
     }
 
-    private async Task ShowWorkspacesAsync()
-    {
-        if (_isPrivate) { await NoticeAsync("Unavailable in private browsing", "Persistent workspaces are disabled in private windows."); return; }
-        var list = new ListView { SelectionMode = ListViewSelectionMode.Single };
-        async Task Load()
-        {
-            list.Items.Clear();
-            foreach (var workspace in await _workspaces.ListAsync())
-                list.Items.Add(new ListViewItem { Tag = workspace, Content = ManagerRow(workspace.Name, $"Updated {workspace.UpdatedAt.LocalDateTime:g}") });
-        }
-        var save = ActionButton("Save current", Symbol.Save, async () =>
-        {
-            var name = new TextBox { Header = "Workspace name", PlaceholderText = "Research", MaxLength = 80, MinWidth = 340 };
-            var dialog = new ContentDialog { Title = "Save workspace", Content = name, PrimaryButtonText = "Save", CloseButtonText = "Cancel", XamlRoot = _root.XamlRoot };
-            if (await dialog.ShowAsync() != ContentDialogResult.Primary || string.IsNullOrWhiteSpace(name.Text)) return;
-            var groups = _tabGroups.Values.OrderBy(x => x.SortOrder).Select(x => x.ToSnapshot()).ToList();
-            var session = new BrowserSession(_vm.Tabs.Select(x => x.ToSnapshot()).ToList(), _vm.SelectedTab?.Id, DateTimeOffset.UtcNow, _splitTabIds.ToList(), groups);
-            await _workspaces.SaveAsync(name.Text, SessionSerializer.Serialize(session)); await Load(); ShowStatus("Workspace saved", InfoBarSeverity.Success);
-        });
-        var open = ActionButton("Open", Symbol.OpenFile, async () =>
-        {
-            if (list.SelectedItem is not ListViewItem item || item.Tag is not WorkspaceRecord workspace) return;
-            if (_vm.Tabs.Any(IsProtectedTab) && !await ConfirmAsync("Switch workspaces?", "Pinned, playing, downloading, or unsaved-form tabs are currently open. Save this workspace first if you need to keep them.", "Switch")) return;
-            var session = SessionSerializer.Deserialize(workspace.SessionJson);
-            if (session.Tabs.Count == 0) { ShowStatus("This workspace has no valid tabs.", InfoBarSeverity.Warning); return; }
-            await ReplaceTabsWithSessionAsync(session); HidePage(); ShowStatus($"Opened {workspace.Name}", InfoBarSeverity.Success);
-        });
-        var export = ActionButton("Export session", Symbol.Upload, async () =>
-        {
-            var picker = new FileSavePicker { SuggestedStartLocation = PickerLocationId.DocumentsLibrary, SuggestedFileName = SafeFileName($"Sutra session {DateTime.Now:yyyy-MM-dd}") };
-            picker.FileTypeChoices.Add("Sutra session", [".sutra-session"]);
-            WinRT.Interop.InitializeWithWindow.Initialize(picker, WinRT.Interop.WindowNative.GetWindowHandle(this));
-            var file = await picker.PickSaveFileAsync();
-            if (file is null) return;
-            var groups = _tabGroups.Values.OrderBy(x => x.SortOrder).Select(x => x.ToSnapshot()).ToList();
-            var session = new BrowserSession(_vm.Tabs.Select(x => x.ToSnapshot()).ToList(), _vm.SelectedTab?.Id, DateTimeOffset.UtcNow, _splitTabIds.ToList(), groups);
-            await File.WriteAllTextAsync(file.Path, SessionSerializer.Serialize(session));
-            ShowStatus("Session exported", InfoBarSeverity.Success);
-        });
-        var import = ActionButton("Import session", Symbol.Download, async () =>
-        {
-            var picker = new FileOpenPicker { SuggestedStartLocation = PickerLocationId.DocumentsLibrary };
-            picker.FileTypeFilter.Add(".sutra-session");
-            picker.FileTypeFilter.Add(".zephyr-session");
-            picker.FileTypeFilter.Add(".luma-session");
-            WinRT.Interop.InitializeWithWindow.Initialize(picker, WinRT.Interop.WindowNative.GetWindowHandle(this));
-            var file = await picker.PickSingleFileAsync();
-            if (file is null) return;
-            try
-            {
-                var session = SessionSerializer.Deserialize(await File.ReadAllTextAsync(file.Path));
-                if (session.Tabs.Count == 0) { ShowStatus("The session file has no valid tabs.", InfoBarSeverity.Warning); return; }
-                if (_vm.Tabs.Any(IsProtectedTab) && !await ConfirmAsync("Replace current tabs?", "The imported session will replace the current tabs. Protected tabs will be closed only after you confirm.", "Replace")) return;
-                await ReplaceTabsWithSessionAsync(session);
-                HidePage(); ShowStatus("Session imported", InfoBarSeverity.Success);
-            }
-            catch (IOException) { ShowStatus("The session file could not be read.", InfoBarSeverity.Error); }
-        });
-        var delete = ActionButton("Delete", Symbol.Delete, async () =>
-        {
-            if (list.SelectedItem is ListViewItem item && item.Tag is WorkspaceRecord workspace && await ConfirmAsync("Delete workspace?", $"Delete {workspace.Name}? Open tabs are not affected.", "Delete")) { await _workspaces.DeleteAsync(workspace.Id); await Load(); }
-        });
-        var toolbar = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 }; toolbar.Children.Add(save); toolbar.Children.Add(open); toolbar.Children.Add(export); toolbar.Children.Add(import); toolbar.Children.Add(delete);
-        await Load(); ShowPage("Workspaces", "Named tab sets are stored locally and can restore split layouts.", PageBody(toolbar, list));
-    }
+    private Task ShowWorkspacesAsync() => ShowWorkspaceLibraryAsync();
 
     private async Task ReplaceTabsWithSessionAsync(BrowserSession session)
     {
-        foreach (var web in _webViews.Values.ToList()) { try { DetachWebView(web); web.Close(); } catch { } }
-        // Every native manager page is disappearing with the tab list: retire their lifecycle callbacks first.
-        foreach (var pageClosed in _nativePageClosedHandlers.Values.ToList()) { try { pageClosed(); } catch { } }
-        _nativePageClosedHandlers.Clear();
-        _webViews.Clear(); _activeNavigationIds.Clear(); _zoomFactors.Clear(); _readerTabs.Clear(); _splitTabIds.Clear(); _tabGroups.Clear(); _vm.Tabs.Clear();
-        foreach (var snapshot in session.Groups ?? [])
+        // Serialized restores are destructive (they close every live WebView), so
+        // never let two overlap and never leave the window with zero tabs if the
+        // incoming session is empty or corrupt.
+        if (_isReplacingTabs) return;
+        _isReplacingTabs = true;
+        try
         {
-            var group = TabGroup.FromSnapshot(snapshot);
-            _tabGroups[group.Id] = group;
+            foreach (var web in _webViews.Values.ToList()) { try { DetachWebView(web); web.Close(); } catch { } }
+            // Every native manager page is disappearing with the tab list: retire their lifecycle callbacks first.
+            foreach (var pageClosed in _nativePageClosedHandlers.Values.ToList()) { try { pageClosed(); } catch { } }
+            _nativePageClosedHandlers.Clear();
+            _nativePageTabs.Clear();
+            HideNativePageVisual();
+            _webViews.Clear(); _activeNavigationIds.Clear(); _zoomFactors.Clear(); _readerTabs.Clear(); _splitTabIds.Clear(); _tabGroups.Clear(); _vm.Tabs.Clear();
+            foreach (var snapshot in session.Groups ?? [])
+            {
+                if (snapshot is null) continue;
+                var group = TabGroup.FromSnapshot(snapshot);
+                _tabGroups[group.Id] = group;
+            }
+            foreach (var snapshot in session.Tabs ?? []) _vm.Add(BrowserTab.FromSnapshot(snapshot), false);
+            MigrateLegacyTabGroups();
+            foreach (var id in session.SplitTabIds ?? []) if (_vm.Tabs.Any(x => x.Id == id)) _splitTabIds.Add(id);
+            if (_splitTabIds.Count < 2) _splitTabIds.Clear();
+            _splitLayout = session.SplitLayout;
+            var active = _vm.Tabs.FirstOrDefault(x => x.Id == session.ActiveTabId) ?? _vm.Tabs.FirstOrDefault();
+            if (active is null)
+            {
+                active = new BrowserTab { Url = "browser://newtab", Title = Browser.Core.Branding.AppBrand.NewTabTitle };
+                _vm.Add(active, false);
+            }
+            RefreshTabLists(); await ActivateTabAsync(active); await SaveSessionAsync();
         }
-        foreach (var snapshot in session.Tabs) _vm.Add(BrowserTab.FromSnapshot(snapshot), false);
-        MigrateLegacyTabGroups();
-        foreach (var id in session.SplitTabIds ?? []) if (_vm.Tabs.Any(x => x.Id == id)) _splitTabIds.Add(id);
-        if (_splitTabIds.Count < 2) _splitTabIds.Clear();
-        var active = _vm.Tabs.FirstOrDefault(x => x.Id == session.ActiveTabId) ?? _vm.Tabs.First();
-        RefreshTabLists(); await ActivateTabAsync(active); await SaveSessionAsync();
+        finally { _isReplacingTabs = false; }
     }
 
     private async Task AddCurrentToReadingListAsync()
@@ -380,19 +348,56 @@ public sealed partial class MainWindow
     {
         using var process = Process.GetCurrentProcess();
         process.Refresh();
+        var cpu = SampleCpuPercent(process);
+        var snapshot = Browser.Platform.Windows.Storage.SystemResourceSnapshotProvider.Capture();
+        _healthHistory.Add(new(DateTimeOffset.UtcNow, process.WorkingSet64 / 1024 / 1024, _webViews.Count, _vm.Tabs.Count(x => x.IsHibernated), cpu));
+        var samples = _healthHistory.Samples;
         var summary = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
-        summary.Children.Add(MetricCard("Memory", $"{process.WorkingSet64 / 1024d / 1024d:N0} MB"));
+        summary.Children.Add(MetricCard("Browser shell memory", $"{process.WorkingSet64 / 1024d / 1024d:N0} MB"));
+        summary.Children.Add(MetricCard("Shell CPU (est.)", $"{cpu:N1}%"));
         summary.Children.Add(MetricCard("Live WebViews", _webViews.Count.ToString()));
         summary.Children.Add(MetricCard("Sleeping tabs", _vm.Tabs.Count(x => x.IsHibernated).ToString()));
+        summary.Children.Add(MetricCard("Memory pressure", snapshot.Pressure.ToString()));
         summary.Children.Add(MetricCard("Active downloads", _activeDownloads.Count.ToString()));
+        var history = new StackPanel { Spacing = 4 };
+        history.Children.Add(new TextBlock { Text = $"Memory MB over time: {Browser.Core.Diagnostics.HealthHistory.Sparkline(samples.Select(s => (double)s.ShellMemoryMb))}", FontSize = 12, Opacity = .75 });
+        history.Children.Add(new TextBlock { Text = $"CPU % over time: {Browser.Core.Diagnostics.HealthHistory.Sparkline(samples.Select(s => s.CpuPercent))}", FontSize = 12, Opacity = .75 });
+        history.Children.Add(new TextBlock { Text = Browser.Core.Diagnostics.AdaptiveMemoryPolicy.Describe(snapshot) + ". Renderer CPU is shared across tabs, so per-tab CPU is not reported as exact.", FontSize = 12, Opacity = .65, TextWrapping = TextWrapping.Wrap });
+        if (_startupTimings.Count > 0)
+            history.Children.Add(new TextBlock { Text = Browser.Core.Diagnostics.StartupPerformancePolicy.Summarize(_startupTimings), FontSize = 12, Opacity = .65, TextWrapping = TextWrapping.Wrap });
         var list = new ListView();
         foreach (var tab in _vm.Tabs.OrderByDescending(x => x.LastActivatedAt))
-            list.Items.Add(new ListViewItem { Content = ManagerRow(tab.Title, $"{(tab.IsHibernated ? "Sleeping" : tab.IsMediaPlaying ? "Playing media" : tab.IsLoading ? "Loading" : "Awake")}  ·  Last active {tab.LastActivatedAt.LocalDateTime:g}") });
+        {
+            var reason = IsNativePageTab(tab) ? "Browser page — no WebView" : _splitTabIds.Contains(tab.Id) ? "Visible in split view" : IsInNeverHibernateGroup(tab) ? "This group stays awake" : HibernationPolicy.GetBlockReason(tab, _vm.SelectedTab,
+                new(_vm.Settings.AutomaticHibernationEnabled, _vm.Settings.HibernationMinutes, _vm.Settings.NeverHibernatePinnedTabs, _vm.Settings.HibernationExclusions.ToHashSet(StringComparer.OrdinalIgnoreCase)), DateTimeOffset.UtcNow) ?? "Eligible for automatic sleep";
+            var memory = tab.RendererMemoryBytes is { } bytes ? $" · Renderer {bytes / 1048576d:N0} MB{(tab.RendererMemoryIsShared ? " (shared)" : "")}" : "";
+            list.Items.Add(new ListViewItem { Content = ManagerRow(tab.Title, $"{reason}{memory} · Last active {tab.LastActivatedAt.LocalDateTime:g}") });
+        }
         var sleep = ActionButton("Hibernate eligible tabs", Symbol.Clock, async () => { await HibernateInactiveTabsAsync(); HidePage(); await ShowPerformanceDashboardAsync(); });
         var diagnostics = ActionButton("Copy diagnostics", Symbol.Copy, CopyDiagnostics);
-        var toolbar = new StackPanel { Spacing = 12 }; toolbar.Children.Add(summary); var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 }; actions.Children.Add(sleep); actions.Children.Add(diagnostics); toolbar.Children.Add(actions);
+        var refresh = ActionButton("Refresh measurements", Symbol.Refresh, async () => { await RefreshTabMemoryUsageAsync(); await ShowPerformanceDashboardAsync(); });
+        var toolbar = new StackPanel { Spacing = 12 }; toolbar.Children.Add(summary); toolbar.Children.Add(history); var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 }; actions.Children.Add(sleep); actions.Children.Add(diagnostics); actions.Children.Add(refresh); toolbar.Children.Add(actions);
         ShowPage("Browser health", "Live process and tab state. Sutra does not guess per-tab memory figures it cannot measure reliably.", PageBody(toolbar, list));
         return Task.CompletedTask;
+    }
+
+    private double SampleCpuPercent(Process process)
+    {
+        try
+        {
+            var now = DateTimeOffset.UtcNow;
+            var total = process.TotalProcessorTime;
+            if (_lastCpuAt != DateTimeOffset.MinValue && (now - _lastCpuAt).TotalMilliseconds >= 100)
+            {
+                var deltaMs = (total - _lastCpuTotal).TotalMilliseconds;
+                var wallMs = (now - _lastCpuAt).TotalMilliseconds * Environment.ProcessorCount;
+                if (wallMs > 0) _lastCpuPercent = Math.Clamp(deltaMs / wallMs * 100, 0, 100 * Environment.ProcessorCount);
+            }
+            _lastCpuTotal = total;
+            _lastCpuAt = now;
+            return _lastCpuPercent;
+        }
+        catch { return 0; }
     }
 
     private static Border MetricCard(string label, string value)
@@ -404,7 +409,7 @@ public sealed partial class MainWindow
     private void CopyDiagnostics()
     {
         using var process = Process.GetCurrentProcess();
-        var text = $"Sutra {Browser.Core.Branding.AppBrand.Version}\r\nWindows {Environment.OSVersion}\r\n.NET {Environment.Version}\r\nMemory {process.WorkingSet64 / 1024d / 1024d:N0} MB\r\nTabs {_vm.Tabs.Count}\r\nLive WebViews {_webViews.Count}\r\nSleeping {_vm.Tabs.Count(x => x.IsHibernated)}\r\nPrivate {_isPrivate}\r\nAd blocking {_vm.Settings.AdBlockingEnabled}";
+        var text = $"Sutra {Browser.Core.Branding.AppBrand.Version}\r\nWindows {Environment.OSVersion}\r\n.NET {Environment.Version}\r\nMemory {process.WorkingSet64 / 1024d / 1024d:N0} MB\r\nCPU {_lastCpuPercent:N1}%\r\nTabs {_vm.Tabs.Count}\r\nLive WebViews {_webViews.Count}\r\nSleeping {_vm.Tabs.Count(x => x.IsHibernated)}\r\nPrivate {_isPrivate}\r\nAd blocking {_vm.Settings.AdBlockingEnabled}\r\n{Browser.Core.Diagnostics.StartupPerformancePolicy.Summarize(_startupTimings)}";
         SetClipboard(text); ShowStatus("Diagnostics copied without browsing data or secrets", InfoBarSeverity.Success);
     }
 
@@ -588,34 +593,35 @@ public sealed partial class MainWindow
         return item;
     }
 
-    private Task ShowProfilesAsync()
+    private async Task ShowProfilesAsync()
     {
+        var directory = App.Services.GetRequiredService<Browser.Data.Repositories.ProfileDirectoryRepository>();
+        var profiles = await directory.ListAsync();
         var list = new ListView { SelectionMode = ListViewSelectionMode.Single };
         void Load()
         {
             list.Items.Clear();
-            foreach (var profile in _vm.Settings.WebProfiles)
-                list.Items.Add(new ListViewItem { Tag = profile, Content = ManagerRow(profile, profile.Equals(_profileName, StringComparison.OrdinalIgnoreCase) ? "Current window" : "Separate cookies, cache, and website sign-ins") });
+            foreach (var profile in profiles)
+                list.Items.Add(new ListViewItem { Tag = profile, Content = ManagerRow(profile, profile.Equals(_profileName, StringComparison.OrdinalIgnoreCase) ? "Current window · Separate browser library" : "Separate website sign-ins, history, bookmarks, notes, settings, and vault") });
         }
         var open = ActionButton("Open profile window", Symbol.NewWindow, () =>
         {
-            if (list.SelectedItem is ListViewItem item && item.Tag is string profile) ((App)Application.Current).OpenWindow(false, null, false, profile);
+            if (list.SelectedItem is ListViewItem item && item.Tag is string profile) ((App)Application.Current).OpenWindow(false, null, true, profile);
         });
         var create = ActionButton("Create profile", Symbol.Add, async () =>
         {
             var name = new TextBox { Header = "Profile name", PlaceholderText = "Work", MaxLength = 40, MinWidth = 340 };
             var dialog = new ContentDialog { Title = "Create web profile", Content = name, PrimaryButtonText = "Create", CloseButtonText = "Cancel", XamlRoot = _root.XamlRoot };
             if (await dialog.ShowAsync() != ContentDialogResult.Primary || string.IsNullOrWhiteSpace(name.Text)) return;
-            var names = _vm.Settings.WebProfiles.Append(name.Text).ToArray();
-            _vm.Settings = SettingsValidator.Validate(_vm.Settings with { WebProfiles = names });
-            if (!_vm.Settings.WebProfiles.Contains(name.Text.Trim(), StringComparer.OrdinalIgnoreCase)) { ShowStatus("Use letters, numbers, spaces, hyphens, or underscores.", InfoBarSeverity.Warning); return; }
-            await SaveSettingsSafeAsync(); Load();
+            try { profiles = await directory.AddAsync(name.Text); Load(); }
+            catch (ArgumentException) { ShowStatus("Use letters, numbers, spaces, hyphens, or underscores.", InfoBarSeverity.Warning); }
+            catch (InvalidOperationException) { ShowStatus("The profile directory is full (32 profiles).", InfoBarSeverity.Warning); }
         });
         var guest = ActionButton("Open private guest", Symbol.ProtectedDocument, () => OpenPrivateWindow());
+        create.IsEnabled = !_isPrivate;
         var toolbar = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 }; toolbar.Children.Add(open); toolbar.Children.Add(create); toolbar.Children.Add(guest);
         Load();
-        ShowPage("Profiles", "Web profiles isolate website cookies, cache, and sign-ins inside the shared WebView2 environment. Sutra bookmarks, history, settings, and the encrypted password vault remain device-wide in this version.", PageBody(toolbar, list));
-        return Task.CompletedTask;
+        ShowPage("Profiles", "Each named profile has its own browser library and encrypted vault. Existing shared data remains in Default; use bookmark import/export to move a copy into another profile. Website profiles use the shared WebView2 environment.", PageBody(toolbar, list));
     }
 
     private void ApplyCustomKeyboardShortcuts()
@@ -702,14 +708,13 @@ public sealed partial class MainWindow
 
     private async Task MoveTabToNewWindowAsync(BrowserTab tab)
     {
-        if (IsProtectedTab(tab))
+        var check = Browser.Core.Tabs.TabTransferPolicy.CanTransfer(tab, IsNativePageTab(tab), _profileName, _isPrivate, _profileName, _isPrivate);
+        if (!check.Allowed)
         {
-            await NoticeAsync("Tab is protected", "Unpin the tab and finish media, downloads, or unsaved form work before moving it to a new window."); return;
+            await NoticeAsync("Tab cannot be moved", check.Reason); return;
         }
-        var url = tab.Url == "browser://newtab" ? null : tab.Url;
-        ((App)Application.Current).OpenWindow(false, url, false, _profileName);
-        CloseTab(tab);
-        ShowStatus("Tab moved to a new window");
+        var target = await ((App)Application.Current).OpenPreparedWindowAsync(_isPrivate, null, false, _profileName);
+        if (target is not null) await MoveTabToWindowAsync(tab, target);
     }
 
     private Task ShowImportDataAsync()

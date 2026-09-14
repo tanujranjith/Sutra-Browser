@@ -4,6 +4,7 @@ public static class AppBrand
 {
     public const string Name = "Sutra Browser";
     public const string ShortName = "Sutra";
+    public const string AssistantName = "Sutra Assistant";
     public const string ApplicationId = "SutraBrowser.Sutra";
     public const string Version = "0.3.0";
     public const string NewTabTitle = "New tab";

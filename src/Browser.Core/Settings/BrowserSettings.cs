@@ -28,6 +28,8 @@ public sealed record BrowserSettings
     public Dictionary<string, string> SearchAliases { get; init; } = new(StringComparer.OrdinalIgnoreCase);
     public string HomePage { get; init; } = "browser://newtab";
     public bool HistoryEnabled { get; init; } = true;
+    /// <summary>Zero keeps history until explicit deletion.</summary>
+    public int HistoryRetentionDays { get; init; }
     public bool BookmarkBarVisible { get; init; }
     public bool OpenToolbarTabsInBackground { get; init; } = false;
     public bool OpenLinksInBackground { get; init; } = true;
@@ -95,6 +97,7 @@ public static class SettingsValidator
             DarkThemeStartHour = Math.Clamp(value.DarkThemeStartHour, 0, 23),
             LightThemeStartHour = Math.Clamp(value.LightThemeStartHour, 0, 23),
             HibernationMinutes = Math.Clamp(value.HibernationMinutes, 1, 10080),
+            HistoryRetentionDays = Math.Clamp(value.HistoryRetentionDays, 0, 3650),
             MemorySaverTabLimit = Math.Clamp(value.MemorySaverTabLimit, 4, 100),
             SidebarWidth = Math.Clamp(value.SidebarWidth, 180, 520),
             SiteZoomFactors = NormalizeSiteZoomFactors(value.SiteZoomFactors),

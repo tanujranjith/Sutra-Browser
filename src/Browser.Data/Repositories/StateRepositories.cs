@@ -10,7 +10,10 @@ public sealed class AppStateRepository(BrowserDatabase database)
     public async Task SetAsync(string key, string value, CancellationToken ct = default)
     {
         await using var c = database.OpenConnection(); await c.OpenAsync(ct); await using var cmd = c.CreateCommand();
-        cmd.CommandText = "INSERT INTO app_state(key,value,updated_at) VALUES($key,$value,$at) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at";
+        cmd.CommandText = "INSERT INTO app_state(key,value,updated_at) SELECT $key,$value,$at WHERE $unrestricted=1 OR (SELECT epoch FROM privacy_state WHERE id=1)=$epoch ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at";
+        var automatic = Browser.Core.Privacy.KillSwitchPolicy.IsAutomaticSessionKey(key);
+        cmd.Parameters.AddWithValue("$unrestricted", automatic ? 0 : 1);
+        cmd.Parameters.AddWithValue("$epoch", automatic ? database.PrivacyEpoch : -1);
         cmd.Parameters.AddWithValue("$key", key); cmd.Parameters.AddWithValue("$value", value); cmd.Parameters.AddWithValue("$at", DateTimeOffset.UtcNow.ToString("O")); await cmd.ExecuteNonQueryAsync(ct);
     }
     public async Task<string?> GetAsync(string key, CancellationToken ct = default)
@@ -49,7 +52,7 @@ public sealed class PasswordMetadataRepository(BrowserDatabase database)
     public async Task DeleteAsync(Guid id, CancellationToken ct = default) { await using var c=database.OpenConnection(); await c.OpenAsync(ct); await using var cmd=c.CreateCommand(); cmd.CommandText="DELETE FROM password_metadata WHERE id=$id"; cmd.Parameters.AddWithValue("$id",id.ToString()); await cmd.ExecuteNonQueryAsync(ct); }
 }
 
-public sealed class DownloadRepository(BrowserDatabase database)
+public sealed partial class DownloadRepository(BrowserDatabase database)
 {
     public async Task UpsertAsync(DownloadRecord item, CancellationToken ct = default)
     {

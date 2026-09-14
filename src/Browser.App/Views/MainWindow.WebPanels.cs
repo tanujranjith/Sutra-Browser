@@ -48,7 +48,7 @@ public sealed partial class MainWindow
         });
         var close = ActionButton("Close panel", Symbol.Cancel, CloseWebPanel);
         var controls = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Children = { open, add, remove, close } };
-        var note = new TextBlock { Text = "Panels are floating website views. To protect RAM, Sutra keeps only the visible panel alive; switching or closing it releases its WebView. Panels use the current browser profile and never run Sutra Copilot.", TextWrapping = TextWrapping.Wrap, Opacity = .7 };
+        var note = new TextBlock { Text = $"Panels are floating website views. To protect RAM, Sutra keeps only the visible panel alive; switching or closing it releases its WebView. Panels use the current browser profile and never run {AppBrand.AssistantName}.", TextWrapping = TextWrapping.Wrap, Opacity = .7 };
         var body = new StackPanel { Spacing = 12, Children = { note, controls, list } };
         ShowPage("Web panels", "Keep frequently used sites one click away without keeping a background tab for each.", body);
         return Task.CompletedTask;
@@ -56,10 +56,12 @@ public sealed partial class MainWindow
 
     private async Task OpenWebPanelAsync(WebPanelDefinition panel)
     {
+        if (_isWindowClosed) return;
         if (_activeWebPanelUrl?.Equals(panel.Url, StringComparison.OrdinalIgnoreCase) == true && _utilitySidebar.Visibility == Visibility.Visible) return;
         CloseWebPanel();
         var view = new WebView2 { HorizontalAlignment = HorizontalAlignment.Stretch, VerticalAlignment = VerticalAlignment.Stretch };
         var environment = await _environment.GetAsync();
+        if (_isWindowClosed) { view.Close(); return; }
         if (_isPrivate)
         {
             var options = environment.CreateCoreWebView2ControllerOptions(); options.ProfileName = AppBrand.PrivateProfileName; options.IsInPrivateModeEnabled = true;
@@ -67,16 +69,17 @@ public sealed partial class MainWindow
         }
         else if (!_profileName.Equals("Default", StringComparison.OrdinalIgnoreCase))
         {
-            var options = environment.CreateCoreWebView2ControllerOptions(); options.ProfileName = "Sutra-" + new string(_profileName.Where(char.IsLetterOrDigit).Take(50).ToArray());
+            var options = environment.CreateCoreWebView2ControllerOptions(); options.ProfileName = Browser.Core.Profiles.ProfileIdentity.WebViewName(_profileName);
             await view.EnsureCoreWebView2Async(environment, options);
         }
         else await view.EnsureCoreWebView2Async(environment);
+        if (_isWindowClosed) { view.Close(); return; }
         var core = view.CoreWebView2;
         core.Settings.IsPasswordAutosaveEnabled = false; core.Settings.IsGeneralAutofillEnabled = false; core.Settings.AreBrowserAcceleratorKeysEnabled = false;
         core.AddWebResourceRequestedFilter("*", CoreWebView2WebResourceContext.All);
         var panelTab = new BrowserTab { Url = panel.Url, Title = panel.Name };
         core.WebResourceRequested += (_, e) => OnWebResourceRequested(panelTab, core, e);
-        core.NewWindowRequested += (_, e) => { e.Handled = true; DispatcherQueue.TryEnqueue(() => NewTab(e.Uri, !_vm.Settings.OpenLinksInBackground)); };
+        core.NewWindowRequested += (_, e) => { e.Handled = true; DispatcherQueue.TryEnqueue(() => { if (!_isWindowClosed) NewTab(e.Uri, !_vm.Settings.OpenLinksInBackground); }); };
         core.Navigate(panel.Url);
         var header = new Grid { Padding = new(10, 7, 6, 7) }; header.ColumnDefinitions.Add(new() { Width = new(1, GridUnitType.Star) }); header.ColumnDefinitions.Add(new() { Width = GridLength.Auto });
         header.Children.Add(new TextBlock { Text = panel.Name, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis });

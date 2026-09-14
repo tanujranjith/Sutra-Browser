@@ -5,8 +5,13 @@ namespace Browser.Data;
 public sealed class BrowserDatabase
 {
     private readonly string _connectionString;
-    public BrowserDatabase(string path)
+    private long? _privacyEpoch;
+    // An initialized writer keeps its original epoch for its entire lifetime.
+    // A kill switch invalidates old writers, including those in another process.
+    public long PrivacyEpoch => _privacyEpoch ?? throw new InvalidOperationException("Initialize the browser database before writing history or sessions.");
+    public BrowserDatabase(string path, long? writerEpoch = null)
     {
+        _privacyEpoch = writerEpoch;
         var directory = Path.GetDirectoryName(Path.GetFullPath(path));
         if (directory is not null) Directory.CreateDirectory(directory);
         _connectionString = new SqliteConnectionStringBuilder { DataSource = path, Mode = SqliteOpenMode.ReadWriteCreate, Cache = SqliteCacheMode.Shared }.ToString();
@@ -43,6 +48,7 @@ public sealed class BrowserDatabase
                 throw;
             }
         }
+        _privacyEpoch ??= Convert.ToInt64(await ScalarAsync(connection, "SELECT epoch FROM privacy_state WHERE id=1;", cancellationToken));
     }
 
     private static async Task ExecuteAsync(SqliteConnection connection, string sql, CancellationToken ct)
@@ -110,6 +116,60 @@ public static class Migrations
             CREATE TABLE offline_articles (
               id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, url TEXT NOT NULL UNIQUE, archive_path TEXT NOT NULL,
               saved_at TEXT NOT NULL);
+            """)
+        ,new(5, """
+            ALTER TABLE offline_articles ADD COLUMN content_text TEXT NOT NULL DEFAULT '';
+            CREATE INDEX ix_offline_articles_saved ON offline_articles(saved_at DESC);
+            """)
+        ,new(6, """
+            CREATE TABLE session_snapshots (
+                id INTEGER PRIMARY KEY AUTOINCREMENT, window_id TEXT NOT NULL,
+                profile_name TEXT NOT NULL, reason TEXT NOT NULL, session_json TEXT NOT NULL,
+                fingerprint TEXT NOT NULL, saved_at TEXT NOT NULL);
+            CREATE INDEX ix_session_snapshots_window ON session_snapshots(window_id,id DESC);
+            """)
+        ,new(7, """
+            ALTER TABLE workspaces ADD COLUMN color TEXT NOT NULL DEFAULT '#F47A22';
+            ALTER TABLE workspaces ADD COLUMN icon TEXT NOT NULL DEFAULT 'Folder';
+            ALTER TABLE workspaces ADD COLUMN is_template INTEGER NOT NULL DEFAULT 0;
+            CREATE TABLE workspace_versions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT, workspace_id INTEGER NOT NULL,
+                name TEXT NOT NULL, session_json TEXT NOT NULL, color TEXT NOT NULL,
+                icon TEXT NOT NULL, is_template INTEGER NOT NULL, reason TEXT NOT NULL, saved_at TEXT NOT NULL);
+            CREATE INDEX ix_workspace_versions_workspace ON workspace_versions(workspace_id,id DESC);
+            CREATE INDEX ix_downloads_started ON downloads(started_at DESC,id);
+            """)
+        ,new(8, """
+            CREATE TABLE privacy_state (id INTEGER PRIMARY KEY CHECK(id=1), epoch INTEGER NOT NULL);
+            INSERT INTO privacy_state(id,epoch) VALUES(1,0);
+            """)
+        ,new(9, """
+            CREATE TABLE window_sessions (
+                window_id TEXT PRIMARY KEY, profile_name TEXT NOT NULL,
+                session_json TEXT NOT NULL, saved_at TEXT NOT NULL);
+            CREATE INDEX ix_window_sessions_profile_saved ON window_sessions(profile_name, saved_at DESC);
+            """)
+        ,new(10, """
+            CREATE VIRTUAL TABLE history_fts USING fts5(title, url, domain, typed_query, content='history', content_rowid='id', tokenize='porter');
+            CREATE TRIGGER history_ai AFTER INSERT ON history BEGIN INSERT INTO history_fts(rowid,title,url,domain,typed_query) VALUES(new.id,new.title,new.url,new.domain,new.typed_query); END;
+            CREATE TRIGGER history_ad AFTER DELETE ON history BEGIN INSERT INTO history_fts(history_fts,rowid,title,url,domain,typed_query) VALUES('delete',old.id,old.title,old.url,old.domain,old.typed_query); END;
+            CREATE TRIGGER history_au AFTER UPDATE ON history BEGIN INSERT INTO history_fts(history_fts,rowid,title,url,domain,typed_query) VALUES('delete',old.id,old.title,old.url,old.domain,old.typed_query); INSERT INTO history_fts(rowid,title,url,domain,typed_query) VALUES(new.id,new.title,new.url,new.domain,new.typed_query); END;
+            CREATE VIRTUAL TABLE bookmarks_fts USING fts5(title, url, content='bookmarks', content_rowid='id', tokenize='porter');
+            CREATE TRIGGER bookmarks_ai AFTER INSERT ON bookmarks BEGIN INSERT INTO bookmarks_fts(rowid,title,url) VALUES(new.id,new.title,new.url); END;
+            CREATE TRIGGER bookmarks_ad AFTER DELETE ON bookmarks BEGIN INSERT INTO bookmarks_fts(bookmarks_fts,rowid,title,url) VALUES('delete',old.id,old.title,old.url); END;
+            CREATE TRIGGER bookmarks_au AFTER UPDATE ON bookmarks BEGIN INSERT INTO bookmarks_fts(bookmarks_fts,rowid,title,url) VALUES('delete',old.id,old.title,old.url); INSERT INTO bookmarks_fts(rowid,title,url) VALUES(new.id,new.title,new.url); END;
+            CREATE VIRTUAL TABLE page_notes_fts USING fts5(url, quote, note, content='page_notes', content_rowid='id', tokenize='porter');
+            CREATE TRIGGER page_notes_ai AFTER INSERT ON page_notes BEGIN INSERT INTO page_notes_fts(rowid,url,quote,note) VALUES(new.id,new.url,new.quote,new.note); END;
+            CREATE TRIGGER page_notes_ad AFTER DELETE ON page_notes BEGIN INSERT INTO page_notes_fts(page_notes_fts,rowid,url,quote,note) VALUES('delete',old.id,old.url,old.quote,old.note); END;
+            CREATE TRIGGER page_notes_au AFTER UPDATE ON page_notes BEGIN INSERT INTO page_notes_fts(page_notes_fts,rowid,url,quote,note) VALUES('delete',old.id,old.url,old.quote,old.note); INSERT INTO page_notes_fts(rowid,url,quote,note) VALUES(new.id,new.url,new.quote,new.note); END;
+            CREATE VIRTUAL TABLE offline_articles_fts USING fts5(title, url, content_text, content='offline_articles', content_rowid='id', tokenize='porter');
+            CREATE TRIGGER offline_articles_ai AFTER INSERT ON offline_articles BEGIN INSERT INTO offline_articles_fts(rowid,title,url,content_text) VALUES(new.id,new.title,new.url,new.content_text); END;
+            CREATE TRIGGER offline_articles_ad AFTER DELETE ON offline_articles BEGIN INSERT INTO offline_articles_fts(offline_articles_fts,rowid,title,url,content_text) VALUES('delete',old.id,old.title,old.url,old.content_text); END;
+            CREATE TRIGGER offline_articles_au AFTER UPDATE ON offline_articles BEGIN INSERT INTO offline_articles_fts(offline_articles_fts,rowid,title,url,content_text) VALUES('delete',old.id,old.title,old.url,old.content_text); INSERT INTO offline_articles_fts(rowid,title,url,content_text) VALUES(new.id,new.title,new.url,new.content_text); END;
+            INSERT INTO history_fts(history_fts) VALUES('rebuild');
+            INSERT INTO bookmarks_fts(bookmarks_fts) VALUES('rebuild');
+            INSERT INTO page_notes_fts(page_notes_fts) VALUES('rebuild');
+            INSERT INTO offline_articles_fts(offline_articles_fts) VALUES('rebuild');
             """)
     ];
 }

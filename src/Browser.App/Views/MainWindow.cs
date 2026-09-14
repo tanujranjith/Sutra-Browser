@@ -18,6 +18,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.Web.WebView2.Core;
+using Windows.ApplicationModel.DataTransfer;
 using Windows.System;
 
 namespace Browser.App;
@@ -27,19 +28,30 @@ public sealed partial class MainWindow : Window
     private readonly MainWindowViewModel _vm = new();
     private readonly WebViewEnvironmentManager _environment = App.Services.GetRequiredService<WebViewEnvironmentManager>();
     private readonly BrowserPaths _paths = App.Services.GetRequiredService<BrowserPaths>();
-    private readonly SessionRepository _sessions = App.Services.GetRequiredService<SessionRepository>();
-    private readonly SettingsRepository _settingsRepository = App.Services.GetRequiredService<SettingsRepository>();
-    private readonly AppStateRepository _appState = App.Services.GetRequiredService<AppStateRepository>();
-    private readonly HistoryRepository _history = App.Services.GetRequiredService<HistoryRepository>();
-    private readonly BookmarkRepository _bookmarks = App.Services.GetRequiredService<BookmarkRepository>();
-    private readonly DownloadRepository _downloads = App.Services.GetRequiredService<DownloadRepository>();
-    private readonly WorkspaceRepository _workspaces = App.Services.GetRequiredService<WorkspaceRepository>();
-    private readonly ReadingListRepository _readingList = App.Services.GetRequiredService<ReadingListRepository>();
-    private readonly PermissionRepository _permissions = App.Services.GetRequiredService<PermissionRepository>();
-    private readonly CredentialService _credentials = App.Services.GetRequiredService<CredentialService>();
-    private readonly PasswordMetadataRepository _passwordMetadata = App.Services.GetRequiredService<PasswordMetadataRepository>();
-    private readonly AiActionLogRepository _aiLogs = App.Services.GetRequiredService<AiActionLogRepository>();
-    private readonly PageNoteRepository _pageNotes = App.Services.GetRequiredService<PageNoteRepository>();
+    private readonly SessionRepository _sessions;
+    private readonly SessionSnapshotRepository _sessionSnapshots;
+    private readonly WindowSessionRepository _windowSessions;
+    private readonly IServiceProvider _dataServices;
+    private readonly Guid _sessionWindowId = Guid.NewGuid();
+    private readonly List<Browser.Core.Diagnostics.StartupPhaseTiming> _startupTimings = [];
+    private readonly Browser.Core.Diagnostics.HealthHistory _healthHistory = new();
+    private TimeSpan _lastCpuTotal = TimeSpan.Zero;
+    private DateTimeOffset _lastCpuAt = DateTimeOffset.MinValue;
+    private double _lastCpuPercent;
+    private readonly TaskCompletionSource<bool> _ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly Browser.Core.Sessions.BrowserSession? _launchSession;
+    private readonly SettingsRepository _settingsRepository;
+    private readonly AppStateRepository _appState;
+    private readonly HistoryRepository _history;
+    private readonly BookmarkRepository _bookmarks;
+    private readonly DownloadRepository _downloads;
+    private readonly WorkspaceRepository _workspaces;
+    private readonly ReadingListRepository _readingList;
+    private readonly PermissionRepository _permissions;
+    private readonly CredentialService _credentials;
+    private readonly PasswordMetadataRepository _passwordMetadata;
+    private readonly AiActionLogRepository _aiLogs;
+    private readonly PageNoteRepository _pageNotes;
     // ONE coordinator serializes every persistent write (session snapshots and
     // settings alike) because both paths touch the same SQLite app_state store.
     // Requests that arrive mid-pass are coalesced into one trailing pass that
@@ -49,7 +61,7 @@ public sealed partial class MainWindow : Window
     // can cancel lifetime work and await it before releasing shared controls.
     private readonly Browser.Core.Runtime.BackgroundWorkTracker _maintenanceWork = new();
     private readonly Browser.Core.Runtime.BackgroundWorkTracker _mediaRefreshWork = new();
-    private readonly Browser.Core.Passwords.ISecureCredentialStore _secureStore = App.Services.GetRequiredService<Browser.Core.Passwords.ISecureCredentialStore>();
+    private readonly Browser.Core.Passwords.ISecureCredentialStore _secureStore;
     private readonly Dictionary<Guid, WebView2> _webViews = [];
     // Native manager pages are intentionally transient UI tabs: they do not create a WebView
     // or persist into session restore/recently-closed history.
@@ -66,6 +78,9 @@ public sealed partial class MainWindow : Window
     private bool _tabMemoryRefreshInFlight;
     private DateTimeOffset _lastTabMemoryRefreshAt = DateTimeOffset.MinValue;
     private readonly Dictionary<Guid, CoreWebView2DownloadOperation> _activeDownloads = [];
+    private readonly Dictionary<Guid, CoreWebView2DownloadOperation> _resumableDownloads = [];
+    private readonly Dictionary<Guid, Guid> _downloadTabIds = [];
+    private readonly HashSet<Guid> _pausedDownloads = [];
     private readonly Dictionary<Guid, Browser.Data.Models.DownloadRecord> _privateDownloads = [];
     private readonly Dictionary<Guid, TabViewItem> _horizontalTabItems = [];
     private readonly Dictionary<Guid, ListViewItem> _verticalTabItems = [];
@@ -107,7 +122,7 @@ public sealed partial class MainWindow : Window
     private readonly Button _reload = IconButton(Symbol.Refresh, "Reload (Ctrl+R)");
     private readonly Button _home = IconButton(Symbol.Home, "Home");
     private readonly Button _bookmark = IconButton(Symbol.OutlineStar, "Bookmark this page (Ctrl+D)");
-    private readonly Button _ai = IconButton(Symbol.Message, "AI copilot");
+    private readonly Button _ai = IconButton(Symbol.Message, AppBrand.AssistantName);
     private readonly Button _shield = IconButton(Symbol.ProtectedDocument, "Privacy and content blocking");
     private readonly Button _splitView = IconButton(Symbol.View, "Split screen");
     private readonly Button _media = IconButton(Symbol.Play, "Media controls");
@@ -164,9 +179,27 @@ public sealed partial class MainWindow : Window
     private int _activationVersion;
     private string? _pendingTypedQuery;
 
-    public MainWindow(bool isPrivate = false, string? initialUrl = null, bool restoreSession = true, string profileName = "Default")
+    public MainWindow(bool isPrivate = false, string? initialUrl = null, bool restoreSession = true, string profileName = "Default", Browser.Core.Sessions.BrowserSession? launchSession = null, IServiceProvider? dataServices = null)
     {
+        _dataServices = dataServices ?? App.Services;
+        _sessions = _dataServices.GetRequiredService<SessionRepository>();
+        _sessionSnapshots = _dataServices.GetRequiredService<SessionSnapshotRepository>();
+        _windowSessions = _dataServices.GetRequiredService<WindowSessionRepository>();
+        _settingsRepository = _dataServices.GetRequiredService<SettingsRepository>();
+        _appState = _dataServices.GetRequiredService<AppStateRepository>();
+        _history = _dataServices.GetRequiredService<HistoryRepository>();
+        _bookmarks = _dataServices.GetRequiredService<BookmarkRepository>();
+        _downloads = _dataServices.GetRequiredService<DownloadRepository>();
+        _workspaces = _dataServices.GetRequiredService<WorkspaceRepository>();
+        _readingList = _dataServices.GetRequiredService<ReadingListRepository>();
+        _permissions = _dataServices.GetRequiredService<PermissionRepository>();
+        _credentials = _dataServices.GetRequiredService<CredentialService>();
+        _passwordMetadata = _dataServices.GetRequiredService<PasswordMetadataRepository>();
+        _aiLogs = _dataServices.GetRequiredService<AiActionLogRepository>();
+        _pageNotes = _dataServices.GetRequiredService<PageNoteRepository>();
+        _secureStore = _dataServices.GetRequiredService<Browser.Core.Passwords.ISecureCredentialStore>();
         _isPrivate = isPrivate;
+        _launchSession = isPrivate ? null : launchSession;
         _profileName = isPrivate ? "Private" : string.IsNullOrWhiteSpace(profileName) ? "Default" : profileName;
         // Keep browser shortcuts functional without WinUI's transient accelerator
         // badges appearing over arbitrary page or sidebar content.
@@ -196,9 +229,19 @@ public sealed partial class MainWindow : Window
         Closed += OnWindowClosed;
         _root.Loaded += async (_, _) =>
         {
+            if (_isWindowClosed) return;
             StartBootAnimation();
-            try { await InitializeAsync(); }
-            finally { await FinishBootAnimationAsync(); }
+            try { await InitializeAsync(); _ready.TrySetResult(true); }
+            catch (Exception ex)
+            {
+                // Startup must never terminate the process on corrupt local data
+                // (session/settings/SQLite). Fall back to a single fresh tab so the
+                // window is always usable; the type-only log avoids leaking paths.
+                Debug.WriteLine($"Sutra startup containment: {ex.GetType().Name}");
+                try { if (!_isWindowClosed) EnsureEmergencyTab(); } catch { }
+                try { if (!_isWindowClosed) ShowStatus("Sutra started with a fresh tab because the saved session could not be read.", InfoBarSeverity.Warning, 7000); } catch { }
+            }
+            finally { _ready.TrySetResult(false); await FinishBootAnimationAsync(); }
         };
         _root.ActualThemeChanged += (_, _) =>
         {
@@ -390,7 +433,7 @@ public sealed partial class MainWindow : Window
 
     private Grid BuildTitleBar()
     {
-        var bar = new Grid { Padding = new(14, 0, 140, 0), Background = ResourceBrush("SutraChromeBrush") };
+        var bar = new Grid { Padding = new(14, 0, 140, 0), Background = ChromeBrush("SutraChromeBrush") };
         bar.ColumnDefinitions.Add(new() { Width = GridLength.Auto });
         bar.ColumnDefinitions.Add(new() { Width = GridLength.Auto });
         bar.ColumnDefinitions.Add(new() { Width = GridLength.Auto });
@@ -399,7 +442,7 @@ public sealed partial class MainWindow : Window
         {
             Text = "◆",
             FontSize = 13,
-            Foreground = ResourceBrush("SutraAccentBrush"),
+            Foreground = ChromeBrush("SutraAccentBrush"),
             Margin = new(0, 0, 8, 0),
             VerticalAlignment = VerticalAlignment.Center
         };
@@ -413,6 +456,8 @@ public sealed partial class MainWindow : Window
         };
         Grid.SetColumn(name, 1);
         bar.Children.Add(name);
+        var identity = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+        Grid.SetColumn(identity, 2); bar.Children.Add(identity);
         if (_isPrivate || !_profileName.Equals("Default", StringComparison.OrdinalIgnoreCase))
         {
             var badge = new Border
@@ -424,10 +469,10 @@ public sealed partial class MainWindow : Window
                 VerticalAlignment = VerticalAlignment.Center,
                 Child = new TextBlock { Text = _isPrivate ? "Private" : _profileName, FontSize = 11, FontWeight = FontWeights.SemiBold }
             };
-            Grid.SetColumn(badge, 2);
             badge.HorizontalAlignment = HorizontalAlignment.Left;
-            bar.Children.Add(badge);
+            identity.Children.Add(badge);
         }
+        identity.Children.Add(_workspaceIdentity);
         _horizontalTabs.Height = 44;
         _horizontalTabs.Margin = new(16, 0, 0, 0);
         _horizontalTabs.Background = new SolidColorBrush(Colors.Transparent);
@@ -445,9 +490,47 @@ public sealed partial class MainWindow : Window
         _horizontalTabs.CanReorderTabs = true;
         _horizontalTabs.TabWidthMode = TabViewWidthMode.SizeToContent;
         _horizontalTabs.CloseButtonOverlayMode = TabViewCloseButtonOverlayMode.Auto;
+        _horizontalTabs.AllowDrop = true;
         _horizontalTabs.AddTabButtonClick += (_, _) => NewTab(activate: true);
         _horizontalTabs.TabCloseRequested += (_, e) => CloseTab(((TabViewItem)e.Tab).Tag as BrowserTab);
         _horizontalTabs.TabDragCompleted += (_, _) => SynchronizeTabOrder(_horizontalTabs.TabItems.OfType<TabViewItem>().Select(item => (BrowserTab)item.Tag));
+        // Horizontal-strip transfer (#11): publish the same drag payload the sidebar uses so
+        // strips can be both sources and targets across windows. Same-window reorders still
+        // use the built-in TabView path; cross-window drops go through the guarded transfer.
+        _horizontalTabs.TabDragStarting += (_, e) =>
+        {
+            try
+            {
+                if (e.Tab is TabViewItem { Tag: BrowserTab tab })
+                {
+                    e.Data.Properties[DragKindKey] = "tab";
+                    e.Data.Properties[DragTabKey] = tab.Id.ToString();
+                    e.Data.RequestedOperation = DataPackageOperation.Move;
+                }
+            }
+            catch (Exception ex) { Debug.WriteLine($"Tab drag payload failed: {ex.GetType().Name}"); }
+        };
+        _horizontalTabs.TabStripDragOver += (_, e) =>
+        {
+            try
+            {
+                e.AcceptedOperation = e.Data.Properties.ContainsKey(DragTabKey) || e.Data.Properties.ContainsKey(DragKindKey)
+                    ? DataPackageOperation.Move : DataPackageOperation.None;
+            }
+            catch { e.AcceptedOperation = DataPackageOperation.None; }
+        };
+        _horizontalTabs.TabStripDrop += async (_, e) => { await AcceptHorizontalTabDropAsync(e.Data); };
+        _horizontalTabs.DragOver += (_, e) =>
+        {
+            try
+            {
+                e.AcceptedOperation = e.DataView.Properties.ContainsKey(DragTabKey) || e.DataView.Properties.ContainsKey(DragKindKey)
+                    ? DataPackageOperation.Move : DataPackageOperation.None;
+                e.DragUIOverride.Caption = "Move tab here";
+            }
+            catch { e.AcceptedOperation = DataPackageOperation.None; }
+        };
+        _horizontalTabs.Drop += async (_, e) => { await AcceptHorizontalTabDropAsync(e.DataView); };
         _horizontalTabs.SelectionChanged += async (_, _) =>
         {
             if (!_refreshingTabs && _horizontalTabs.SelectedItem is TabViewItem item && item.Tag is BrowserTab tab && tab.Id != _vm.SelectedTab?.Id)
@@ -455,19 +538,51 @@ public sealed partial class MainWindow : Window
         };
     }
 
+    private async Task AcceptHorizontalTabDropAsync(DataPackage data)
+    {
+        Guid? id = null;
+        try { if (data.Properties.TryGetValue(DragTabKey, out var v) && v is string s && Guid.TryParse(s, out var parsed)) id = parsed; }
+        catch (Exception ex) { Debug.WriteLine($"Horizontal tab drop failed: {ex.GetType().Name}"); return; }
+        await AcceptHorizontalTabTransferAsync(id);
+    }
+
+    private async Task AcceptHorizontalTabDropAsync(DataPackageView data)
+    {
+        Guid? id = null;
+        try { if (data.Properties.TryGetValue(DragTabKey, out var v) && v is string s && Guid.TryParse(s, out var parsed)) id = parsed; }
+        catch (Exception ex) { Debug.WriteLine($"Horizontal tab drop failed: {ex.GetType().Name}"); return; }
+        await AcceptHorizontalTabTransferAsync(id);
+    }
+
+    private async Task AcceptHorizontalTabTransferAsync(Guid? id)
+    {
+        try
+        {
+            if (id is null || id == Guid.Empty) return;
+            var tabId = id.Value;
+            if (_vm.Tabs.Any(x => x.Id == tabId)) return;
+            var source = TabTransferTargets().FirstOrDefault(window => window._vm.Tabs.Any(x => x.Id == tabId));
+            var sourceTab = source?._vm.Tabs.FirstOrDefault(x => x.Id == tabId);
+            if (source is null || sourceTab is null) return;
+            await source.MoveTabToWindowAsync(sourceTab, this);
+        }
+        catch (Exception ex) { Debug.WriteLine($"Horizontal tab drop failed: {ex.GetType().Name}"); }
+    }
+
     private Border BuildToolbar()
     {
         _toolbar.Padding = new(12, 8, 12, 8);
-        _toolbar.Background = ResourceBrush("SutraToolbarBrush");
+        _toolbar.Background = ChromeBrush("SutraToolbarBrush");
         _toolbar.ColumnSpacing = 4;
         for (var i = 0; i < 12; i++) _toolbar.ColumnDefinitions.Add(new() { Width = i == 4 ? new(1, GridUnitType.Star) : GridLength.Auto });
-        _back.Click += (_, _) => CurrentWebView()?.GoBack();
-        _forward.Click += (_, _) => CurrentWebView()?.GoForward();
+        _back.Click += (_, _) => SafeGoBack();
+        _forward.Click += (_, _) => SafeGoForward();
         _reload.Click += (_, _) => ReloadOrStop();
         _home.Click += (_, _) => Navigate(_vm.Settings.HomePage);
 
         _address.PlaceholderText = "Search or enter address";
-        _address.MinWidth = 300;
+        _address.MinWidth = 120;
+        AutomationProperties.SetName(_address, "Search or enter address");
         _address.Height = 36;
         _address.CornerRadius = new(10);
         _address.QueryIcon = new SymbolIcon(Symbol.Find);
@@ -494,7 +609,7 @@ public sealed partial class MainWindow : Window
         return new Border
         {
             BorderThickness = new(0, 0, 0, 1),
-            BorderBrush = ResourceBrush("SutraBorderBrush"),
+            BorderBrush = ChromeBrush("SutraBorderBrush"),
             Child = _toolbar
         };
     }
@@ -700,6 +815,10 @@ public sealed partial class MainWindow : Window
         AddMenu(flyout, "Organize tabs by site", async () => await SuggestDomainGroupsAsync(true), null, Symbol.Tag);
         AddMenu(flyout, "Command palette", async () => await ShowCommandPaletteAsync(), "Ctrl+Shift+P", Symbol.AllApps);
         AddMenu(flyout, "Workspaces", async () => await ShowWorkspacesAsync(), null, Symbol.Library);
+        AddMenu(flyout, "Library", async () => await ShowLibrarySearchAsync(), null, Symbol.Library);
+        AddMenu(flyout, "Save for offline reading", async () => await SaveOfflineArticleAsync(), null, Symbol.SaveLocal);
+        AddMenu(flyout, "Offline library", async () => await ShowOfflineLibraryAsync(), null, Symbol.SaveLocal);
+        AddMenu(flyout, "Session recovery", async () => await ShowSessionRecoveryAsync(), null, Symbol.Undo);
         AddMenu(flyout, "Web panels", async () => await ShowWebPanelsAsync(), null, Symbol.DockRight);
         AddMenu(flyout, "Profiles", async () => await ShowProfilesAsync(), null, Symbol.Contact);
         AddMenu(flyout, "Keyboard shortcuts", async () => await ShowKeyboardShortcutsAsync(), null, Symbol.Keyboard);
@@ -773,14 +892,15 @@ public sealed partial class MainWindow : Window
         Shortcut(VirtualKey.T, VirtualKeyModifiers.Control | VirtualKeyModifiers.Shift, ReopenClosed);
         Shortcut(VirtualKey.F, VirtualKeyModifiers.Control, async () => await FindInPageAsync());
         Shortcut(VirtualKey.P, VirtualKeyModifiers.Control | VirtualKeyModifiers.Shift, async () => await ShowCommandPaletteAsync());
+        Shortcut(VirtualKey.K, VirtualKeyModifiers.Control | VirtualKeyModifiers.Menu | VirtualKeyModifiers.Shift, async () => await ((App)Application.Current).RunKillSwitchAsync());
         Shortcut(VirtualKey.P, VirtualKeyModifiers.Control, PrintCurrentPage);
         Shortcut(VirtualKey.D, VirtualKeyModifiers.Control, async () => await BookmarkCurrentAsync());
         Shortcut(VirtualKey.H, VirtualKeyModifiers.Control, async () => await ShowHistoryAsync());
         Shortcut(VirtualKey.J, VirtualKeyModifiers.Control, async () => await ShowDownloadsAsync());
         Shortcut(VirtualKey.R, VirtualKeyModifiers.Control, ReloadOrStop);
         Shortcut(VirtualKey.F5, VirtualKeyModifiers.None, ReloadOrStop);
-        Shortcut(VirtualKey.Left, VirtualKeyModifiers.Menu, () => CurrentWebView()?.GoBack());
-        Shortcut(VirtualKey.Right, VirtualKeyModifiers.Menu, () => CurrentWebView()?.GoForward());
+        Shortcut(VirtualKey.Left, VirtualKeyModifiers.Menu, () => SafeGoBack());
+        Shortcut(VirtualKey.Right, VirtualKeyModifiers.Menu, () => SafeGoForward());
         Shortcut(VirtualKey.Add, VirtualKeyModifiers.Control, () => Zoom(.1));
         Shortcut(VirtualKey.Subtract, VirtualKeyModifiers.Control, () => Zoom(-.1));
         Shortcut(VirtualKey.Number0, VirtualKeyModifiers.Control, () => SetZoom(1));
@@ -799,8 +919,8 @@ public sealed partial class MainWindow : Window
     }
 
     private void OpenPrivateWindow() => ((App)Application.Current).OpenWindow(true);
-    private void OpenNewWindow() => ((App)Application.Current).OpenWindow(false, null, false);
-    private void OpenNewWindow(string url) => ((App)Application.Current).OpenWindow(false, url, false);
+    private void OpenNewWindow() => ((App)Application.Current).OpenWindow(false, null, false, _isPrivate ? "Default" : _profileName);
+    private void OpenNewWindow(string url) => ((App)Application.Current).OpenWindow(false, url, false, _isPrivate ? "Default" : _profileName);
 
     private void ApplyTheme()
     {
@@ -855,10 +975,10 @@ public sealed partial class MainWindow : Window
         _ai.Visibility = _vm.Settings.ShowAiButton ? Visibility.Visible : Visibility.Collapsed;
         // Keep the permanent chrome intentionally quiet. Secondary tools remain
         // available from the browser menu and retain their existing behavior.
-        _security.Visibility = Visibility.Collapsed;
-        _shield.Visibility = Visibility.Collapsed;
-        _splitView.Visibility = Visibility.Collapsed;
-        _media.Visibility = Visibility.Collapsed;
+        _security.Visibility = Visibility.Visible;
+        _shield.Visibility = Visibility.Visible;
+        _splitView.Visibility = _vm.Settings.ShowSplitButton ? Visibility.Visible : Visibility.Collapsed;
+        _media.Visibility = _vm.Settings.ShowMediaButton ? Visibility.Visible : Visibility.Collapsed;
         var compact = _vm.Settings.ToolbarDensity == ToolbarDensity.Compact;
         _toolbar.Padding = compact ? new Thickness(6, 2, 6, 3) : new Thickness(8, 5, 8, 6);
         _address.Height = compact ? 32 : 38;
@@ -867,10 +987,10 @@ public sealed partial class MainWindow : Window
             button.Height = compact ? 32 : 36;
             button.Background = new SolidColorBrush(Colors.Transparent);
             button.BorderBrush = new SolidColorBrush(Colors.Transparent);
-            button.Foreground = ResourceBrush("SutraTextSecondaryBrush");
+            button.Foreground = ChromeBrush("SutraTextSecondaryBrush");
         }
-        _address.Background = ResourceBrush("SutraSurfaceBrush");
-        _address.BorderBrush = ResourceBrush("SutraBorderBrush");
+        _address.Background = ChromeBrush("SutraSurfaceBrush");
+        _address.BorderBrush = ChromeBrush("SutraBorderBrush");
         var controls = new Dictionary<string, FrameworkElement>(StringComparer.OrdinalIgnoreCase)
         {
             ["Back"] = _back, ["Forward"] = _forward, ["Reload"] = _reload, ["Home"] = _home,
@@ -896,19 +1016,24 @@ public sealed partial class MainWindow : Window
             var glass = CreateGlassBrush(surface, _root.ActualTheme == ElementTheme.Light ? .72 : .64);
             var strongGlass = CreateGlassBrush(surface, _root.ActualTheme == ElementTheme.Light ? .82 : .74);
             _progress.Foreground = accent;
-            _root.Background = ResourceBrush("SutraChromeBrush");
-            _toolbar.Background = ResourceBrush("SutraToolbarBrush");
+            _root.Background = ChromeBrush("SutraChromeBrush");
+            if (_horizontalTabs.Parent is Grid titleChrome)
+            {
+                titleChrome.Background = ChromeBrush("SutraChromeBrush");
+                if (titleChrome.Children.FirstOrDefault() is TextBlock mark) mark.Foreground = accent;
+            }
+            _toolbar.Background = ChromeBrush("SutraToolbarBrush");
             _horizontalTabs.Background = new SolidColorBrush(Colors.Transparent);
-            _verticalPane.Background = ResourceBrush("SutraSurfaceBrush");
-            _bookmarkBar.Background = ResourceBrush("SutraToolbarBrush");
-            _utilitySidebar.Background = ResourceBrush("SutraSurfaceBrush");
-            _downloadShelf.Background = ResourceBrush("SutraSurfaceBrush");
-            _statusBubble.Background = ResourceBrush("SutraSurfaceBrush");
-            _bookmarkBar.BorderBrush = ResourceBrush("SutraBorderBrush");
-            _verticalPane.BorderBrush = ResourceBrush("SutraBorderBrush");
-            _utilitySidebar.BorderBrush = ResourceBrush("SutraBorderBrush");
-            _downloadShelf.BorderBrush = ResourceBrush("SutraBorderBrush");
-            _statusBubble.BorderBrush = ResourceBrush("SutraBorderBrush");
+            _verticalPane.Background = ChromeBrush("SutraSurfaceBrush");
+            _bookmarkBar.Background = ChromeBrush("SutraToolbarBrush");
+            _utilitySidebar.Background = ChromeBrush("SutraSurfaceBrush");
+            _downloadShelf.Background = ChromeBrush("SutraSurfaceBrush");
+            _statusBubble.Background = ChromeBrush("SutraSurfaceBrush");
+            _bookmarkBar.BorderBrush = ChromeBrush("SutraBorderBrush");
+            _verticalPane.BorderBrush = ChromeBrush("SutraBorderBrush");
+            _utilitySidebar.BorderBrush = ChromeBrush("SutraBorderBrush");
+            _downloadShelf.BorderBrush = ChromeBrush("SutraBorderBrush");
+            _statusBubble.BorderBrush = ChromeBrush("SutraBorderBrush");
         }
         catch { }
         ApplyCustomKeyboardShortcuts();
@@ -996,30 +1121,38 @@ public sealed partial class MainWindow : Window
 
     private async void OnAppWindowClosing(Microsoft.UI.Windowing.AppWindow sender, Microsoft.UI.Windowing.AppWindowClosingEventArgs args)
     {
-        if (_allowClose || _activeDownloads.Count == 0) return;
-        args.Cancel = true;
-        var dialog = new ContentDialog
+        if (_allowClose || _activeDownloads.Count == 0 && _pausedDownloads.Count == 0) return;
+        try
         {
-            Title = "Downloads are still active",
-            Content = "Closing now will cancel active downloads.",
-            PrimaryButtonText = "Cancel downloads and close",
-            CloseButtonText = "Keep browsing",
-            DefaultButton = ContentDialogButton.Close,
-            XamlRoot = _root.XamlRoot
-        };
-        if (await dialog.ShowAsync() == ContentDialogResult.Primary)
-        {
-            foreach (var operation in _activeDownloads.Values.ToList()) operation.Cancel();
-            _allowClose = true;
-            Close();
+            args.Cancel = true;
+            var dialog = new ContentDialog
+            {
+                Title = "Downloads are active or paused",
+                Content = "Closing now will cancel these transfers. They cannot resume after restart.",
+                PrimaryButtonText = "Cancel downloads and close",
+                CloseButtonText = "Keep browsing",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = _root.XamlRoot
+            };
+            if (await dialog.ShowAsync() == ContentDialogResult.Primary)
+            {
+                var transfers = _activeDownloads.Values.Concat(_resumableDownloads.Where(x => _pausedDownloads.Contains(x.Key)).Select(x => x.Value)).Distinct().ToList();
+                _pausedDownloads.Clear();
+                foreach (var operation in transfers) { try { operation.Cancel(); } catch { } }
+                _allowClose = true;
+                Close();
+            }
         }
+        catch (Exception ex) { Debug.WriteLine($"Close confirmation failed: {ex.GetType().Name}"); }
     }
 
     private async void OnWindowClosed(object sender, WindowEventArgs args)
     {
+        try
+        {
         // From here on, no callback may update the UI of this window.
         _isWindowClosed = true;
-        _aiCancellation?.Cancel();
+        try { _aiCancellation?.Cancel(); } catch { }
 
         StopTimer(_maintenanceTimer);
         StopTimer(_notificationTimer);
@@ -1028,22 +1161,35 @@ public sealed partial class MainWindow : Window
 
         // Cancel lifetime work and let tracked in-flight passes unwind before any
         // control they can observe is released. Cancellation is normal shutdown.
-        _windowLifetimeCts.Cancel();
+        try { _windowLifetimeCts.Cancel(); } catch { }
         await DrainBackgroundWorkQuietlyAsync(_maintenanceWork);
         await DrainBackgroundWorkQuietlyAsync(_mediaRefreshWork);
 
         // The utility web-panel WebView is not a tab WebView; close it explicitly.
-        CloseWebPanel();
-        CloseAllTabWebViews();
+        try { CloseWebPanel(); } catch { }
+        try { CloseAllTabWebViews(); } catch { }
 
-        if (!_isPrivate)
+        if (!_isPrivate && !_suppressPersistence)
         {
-            CaptureWindowPlacement();
+            try { CaptureWindowPlacement(); } catch { }
             // Only mark shutdown clean once the required normal-window state has
             // actually been flushed. A failed flush leaves the crash-recovery
             // notice active instead of pretending the exit was clean.
-            if (_restoreSession && await FlushSessionStateBeforeExitAsync())
-                await _appState.SetAsync("browser.cleanShutdown", "true");
+            try
+            {
+                if (await FlushSessionStateBeforeExitAsync() && _restoreSession)
+                    await _appState.SetAsync("browser.cleanShutdown", "true");
+                // Multi-window restore (#2): an explicitly closed window must not reopen next launch,
+                // but the last remaining window must stay restorable. Crash shutdowns never reach here,
+                // so their rows correctly remain for recovery.
+                try
+                {
+                    var others = ((App)Application.Current).BrowserWindows.Count(w => !ReferenceEquals(w, this));
+                    if (others > 0) await _windowSessions.DeleteAsync(_sessionWindowId);
+                }
+                catch (Exception ex) { Debug.WriteLine($"Window session cleanup failed: {ex.GetType().Name}"); }
+            }
+            catch (Exception ex) { Debug.WriteLine($"Shutdown flush failed: {ex.GetType().Name}"); }
         }
 
         // Best-effort cleanup of window-specific temporary data. Normal browser
@@ -1060,6 +1206,8 @@ public sealed partial class MainWindow : Window
         _notesSidebarList = null;
         unchecked { _notesSearchGeneration++; }
         _windowLifetimeCts.Dispose();
+        }
+        finally { _shutdownCompleted.TrySetResult(); }
     }
 
     private static async Task DrainBackgroundWorkQuietlyAsync(Browser.Core.Runtime.BackgroundWorkTracker tracker)
@@ -1074,8 +1222,9 @@ public sealed partial class MainWindow : Window
         foreach (var pair in _webViews.ToList())
         {
             _webViews.Remove(pair.Key);
-            DetachWebView(pair.Value);
-            try { pair.Value.Close(); } catch { /* already closed or detached */ }
+            try { DetachWebView(pair.Value); }
+            catch (Exception ex) { Debug.WriteLine($"WebView detach during shutdown: {ex.GetType().Name}"); }
+            finally { try { pair.Value.Close(); } catch { /* already closed or detached */ } }
         }
     }
 

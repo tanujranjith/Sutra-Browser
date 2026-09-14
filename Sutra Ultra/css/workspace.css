@@ -1,0 +1,56 @@
+/* Sutra's working canvas: navigation and reading tools remain within easy reach. */
+body { overflow: auto; }
+.afterglow-shell { min-height: 100dvh; }
+.artwork { position: fixed; opacity: .32; animation: none; background-position: center; }
+.afterglow-shell::after { position: fixed; background: linear-gradient(90deg,rgba(11,13,15,.9),rgba(11,13,15,.45)); }
+.page-controls { position: relative; inset: auto; display: flex; justify-content: space-between; align-items: center; padding: 22px clamp(24px,5vw,76px); }
+.canvas-date { color: var(--muted); font-size: 12px; letter-spacing: .035em; }
+.customize-link { padding: 8px 14px; border: 1px solid var(--line); border-radius: 100px; font-size: 12px; }
+.canvas { max-width: 1000px; min-height: auto; padding: clamp(22px,5vh,64px) 40px 24px; margin: auto; }
+.welcome { margin-bottom: 30px; }
+.eyebrow { display: flex; align-items: center; gap: 10px; font-size: 10px; letter-spacing: .2em; color: #dbc9b8; font-weight: 600; }
+.eyebrow span { color: var(--accent); font-size: 15px; }
+h1 { margin: 24px 0 16px; font-size: clamp(38px,5.2vw,64px); font-weight: 500; line-height: 1.07; letter-spacing: -.045em; }
+h1 span { color: #c8b4a4; font-family: Georgia,serif; font-style: italic; font-weight: 400; }
+.welcome-description { font-size: 14px; color: var(--muted); line-height: 1.6; }
+.command-dock { position: relative; left: auto; bottom: auto; width: 100%; min-height: 64px; border-radius: 16px; box-shadow: 0 8px 32px #0002; background: #16191de8; }
+.afterglow-shell[data-dock="bottom-center"] .command-dock { left: auto; transform: none; }
+.afterglow-shell[data-dock="bottom-center"] .command-dock:focus-within { transform: translateY(-2px); }
+.submit-button { border-radius: 11px; color: #231207; }
+.search-icon { flex-basis: 22px; }
+.brand-mark { display: none; }
+.quick-access { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); gap: 10px; margin-top: 20px; }
+.quick-access button { padding: 18px 4px 12px; background: transparent; border: 1px solid transparent; border-radius: 14px; display: flex; flex-direction: column; align-items: center; gap: 10px; color: var(--muted); font-size: 12px; cursor: pointer; }
+.quick-icon { width: 44px; height: 44px; display: grid; place-items: center; background: #ffffff09; border: 1px solid #ffffff14; border-radius: 13px; font-size: 25px; color: #e4d4c7; }
+.quick-access button:hover { background: #ffffff06; border-color: #ffffff14; color: var(--text); }
+.continue-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 32px; }
+.feature-card { display: flex; flex-direction: column; gap: 16px; text-align: left; padding: 24px; min-width: 0; color: var(--text); background: #15181ca8; border: 1px solid #ffffff15; border-radius: 16px; cursor: pointer; }
+.feature-card:hover { background: #1c2025d9; border-color: #b3927466; }
+.card-label { font-size: 9px; letter-spacing: .15em; color: #c0a58e; }
+.feature-card strong { font-size: 18px; font-weight: 500; letter-spacing: -.025em; }
+.feature-card > span:last-child { display: flex; gap: 8px; align-items: center; justify-content: space-between; width: 100%; color: var(--muted); font-size: 12px; line-height: 1.5; }
+kbd { color: #b7b6b2; font: 10px 'Segoe UI',sans-serif; border: 1px solid #ffffff20; border-radius: 5px; padding: 3px 6px; white-space: nowrap; }
+.canvas-footer { display: flex; justify-content: space-between; gap: 16px; margin-top: 36px; padding: 20px 0 8px; border-top: 1px solid #ffffff12; color: var(--muted); font-size: 11px; }
+.canvas-footer button { border: 0; background: none; color: var(--muted); padding: 0; cursor: pointer; }
+.live-region { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); max-width: calc(100vw - 32px); padding: 12px 18px; background: #20252b; color: var(--text); border-radius: 10px; z-index: 5; }
+.live-region:empty { display: none; }
+.afterglow-shell[data-art="quiet"] .artwork { display: none; }
+.afterglow-shell[data-dock="bottom-center"] .welcome { text-align: center; }
+.afterglow-shell[data-dock="bottom-center"] .eyebrow { justify-content: center; }
+.quick-access button:disabled { opacity: .45; cursor: default; }
+html[data-theme="light"] { color-scheme: light; --canvas: #f5f2ed; --text: #282522; --muted: #655c53; --quiet: #796c61; --line: #0002; --dock: #ffffffdc; }
+html[data-theme="light"] .afterglow-shell::after { background: linear-gradient(90deg,#f5f2edf5,#f5f2edb8); }
+html[data-theme="light"] .command-dock, html[data-theme="light"] .customize-dialog { background: #fffdf9ed; color: var(--text); }
+html[data-theme="light"] h1 span { color: #9a603b; }
+html[data-theme="light"] .eyebrow, html[data-theme="light"] .card-label { color: #845637; }
+html[data-theme="light"] .feature-card { background: #fff9; border-color: #3322111c; }
+html[data-theme="light"] .feature-card:hover { background: #fff; border-color: #8c5c3455; }
+html[data-theme="light"] .quick-icon { background: #fff9; border-color: #33221120; color: #845637; }
+html[data-theme="light"] .quick-access button:hover { background: #fff5; border-color: #33221120; }
+html[data-theme="light"] .canvas-footer, html[data-theme="light"] kbd { border-color: #33221125; }
+html[data-theme="light"] kbd { color: #655c53; }
+html[data-theme="light"] .setting-row select { background: #f5f2ed; }
+html[data-theme="light"] .live-region { background: #fff; color: var(--text); box-shadow: 0 4px 20px #0002; }
+@media (max-width: 700px) { .canvas { padding: 20px 24px; } .quick-access { grid-template-columns: repeat(3,minmax(0,1fr)); } .continue-grid { grid-template-columns: 1fr; margin-top: 24px; } .command-dock { left: auto; bottom: auto; width: 100%; } .shortcut { display: none; } .canvas-footer { flex-wrap: wrap; } }
+@media (max-height: 750px) and (min-width: 701px) { .canvas { padding-top: 12px; } h1 { font-size: 44px; margin: 18px 0 12px; } .welcome { margin-bottom: 22px; } .continue-grid { margin-top: 22px; } .canvas-footer { margin-top: 20px; } }
+@media (forced-colors: active) { .artwork,.afterglow-shell::after { display: none; } .quick-access button,.feature-card,.command-dock { border: 1px solid ButtonText; background: Canvas; color: CanvasText; } h1 span,.quick-icon,.card-label { color: CanvasText; } }

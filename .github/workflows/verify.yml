@@ -1,0 +1,36 @@
+name: Windows verification
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: windows-2022
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        configuration: [Debug, Release]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Restore, build, test, and check development package
+        shell: pwsh
+        run: ./scripts/verify.ps1 -Configuration '${{ matrix.configuration }}' -Publish:('${{ matrix.configuration }}' -eq 'Release')
+      - name: Retain test reports and package manifests
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verification-${{ matrix.configuration }}
+          path: |
+            artifacts/test-results/**/*.trx
+            artifacts/releases/**/artifact-manifest.json
+          if-no-files-found: error
+          retention-days: 14

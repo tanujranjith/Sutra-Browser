@@ -59,9 +59,11 @@ public sealed class RepositoryTests : IAsyncLifetime
     public async Task WorkspacesReplaceByNameAndDelete()
     {
         var repo=new WorkspaceRepository(_database);
-        await repo.SaveAsync("Research","{\"tabs\":[1]}");
-        await repo.SaveAsync("Research","{\"tabs\":[2]}");
-        var item=Assert.Single(await repo.ListAsync());Assert.Contains("[2]",item.SessionJson);
+        var tab = new Browser.Core.Tabs.BrowserTab { Url = "https://example.com", Title = "First" };
+        await repo.SaveAsync("Research", Browser.Core.Sessions.SessionSerializer.Serialize(new([tab.ToSnapshot()], tab.Id, DateTimeOffset.UtcNow)));
+        tab.Title = "Second";
+        await repo.SaveAsync("Research", Browser.Core.Sessions.SessionSerializer.Serialize(new([tab.ToSnapshot()], tab.Id, DateTimeOffset.UtcNow)));
+        var item=Assert.Single(await repo.ListAsync());Assert.Contains("Second",item.SessionJson);
         await repo.DeleteAsync(item.Id);Assert.Empty(await repo.ListAsync());
     }
 

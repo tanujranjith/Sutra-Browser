@@ -579,7 +579,7 @@ public sealed class NoteTargetSelectionTests
         // The active surface in this scenario is the native notes manager page,
         // whose URL can never carry a note; editing must not consult it at all.
         const string activeManagerSurface = "sutra://page/notes";
-        Assert.NotEqual(NoteTargets.Normalize("https://example.com/article#frag"), activeManagerSurface);
+        Assert.NotEqual(activeManagerSurface, NoteTargets.Normalize("https://example.com/article#frag"));
         var target = NoteTargetSelection.ResolveEditTarget("https://example.com/article#frag");
         Assert.Equal("https://example.com/article", target);
     }

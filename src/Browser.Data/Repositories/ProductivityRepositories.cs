@@ -4,15 +4,18 @@ using Microsoft.Data.Sqlite;
 
 namespace Browser.Data.Repositories;
 
-public sealed class WorkspaceRepository(BrowserDatabase database)
+public sealed partial class WorkspaceRepository(BrowserDatabase database)
 {
     public async Task SaveAsync(string name, string sessionJson, CancellationToken ct = default)
     {
-        name = name.Trim();
-        if (name.Length is < 1 or > 80) throw new ArgumentException("Workspace name must be 1 to 80 characters.", nameof(name));
+        name = Browser.Core.Workspaces.WorkspacePolicy.Name(name);
+        sessionJson = Browser.Core.Workspaces.WorkspacePolicy.SessionJson(sessionJson);
         await using var connection = database.OpenConnection();
         await connection.OpenAsync(ct);
+        using var transaction = connection.BeginTransaction(deferred: false);
+        await CaptureVersionAsync(connection, transaction, "name=$match", name, "Updated tabs", ct);
         await using var command = connection.CreateCommand();
+        command.Transaction = transaction;
         command.CommandText = """
             INSERT INTO workspaces(name,session_json,updated_at) VALUES($name,$session,$updated)
             ON CONFLICT(name) DO UPDATE SET session_json=excluded.session_json,updated_at=excluded.updated_at;
@@ -21,6 +24,7 @@ public sealed class WorkspaceRepository(BrowserDatabase database)
         command.Parameters.AddWithValue("$session", sessionJson);
         command.Parameters.AddWithValue("$updated", DateTimeOffset.UtcNow.ToString("O"));
         await command.ExecuteNonQueryAsync(ct);
+        transaction.Commit();
     }
 
     public async Task<IReadOnlyList<WorkspaceRecord>> ListAsync(CancellationToken ct = default)
@@ -28,10 +32,10 @@ public sealed class WorkspaceRepository(BrowserDatabase database)
         await using var connection = database.OpenConnection();
         await connection.OpenAsync(ct);
         await using var command = connection.CreateCommand();
-        command.CommandText = "SELECT id,name,session_json,updated_at FROM workspaces ORDER BY updated_at DESC";
+        command.CommandText = "SELECT id,name,session_json,updated_at,color,icon,is_template FROM workspaces ORDER BY updated_at DESC,id DESC";
         var result = new List<WorkspaceRecord>();
         await using var reader = await command.ExecuteReaderAsync(ct);
-        while (await reader.ReadAsync(ct)) result.Add(new(reader.GetInt64(0), reader.GetString(1), reader.GetString(2), DateTimeOffset.Parse(reader.GetString(3))));
+        while (await reader.ReadAsync(ct)) result.Add(new(reader.GetInt64(0), reader.GetString(1), reader.GetString(2), DateTimeOffset.Parse(reader.GetString(3)), reader.GetString(4), reader.GetString(5), reader.GetBoolean(6)));
         return result;
     }
 
@@ -39,10 +43,14 @@ public sealed class WorkspaceRepository(BrowserDatabase database)
     {
         await using var connection = database.OpenConnection();
         await connection.OpenAsync(ct);
+        using var transaction = connection.BeginTransaction(deferred: false);
+        await CaptureVersionAsync(connection, transaction, "id=$match", id, "Deleted workspace", ct);
         await using var command = connection.CreateCommand();
+        command.Transaction = transaction;
         command.CommandText = "DELETE FROM workspaces WHERE id=$id";
         command.Parameters.AddWithValue("$id", id);
         await command.ExecuteNonQueryAsync(ct);
+        transaction.Commit();
     }
 }
 
@@ -175,20 +183,49 @@ public sealed class PageNoteRepository(BrowserDatabase database)
     /// </summary>
     public async Task<IReadOnlyList<PageNoteRecord>> SearchAsync(string query = "", int limit = DefaultSearchLimit, CancellationToken ct = default)
     {
+        return await SearchPagedAsync(query, 0, Math.Clamp(limit, 1, MaxListLimit), ct);
+    }
+
+    public async Task<IReadOnlyList<PageNoteRecord>> SearchPagedAsync(string query = "", int offset = 0, int limit = 50, CancellationToken ct = default)
+    {
+        offset = Math.Clamp(offset, 0, 100_000);
         limit = Math.Clamp(limit, 1, MaxListLimit);
         query = (query ?? string.Empty).Trim();
         if (query.Length > NoteTargets.MaxUrlLength) return [];
-        await using var connection = database.OpenConnection();
-        await connection.OpenAsync(ct);
-        await using var command = connection.CreateCommand();
-        command.CommandText = $"""
+        var match = query.IndexOfAny(['%', '_', '\\', '"']) < 0 ? FtsQuery.Build(query) : null;
+        if (match is not null)
+        {
+            try
+            {
+                await using var connection = database.OpenConnection();
+                await connection.OpenAsync(ct);
+                await using var command = connection.CreateCommand();
+                command.CommandText = """
+                    SELECT n.id,n.url,n.quote,n.note,n.created_at,n.updated_at FROM page_notes n
+                    JOIN page_notes_fts ON n.id = page_notes_fts.rowid
+                    WHERE page_notes_fts MATCH $match
+                    ORDER BY bm25(page_notes_fts), n.updated_at DESC LIMIT $limit OFFSET $offset;
+                    """;
+                command.Parameters.AddWithValue("$match", match);
+                command.Parameters.AddWithValue("$limit", limit);
+                command.Parameters.AddWithValue("$offset", offset);
+                return await ReadNotesAsync(command, ct);
+            }
+            catch { }
+        }
+        await using var fallback = database.OpenConnection();
+        await fallback.OpenAsync(ct);
+        await using var cmd = fallback.CreateCommand();
+        cmd.CommandText = $"""
             SELECT id,url,quote,note,created_at,updated_at FROM page_notes
             WHERE $q='' OR url LIKE $like ESCAPE '{LikeEscapeCharacter}' OR quote LIKE $like ESCAPE '{LikeEscapeCharacter}' OR note LIKE $like ESCAPE '{LikeEscapeCharacter}'
-            ORDER BY updated_at DESC LIMIT {limit}
+            ORDER BY updated_at DESC LIMIT $limit OFFSET $offset
             """;
-        command.Parameters.AddWithValue("$q", query);
-        command.Parameters.AddWithValue("$like", $"%{EscapeLikePattern(query)}%");
-        return await ReadNotesAsync(command, ct);
+        cmd.Parameters.AddWithValue("$q", query);
+        cmd.Parameters.AddWithValue("$like", $"%{EscapeLikePattern(query)}%");
+        cmd.Parameters.AddWithValue("$limit", limit);
+        cmd.Parameters.AddWithValue("$offset", offset);
+        return await ReadNotesAsync(cmd, ct);
     }
 
     private const string LikeEscapeCharacter = @"\";

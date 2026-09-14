@@ -34,16 +34,26 @@ public sealed class BrowserTab
     public string? GroupName { get; set; }
     /// <summary>Workspace membership is lightweight metadata; inactive workspaces do not need live WebViews.</summary>
     public string? WorkspaceName { get; set; }
+    /// <summary>Temporary tabs are per-window previews: never persisted, never restored, never kept in recently-closed.</summary>
+    public bool IsTemporary { get; set; }
+    /// <summary>Tree-tab parent. Null means a root tab. Cycles and missing parents are repaired on load.</summary>
+    public Guid? ParentId { get; set; }
+    /// <summary>When true, this tab's tree children are hidden in the tab lists until expanded.</summary>
+    public bool IsTreeCollapsed { get; set; }
     public string? Error { get; set; }
 
     public BrowserTabSnapshot ToSnapshot() => new(Id, Url, Title, FaviconPath, IsPinned, IsHibernated,
-        LastActivatedAt, CreatedAt, ScrollPosition, IsMuted, GroupName, GroupId, WorkspaceName);
+        LastActivatedAt, CreatedAt, ScrollPosition, IsMuted, GroupName, GroupId, WorkspaceName, IsTemporary, ParentId, IsTreeCollapsed);
 
-    public static BrowserTab FromSnapshot(BrowserTabSnapshot item) => new()
+    public static BrowserTab FromSnapshot(BrowserTabSnapshot? item)
     {
-        Id = item.Id == Guid.Empty ? Guid.NewGuid() : item.Id,
-        Url = RestoreUrl(item.Url),
-        Title = RestoreUrl(item.Url) == "browser://newtab" ? "New tab" : string.IsNullOrWhiteSpace(item.Title) ? "New tab" : item.Title,
+        if (item is null) return new() { Url = "browser://newtab", Title = "New tab" };
+        var url = RestoreUrl(item.Url);
+        return new()
+        {
+            Id = item.Id == Guid.Empty ? Guid.NewGuid() : item.Id,
+            Url = url,
+            Title = url == "browser://newtab" ? "New tab" : string.IsNullOrWhiteSpace(item.Title) ? "New tab" : item.Title,
         FaviconPath = item.FaviconPath,
         IsPinned = item.IsPinned,
         IsHibernated = item.IsHibernated,
@@ -54,18 +64,24 @@ public sealed class BrowserTab
         GroupId = item.GroupId is { } groupId && groupId != Guid.Empty ? groupId : null,
         GroupName = string.IsNullOrWhiteSpace(item.GroupName) ? null : item.GroupName.Trim()
         ,WorkspaceName = string.IsNullOrWhiteSpace(item.WorkspaceName) ? null : item.WorkspaceName.Trim()
-    };
+        ,IsTemporary = item.IsTemporary,
+        ParentId = item.ParentId is { } parentId && parentId != Guid.Empty && parentId != (item.Id == Guid.Empty ? Guid.Empty : item.Id) ? parentId : null,
+        IsTreeCollapsed = item.IsTreeCollapsed
+        };
+    }
 
-    private static string RestoreUrl(string value)
+    private static string RestoreUrl(string? value)
     {
+        if (string.IsNullOrWhiteSpace(value)) return "browser://newtab";
         if (value == "browser://newtab" || value.Equals("about:blank", StringComparison.OrdinalIgnoreCase) || value.StartsWith("data:", StringComparison.OrdinalIgnoreCase)) return "browser://newtab";
-        return Uri.TryCreate(value, UriKind.Absolute, out _) ? value : "browser://newtab";
+        return Browser.Core.Sessions.SessionSerializer.IsRestorableUrl(value) ? value : "browser://newtab";
     }
 }
 
 public sealed record BrowserTabSnapshot(Guid Id, string Url, string Title, string? FaviconPath,
     bool IsPinned, bool IsHibernated, DateTimeOffset LastActivatedAt, DateTimeOffset CreatedAt,
-    double ScrollPosition, bool IsMuted, string? GroupName = null, Guid? GroupId = null, string? WorkspaceName = null);
+    double ScrollPosition, bool IsMuted, string? GroupName = null, Guid? GroupId = null, string? WorkspaceName = null,
+    bool IsTemporary = false, Guid? ParentId = null, bool IsTreeCollapsed = false);
 
 public static class TabOrdering
 {

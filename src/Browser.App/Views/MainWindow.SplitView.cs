@@ -9,6 +9,9 @@ namespace Browser.App;
 
 public sealed partial class MainWindow
 {
+    private SplitLayoutPreset _splitLayout;
+    private IReadOnlyList<double>? _splitColumnFractions;
+    private IReadOnlyList<double>? _splitRowFractions;
     private bool IsSplitViewActive => _splitTabIds.Count >= 2;
 
     private MenuFlyout BuildSplitViewMenu()
@@ -16,6 +19,10 @@ public sealed partial class MainWindow
         var menu = new MenuFlyout();
         var heading = new MenuFlyoutItem { Text = IsSplitViewActive ? $"Split screen · {_splitTabIds.Count} panes" : "Split screen", IsEnabled = false };
         menu.Items.Add(heading);
+        menu.Items.Add(new MenuFlyoutSeparator());
+        AddMenu(menu, "Side by side · 2 panes", async () => await EnableSplitViewAsync(2, SplitLayoutPreset.SideBySide), null, Symbol.View);
+        AddMenu(menu, "Stacked · 2 panes", async () => await EnableSplitViewAsync(2, SplitLayoutPreset.Stacked), null, Symbol.View);
+        AddMenu(menu, "Focus left · 3 panes", async () => await EnableSplitViewAsync(3, SplitLayoutPreset.FocusLeft), null, Symbol.View);
         menu.Items.Add(new MenuFlyoutSeparator());
         foreach (var count in new[] { 2, 3, 4, 6, 8 })
         {
@@ -30,7 +37,7 @@ public sealed partial class MainWindow
         return menu;
     }
 
-    private async Task EnableSplitViewAsync(int paneCount)
+    private async Task EnableSplitViewAsync(int paneCount, SplitLayoutPreset preset = SplitLayoutPreset.Automatic)
     {
         paneCount = Math.Clamp(paneCount, 2, 8);
         if (paneCount >= 6 && paneCount > _splitTabIds.Count)
@@ -47,14 +54,18 @@ public sealed partial class MainWindow
             if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
         }
 
-        var selected = _vm.SelectedTab ?? _vm.Tabs.FirstOrDefault() ?? NewTab(activate: false);
+        var selected = _vm.SelectedTab is { } current && !IsNativePageTab(current) ? current : _vm.Tabs.FirstOrDefault(x => !IsNativePageTab(x)) ?? NewTab(activate: false);
         var candidates = new List<BrowserTab> { selected };
-        candidates.AddRange(_vm.Tabs.Where(tab => tab.Id != selected.Id));
+        candidates.AddRange(_vm.Tabs.Where(tab => tab.Id != selected.Id && !IsNativePageTab(tab)));
         while (candidates.Count < paneCount) candidates.Add(NewTab(activate: false));
 
         _splitTabIds.Clear();
+        _splitLayout = preset;
+        _splitColumnFractions = null;
+        _splitRowFractions = null;
         _splitTabIds.AddRange(candidates.Take(paneCount).Select(tab => tab.Id));
         _vm.SelectedTab = selected;
+        HideNativePageVisual();
         await EnsureSplitWebViewsAsync();
         RenderBrowserSurface();
         await RenderAttachedNewTabPagesAsync();
@@ -67,6 +78,8 @@ public sealed partial class MainWindow
     {
         var selected = _vm.SelectedTab ?? _splitTabIds.Select(FindTab).FirstOrDefault(tab => tab is not null);
         _splitTabIds.Clear();
+        _splitColumnFractions = null;
+        _splitRowFractions = null;
         _splitPaneBorders.Clear();
         _splitPaneTitles.Clear();
         if (selected is not null) await ActivateTabAsync(selected);
@@ -78,7 +91,7 @@ public sealed partial class MainWindow
         foreach (var id in _splitTabIds.ToList())
         {
             var tab = FindTab(id);
-            if (tab is null) { _splitTabIds.Remove(id); continue; }
+            if (tab is null || IsNativePageTab(tab)) { _splitTabIds.Remove(id); continue; }
             if (!_webViews.ContainsKey(id)) await CreateWebViewAsync(tab);
         }
         if (_splitTabIds.Count < 2) _splitTabIds.Clear();
@@ -101,16 +114,22 @@ public sealed partial class MainWindow
         }
 
         var count = _splitTabIds.Count;
-        var columns = count switch { 2 => 2, 3 => 3, 4 => 2, <= 6 => 3, _ => 4 };
-        var rows = (int)Math.Ceiling(count / (double)columns);
+        var layout = SplitLayout.Create(count, _splitLayout);
+        var columns = layout.Columns;
+        var rows = layout.Rows;
+        var columnFractions = SplitRatioPolicy.Normalize(_splitColumnFractions, columns) is { } cf && cf.Count == columns ? cf : null;
+        var rowFractions = SplitRatioPolicy.Normalize(_splitRowFractions, rows) is { } rf && rf.Count == rows ? rf : null;
         for (var i = 0; i < columns; i++)
         {
-            _browserHost.ColumnDefinitions.Add(new() { Width = new(1, GridUnitType.Star), MinWidth = 180 });
+            var weight = columnFractions is not null ? columnFractions[i] * columns
+                : layout.WideFirstColumn && i == 0 ? 2 : 1;
+            _browserHost.ColumnDefinitions.Add(new() { Width = new(Math.Clamp(weight, 0.3, 4), GridUnitType.Star), MinWidth = 180 });
             if (i < columns - 1) _browserHost.ColumnDefinitions.Add(new() { Width = new(4) });
         }
         for (var i = 0; i < rows; i++)
         {
-            _browserHost.RowDefinitions.Add(new() { Height = new(1, GridUnitType.Star), MinHeight = 130 });
+            var weight = rowFractions is not null ? rowFractions[i] * rows : 1;
+            _browserHost.RowDefinitions.Add(new() { Height = new(Math.Clamp(weight, 0.3, 4), GridUnitType.Star), MinHeight = 130 });
             if (i < rows - 1) _browserHost.RowDefinitions.Add(new() { Height = new(4) });
         }
 
@@ -119,8 +138,10 @@ public sealed partial class MainWindow
             var tab = FindTab(_splitTabIds[index]);
             if (tab is null || !_webViews.TryGetValue(tab.Id, out var web)) continue;
             var pane = BuildSplitPane(tab, web);
-            Grid.SetColumn(pane, (index % columns) * 2);
-            Grid.SetRow(pane, (index / columns) * 2);
+            var cell = layout.Cells[index];
+            Grid.SetColumn(pane, cell.Column * 2);
+            Grid.SetRow(pane, cell.Row * 2);
+            Grid.SetRowSpan(pane, cell.RowSpan * 2 - 1);
             _browserHost.Children.Add(pane);
         }
         for (var column = 1; column < columns; column++)
@@ -135,6 +156,7 @@ public sealed partial class MainWindow
             var splitter = BuildRowSplitter(row * 2 - 2, row * 2);
             Grid.SetRow(splitter, row * 2 - 1);
             Grid.SetColumnSpan(splitter, _browserHost.ColumnDefinitions.Count);
+            if (layout.WideFirstColumn) { Grid.SetColumn(splitter, 2); Grid.SetColumnSpan(splitter, 1); }
             _browserHost.Children.Add(splitter);
         }
         RefreshSplitPaneChrome();
@@ -163,7 +185,7 @@ public sealed partial class MainWindow
             _browserHost.ColumnDefinitions[leftIndex].Width = new(Math.Max(180, leftWidth + adjusted));
             _browserHost.ColumnDefinitions[rightIndex].Width = new(Math.Max(180, rightWidth - adjusted));
         };
-        splitter.PointerReleased += (_, e) => { dragging = false; splitter.ReleasePointerCapture(e.Pointer); e.Handled = true; };
+        splitter.PointerReleased += (_, e) => { dragging = false; splitter.ReleasePointerCapture(e.Pointer); e.Handled = true; _ = SaveSessionAsync(); };
         splitter.PointerCanceled += (_, e) => { dragging = false; splitter.ReleasePointerCapture(e.Pointer); };
         return splitter;
     }
@@ -191,7 +213,7 @@ public sealed partial class MainWindow
             _browserHost.RowDefinitions[topIndex].Height = new(Math.Max(130, topHeight + adjusted));
             _browserHost.RowDefinitions[bottomIndex].Height = new(Math.Max(130, bottomHeight - adjusted));
         };
-        splitter.PointerReleased += (_, e) => { dragging = false; splitter.ReleasePointerCapture(e.Pointer); e.Handled = true; };
+        splitter.PointerReleased += (_, e) => { dragging = false; splitter.ReleasePointerCapture(e.Pointer); e.Handled = true; _ = SaveSessionAsync(); };
         splitter.PointerCanceled += (_, e) => { dragging = false; splitter.ReleasePointerCapture(e.Pointer); };
         return splitter;
     }

@@ -64,7 +64,7 @@ public sealed partial class MainWindow
         });
         body.Children.Add(new TextBlock
         {
-            Text = "Take a minute to choose your privacy defaults, learn where Copilot sends page content, and try the features that make Sutra feel like yours.",
+            Text = $"Take a minute to choose your privacy defaults, learn where {AppBrand.AssistantName} sends page content, and try the features that make Sutra feel like yours.",
             FontSize = 16,
             Opacity = .72,
             MaxWidth = 650,
@@ -73,7 +73,7 @@ public sealed partial class MainWindow
         });
         body.Children.Add(OnboardingFeatureCard(Symbol.ProtectedDocument, "Private by design", "Protection, local history, and AI sharing are visible choices—not hidden assumptions."));
         body.Children.Add(OnboardingFeatureCard(Symbol.Tag, "Organize without clutter", "Use tabs, bookmarks, reading lists, workspaces, and profiles when you need them."));
-        body.Children.Add(OnboardingFeatureCard(Symbol.Message, "Copilot on your terms", "Keep Copilot local with Ollama or choose a remote OpenAI-compatible provider later."));
+        body.Children.Add(OnboardingFeatureCard(Symbol.Message, $"{AppBrand.AssistantName} on your terms", $"Keep {AppBrand.AssistantName} local with Ollama or choose a remote OpenAI-compatible provider later."));
 
         return ("Let’s make Sutra fit the way you browse.", body,
         [
@@ -134,7 +134,7 @@ public sealed partial class MainWindow
     {
         var provider = new ComboBox
         {
-            Header = "Copilot provider",
+            Header = $"{AppBrand.AssistantName} provider",
             ItemsSource = Enum.GetNames<AiProviderKind>(),
             SelectedItem = _onboardingDraftSettings.AiProvider.ToString(),
             MinWidth = 300
@@ -143,15 +143,15 @@ public sealed partial class MainWindow
         void UpdateExplanation()
         {
             explanation.Text = provider.SelectedItem?.ToString() == nameof(AiProviderKind.Ollama)
-                ? "Ollama keeps the provider local to your device. Page text is sent only to the local model when you invoke Copilot."
-                : "An OpenAI-compatible provider is remote. Visible page text is sent only after you invoke Copilot, and credentials are configured later in Settings.";
+                ? $"Ollama keeps the provider local to your device. Page text is sent only to the local model when you invoke {AppBrand.AssistantName}."
+                : $"An OpenAI-compatible provider is remote. Visible page text is sent only after you invoke {AppBrand.AssistantName}, and credentials are configured later in Settings.";
         }
         provider.SelectionChanged += (_, _) => UpdateExplanation();
         UpdateExplanation();
 
         var body = OnboardingPanel();
-        body.Children.Add(OnboardingSection("Copilot, clearly explained", "Choose the provider you want Sutra to use. This step never asks for an API key or sends page content.", provider, explanation));
-        body.Children.Add(OnboardingFeatureCard(Symbol.Message, "You are always in control", "Copilot starts only when you ask it to act. Private windows require a separate, explicit enablement."));
+        body.Children.Add(OnboardingSection($"{AppBrand.AssistantName}, clearly explained", "Choose the provider you want Sutra to use. This step never asks for an API key or sends page content.", provider, explanation));
+        body.Children.Add(OnboardingFeatureCard(Symbol.Message, "You are always in control", $"{AppBrand.AssistantName} starts only when you ask it to act. Private windows require a separate, explicit enablement."));
 
         async Task ContinueAsync()
         {
@@ -162,7 +162,7 @@ public sealed partial class MainWindow
             await Task.CompletedTask;
         }
 
-        return ("Choose where Copilot should process your requests.", body,
+        return ($"Choose where {AppBrand.AssistantName} should process your requests.", body,
         [
             OnboardingButton("Back", Symbol.Back, () => { _onboardingStep = 2; ShowOnboardingStep(); return Task.CompletedTask; }),
             OnboardingButton("Skip for now", Symbol.Cancel, SkipOnboardingAsync),
@@ -186,7 +186,7 @@ public sealed partial class MainWindow
             () => { OpenPrivateWindow(); return Task.CompletedTask; }));
         body.Children.Add(OnboardingChecklistRow("bookmark", "Save a bookmark", "Open a sample page in the background, then use Ctrl+D or the bookmark button when you are ready.", Symbol.OutlineStar,
             () => { NewTab("https://example.com", activate: false); ShowStatus("A sample page is ready. Use Ctrl+D to bookmark it."); return Task.CompletedTask; }));
-        body.Children.Add(OnboardingChecklistRow("copilot", "Open Copilot", "See the Copilot panel and its local-versus-remote privacy indicator.", Symbol.Message,
+        body.Children.Add(OnboardingChecklistRow("copilot", $"Open {AppBrand.AssistantName}", $"See the {AppBrand.AssistantName} panel and its local-versus-remote privacy indicator.", Symbol.Message,
             async () => { if (!_vm.IsCopilotOpen) await ToggleCopilotAsync(); }));
         body.Children.Add(OnboardingFeatureCard(Symbol.Home, "You can revisit this anytime", "Open the browser menu and choose Welcome to Sutra to see this walkthrough again."));
 

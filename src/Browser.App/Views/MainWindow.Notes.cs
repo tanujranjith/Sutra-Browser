@@ -137,6 +137,25 @@ public sealed partial class MainWindow
         });
         var toolbar = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         toolbar.Children.Add(search); toolbar.Children.Add(edit); toolbar.Children.Add(open); toolbar.Children.Add(remove);
+        var export = ActionButton("Export results", Symbol.Upload, async () =>
+        {
+            var notes = list.Items.OfType<ListViewItem>().Select(x => x.Tag).OfType<PageNoteRecord>().ToList();
+            if (notes.Count == 0) { ShowStatus("Search for notes to export first."); return; }
+            var picker = new Windows.Storage.Pickers.FileSavePicker { SuggestedFileName = $"Sutra notes {DateTime.Now:yyyy-MM-dd}" };
+            picker.FileTypeChoices.Add("Markdown", [".md"]);
+            WinRT.Interop.InitializeWithWindow.Initialize(picker, WinRT.Interop.WindowNative.GetWindowHandle(this));
+            var file = await picker.PickSaveFileAsync();
+            if (file is null) return;
+            try
+            {
+                var markdown = NoteMarkdownExporter.Export(notes.Select(x => new NoteExportItem(x.Url, x.Quote, x.Note, x.UpdatedAt)));
+                await File.WriteAllTextAsync(file.Path, markdown, _windowLifetimeCts.Token);
+                ShowStatus($"Exported {notes.Count} notes as Markdown.", InfoBarSeverity.Success);
+            }
+            catch (OperationCanceledException) { }
+            catch (IOException) { ShowStatus("The notes could not be exported to this file.", InfoBarSeverity.Warning); }
+        });
+        toolbar.Children.Add(export);
         // Only offer manager-local creation when the manager was opened from a
         // real web page; otherwise there is no honest target for a new note.
         if (originTarget is not null)
