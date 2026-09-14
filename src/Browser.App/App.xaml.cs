@@ -24,22 +24,24 @@ public partial class App : Application
     public App()
     {
         InitializeComponent();
-        // Global policy: only cancellation-style exceptions are contained — they
-        // are normal shutdown/teardown artifacts, not corruption. Any other
-        // unhandled UI exception is recorded safely (type only) and deliberately
-        // left unhandled so WinUI terminates the process; the next launch then
-        // shows the truthful crash-recovery notice instead of continuing in an
-        // unknown state. Raw exception text, paths, and secrets are never shown.
+        // Async WinUI/WebView2 callbacks are delivered through void-based event
+        // delegates. An exception that escapes one of those callbacks cannot be
+        // observed by its caller and would otherwise terminate the whole browser.
+        // Callback boundaries log only the exception type and keep the process
+        // alive; startup and shutdown still have their own explicit containment
+        // and recovery paths. Raw exception text, paths, and secrets are never
+        // shown.
         UnhandledException += (_, e) =>
         {
             if (e.Exception is OperationCanceledException)
             {
                 System.Diagnostics.Debug.WriteLine($"Contained cancellation during UI callback: {e.Exception.GetType().Name}");
-                e.Handled = true;
-                return;
             }
-            System.Diagnostics.Debug.WriteLine($"Unhandled UI exception ({e.Exception.GetType().Name}); allowing termination for crash recovery.");
-            e.Handled = false;
+            else
+            {
+                System.Diagnostics.Debug.WriteLine($"Contained UI callback exception: {e.Exception.GetType().Name}");
+            }
+            e.Handled = true;
         };
     }
 

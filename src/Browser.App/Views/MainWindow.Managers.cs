@@ -19,11 +19,12 @@ namespace Browser.App;
 
 public sealed partial class MainWindow
 {
-    private async void OnDownloadStarting(BrowserTab tab, CoreWebView2DownloadStartingEventArgs e)
+    private async Task OnDownloadStartingAsync(BrowserTab tab, CoreWebView2DownloadStartingEventArgs e)
     {
         var deferral = e.GetDeferral();
         try
         {
+            if (_isWindowClosed || !_vm.Tabs.Contains(tab)) { e.Cancel = true; return; }
             var file = Path.GetFileName(e.ResultFilePath);
             var destination = Path.Combine(_vm.Settings.DownloadFolder, file);
             Directory.CreateDirectory(_vm.Settings.DownloadFolder);
@@ -95,6 +96,18 @@ public sealed partial class MainWindow
             operation.StateChanged += async (_, _) => await Save();
             await Save();
         }
+        catch (OperationCanceledException)
+        {
+            e.Cancel = true;
+        }
+        catch (Exception ex)
+        {
+            // A download callback runs on a void-based WebView2 event. A dialog,
+            // path, or operation failure must cancel this transfer rather than
+            // escape into Application.UnhandledException and terminate the app.
+            System.Diagnostics.Debug.WriteLine($"Download start failed: {ex.GetType().Name}");
+            e.Cancel = true;
+        }
         finally { deferral.Complete(); }
     }
 
@@ -156,6 +169,7 @@ public sealed partial class MainWindow
         e.Handled = true;
         try
         {
+            if (_isWindowClosed || !_vm.Tabs.Contains(tab)) { e.State = CoreWebView2PermissionState.Deny; return; }
             if (!Uri.TryCreate(e.Uri, UriKind.Absolute, out var uri) || uri.Scheme != "https") { e.State = CoreWebView2PermissionState.Deny; return; }
             var origin = uri.GetLeftPart(UriPartial.Authority);
             var kind = e.PermissionKind.ToString();
@@ -180,6 +194,15 @@ public sealed partial class MainWindow
             e.State = result is ContentDialogResult.Primary or ContentDialogResult.Secondary ? CoreWebView2PermissionState.Allow : CoreWebView2PermissionState.Deny;
             if (!_isPrivate && result == ContentDialogResult.Secondary) await _permissions.SetAsync(new(origin, kind, "Allow", DateTimeOffset.UtcNow));
             else if (!_isPrivate && result == ContentDialogResult.None) await _permissions.SetAsync(new(origin, kind, "Deny", DateTimeOffset.UtcNow));
+        }
+        catch (OperationCanceledException)
+        {
+            e.State = CoreWebView2PermissionState.Deny;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Permission request failed: {ex.GetType().Name}");
+            e.State = CoreWebView2PermissionState.Deny;
         }
         finally { tab.HasPermissionPrompt = false; deferral.Complete(); }
     }

@@ -79,11 +79,18 @@ internal sealed class NativeBrowserPresenter : IAsyncDisposable
     {
         if (_disposed || _updateQueued) return;
         _updateQueued = true;
-        Placeholder.DispatcherQueue.TryEnqueue(() =>
+        if (!Placeholder.DispatcherQueue.TryEnqueue(() =>
         {
-            _updateQueued = false;
-            UpdateBounds();
-        });
+            try
+            {
+                _updateQueued = false;
+                UpdateBounds();
+            }
+            catch (Exception exception) when (!_disposed)
+            {
+                ReportError(exception);
+            }
+        })) _updateQueued = false;
     }
 
     private void UpdateBounds()
@@ -110,7 +117,7 @@ internal sealed class NativeBrowserPresenter : IAsyncDisposable
         }
         catch (Exception exception)
         {
-            _onError?.Invoke(exception);
+            ReportError(exception);
         }
     }
 
@@ -123,7 +130,13 @@ internal sealed class NativeBrowserPresenter : IAsyncDisposable
     private async void Run(Task operation)
     {
         try { await operation; }
-        catch (Exception exception) when (!_disposed) { _onError?.Invoke(exception); }
+        catch (Exception exception) when (!_disposed) { ReportError(exception); }
+    }
+
+    private void ReportError(Exception exception)
+    {
+        try { _onError?.Invoke(exception); }
+        catch (Exception callbackException) { System.Diagnostics.Debug.WriteLine($"Native browser error callback failed: {callbackException.GetType().Name}"); }
     }
 
     public async ValueTask DisposeAsync()

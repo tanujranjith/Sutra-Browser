@@ -241,7 +241,12 @@ public sealed partial class MainWindow : Window
                 try { if (!_isWindowClosed) EnsureEmergencyTab(); } catch { }
                 try { if (!_isWindowClosed) ShowStatus("Sutra started with a fresh tab because the saved session could not be read.", InfoBarSeverity.Warning, 7000); } catch { }
             }
-            finally { _ready.TrySetResult(false); await FinishBootAnimationAsync(); }
+            finally
+            {
+                _ready.TrySetResult(false);
+                try { await FinishBootAnimationAsync(); }
+                catch (Exception ex) { Debug.WriteLine($"Boot animation cleanup failed: {ex.GetType().Name}"); }
+            }
         };
         _root.ActualThemeChanged += (_, _) =>
         {
@@ -1229,4 +1234,28 @@ public sealed partial class MainWindow : Window
     }
 
     private static void StopTimer(DispatcherTimer? timer) => timer?.Stop();
+
+    /// <summary>
+    /// Observes a task started by a void-based WinUI/WebView2 callback. These
+    /// callbacks cannot return a Task to the framework, so every exception must
+    /// be contained here instead of becoming an application-level crash.
+    /// </summary>
+    private void ObserveUiCallback(string name, Func<Task> operation)
+    {
+        _ = ObserveUiCallbackAsync(name, operation);
+    }
+
+    private static async Task ObserveUiCallbackAsync(string name, Func<Task> operation)
+    {
+        try { await operation(); }
+        catch (OperationCanceledException) { }
+        catch (Exception ex) { Debug.WriteLine($"{name} callback failed: {ex.GetType().Name}"); }
+    }
+
+    private bool IsCurrentTabWebView(BrowserTab tab, WebView2 web)
+        => !_isWindowClosed && _vm.Tabs.Contains(tab) &&
+           _webViews.TryGetValue(tab.Id, out var current) && ReferenceEquals(current, web);
+
+    private bool IsCurrentWebPanel(WebView2 web)
+        => !_isWindowClosed && ReferenceEquals(_webPanelView, web);
 }

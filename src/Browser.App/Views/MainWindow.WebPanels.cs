@@ -78,8 +78,19 @@ public sealed partial class MainWindow
         core.Settings.IsPasswordAutosaveEnabled = false; core.Settings.IsGeneralAutofillEnabled = false; core.Settings.AreBrowserAcceleratorKeysEnabled = false;
         core.AddWebResourceRequestedFilter("*", CoreWebView2WebResourceContext.All);
         var panelTab = new BrowserTab { Url = panel.Url, Title = panel.Name };
-        core.WebResourceRequested += (_, e) => OnWebResourceRequested(panelTab, core, e);
-        core.NewWindowRequested += (_, e) => { e.Handled = true; DispatcherQueue.TryEnqueue(() => { if (!_isWindowClosed) NewTab(e.Uri, !_vm.Settings.OpenLinksInBackground); }); };
+        core.WebResourceRequested += (_, e) =>
+        {
+            if (IsCurrentWebPanel(view)) OnWebResourceRequested(panelTab, core, e);
+        };
+        core.NewWindowRequested += (_, e) =>
+        {
+            e.Handled = true;
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                try { if (IsCurrentWebPanel(view)) NewTab(e.Uri, !_vm.Settings.OpenLinksInBackground); }
+                catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Web-panel popup failed: {ex.GetType().Name}"); }
+            });
+        };
         core.Navigate(panel.Url);
         var header = new Grid { Padding = new(10, 7, 6, 7) }; header.ColumnDefinitions.Add(new() { Width = new(1, GridUnitType.Star) }); header.ColumnDefinitions.Add(new() { Width = GridLength.Auto });
         header.Children.Add(new TextBlock { Text = panel.Name, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis });

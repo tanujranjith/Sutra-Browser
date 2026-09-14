@@ -347,14 +347,26 @@ public sealed partial class MainWindow
         core.Settings.IsGeneralAutofillEnabled = false;
         core.Settings.AreBrowserAcceleratorKeysEnabled = false;
         core.AddWebResourceRequestedFilter("*", CoreWebView2WebResourceContext.All);
-        core.WebResourceRequested += (_, e) => OnWebResourceRequested(tab, core, e);
+        core.WebResourceRequested += (_, e) =>
+        {
+            if (IsCurrentTabWebView(tab, web)) OnWebResourceRequested(tab, core, e);
+        };
         await core.AddScriptToExecuteOnDocumentCreatedAsync(ShortcutBridgeScript);
-        core.WebMessageReceived += (_, e) => OnWebMessageReceived(tab, e);
-        core.NavigationStarting += async (_, e) => await OnNavigationStartingAsync(tab, e);
-        core.NavigationCompleted += async (_, e) => await OnNavigationCompletedAsync(tab, web, e);
+        core.WebMessageReceived += (_, e) =>
+        {
+            if (IsCurrentTabWebView(tab, web)) ObserveUiCallback("Web message", () => OnWebMessageReceivedAsync(tab, e));
+        };
+        core.NavigationStarting += (_, e) =>
+        {
+            if (IsCurrentTabWebView(tab, web)) ObserveUiCallback("Navigation starting", () => OnNavigationStartingAsync(tab, e));
+        };
+        core.NavigationCompleted += (_, e) =>
+        {
+            if (IsCurrentTabWebView(tab, web)) ObserveUiCallback("Navigation completed", () => OnNavigationCompletedAsync(tab, web, e));
+        };
         core.SourceChanged += (_, _) =>
         {
-            if (_isWindowClosed) return;
+            if (!IsCurrentTabWebView(tab, web)) return;
             var source = core.Source;
             var internalPage = tab.Url == "browser://newtab" && (source.StartsWith("data:", StringComparison.OrdinalIgnoreCase) || source == "about:blank" || source.Equals(_newTabFileUri, StringComparison.OrdinalIgnoreCase));
             var errorPage = tab.Error is not null && (source.StartsWith("data:", StringComparison.OrdinalIgnoreCase) || source == "about:blank");
@@ -363,20 +375,23 @@ public sealed partial class MainWindow
         };
         core.DocumentTitleChanged += (_, _) =>
         {
-            if (_isWindowClosed) return;
+            if (!IsCurrentTabWebView(tab, web)) return;
             if (tab.Url != "browser://newtab") tab.Title = string.IsNullOrWhiteSpace(core.DocumentTitle) ? tab.Url : core.DocumentTitle;
             RefreshTabLists();
         };
-        core.HistoryChanged += (_, _) => UpdateNavigationState(web, tab);
+        core.HistoryChanged += (_, _) =>
+        {
+            if (IsCurrentTabWebView(tab, web)) UpdateNavigationState(web, tab);
+        };
         core.StatusBarTextChanged += (_, _) => DispatcherQueue.TryEnqueue(() =>
         {
-            if (_isWindowClosed || _vm.SelectedTab?.Id != tab.Id) return;
+            if (!IsCurrentTabWebView(tab, web) || _vm.SelectedTab?.Id != tab.Id) return;
             _status.Text = core.StatusBarText ?? string.Empty;
             _statusBubble.Visibility = string.IsNullOrWhiteSpace(core.StatusBarText) ? Visibility.Collapsed : Visibility.Visible;
         });
         core.IsDocumentPlayingAudioChanged += (_, _) =>
         {
-            if (_isWindowClosed) return;
+            if (!IsCurrentTabWebView(tab, web)) return;
             tab.IsMediaPlaying = core.IsDocumentPlayingAudio;
             _media.Opacity = _vm.Tabs.Any(item => item.IsMediaPlaying) ? 1 : .72;
             RefreshTabLists();
@@ -387,23 +402,35 @@ public sealed partial class MainWindow
             if (AuthenticationPopupPolicy.ShouldOpenInAuthenticationWindow(popupUri))
             {
                 var deferral = e.GetDeferral();
-                DispatcherQueue.TryEnqueue(async () =>
+                if (!DispatcherQueue.TryEnqueue(() => ObserveUiCallback("Authentication popup", async () =>
                 {
                     try { if (!_isWindowClosed) await ((App)Application.Current).OpenAuthenticationPopupAsync(_isPrivate, popupUri, _profileName, e); }
                     finally { deferral.Complete(); }
-                });
+                }))) deferral.Complete();
                 return;
             }
             e.Handled = true;
-            DispatcherQueue.TryEnqueue(() => { if (!_isWindowClosed) NewTab(popupUri, !_vm.Settings.OpenLinksInBackground); });
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                try { if (IsCurrentTabWebView(tab, web)) NewTab(popupUri, !_vm.Settings.OpenLinksInBackground); }
+                catch (Exception ex) { Debug.WriteLine($"New-tab popup failed: {ex.GetType().Name}"); }
+            });
         };
-        core.DownloadStarting += (_, e) => OnDownloadStarting(tab, e);
-        core.PermissionRequested += async (_, e) => await OnPermissionRequestedAsync(tab, e);
+        core.DownloadStarting += (_, e) =>
+        {
+            if (IsCurrentTabWebView(tab, web)) ObserveUiCallback("Download starting", () => OnDownloadStartingAsync(tab, e));
+            else e.Cancel = true;
+        };
+        core.PermissionRequested += (_, e) =>
+        {
+            if (IsCurrentTabWebView(tab, web)) ObserveUiCallback("Permission request", () => OnPermissionRequestedAsync(tab, e));
+            else { e.Handled = true; e.State = CoreWebView2PermissionState.Deny; }
+        };
         core.ProcessFailed += (_, e) =>
         {
             // Closing an intentionally hibernated WebView can raise a process event.
             // It is not a crash and must not overwrite the sleeping placeholder.
-            if (_isWindowClosed || tab.IsHibernated) return;
+            if (!IsCurrentTabWebView(tab, web) || tab.IsHibernated) return;
             tab.Error = $"WebView process failure: {e.ProcessFailedKind}";
             tab.IsLoading = false;
             try { ShowErrorPage(web, tab.Error); } catch { }
@@ -412,14 +439,17 @@ public sealed partial class MainWindow
         };
         core.ContainsFullScreenElementChanged += (_, _) => DispatcherQueue.TryEnqueue(() =>
         {
-            if (_isWindowClosed) return;
+            if (!IsCurrentTabWebView(tab, web)) return;
             AppWindow.SetPresenter(core.ContainsFullScreenElement ? AppWindowPresenterKind.FullScreen : AppWindowPresenterKind.Default);
         });
-        core.FaviconChanged += async (_, _) => await UpdateFaviconAsync(tab, core);
+        core.FaviconChanged += (_, _) =>
+        {
+            if (IsCurrentTabWebView(tab, web)) ObserveUiCallback("Favicon update", () => UpdateFaviconAsync(tab, core));
+        };
         web.GotFocus += (_, _) =>
         {
-            if (IsSplitViewActive && _splitTabIds.Contains(tab.Id) && _vm.SelectedTab?.Id != tab.Id)
-                DispatcherQueue.TryEnqueue(async () => { if (!_isWindowClosed) await ActivateSplitPaneAsync(tab); });
+            if (IsCurrentTabWebView(tab, web) && IsSplitViewActive && _splitTabIds.Contains(tab.Id) && _vm.SelectedTab?.Id != tab.Id)
+                DispatcherQueue.TryEnqueue(() => ObserveUiCallback("Split-pane activation", async () => { if (IsCurrentTabWebView(tab, web)) await ActivateSplitPaneAsync(tab); }));
         };
         web.PointerPressed += (_, e) =>
         {
@@ -437,6 +467,7 @@ public sealed partial class MainWindow
 
     private async Task OnNavigationStartingAsync(BrowserTab tab, CoreWebView2NavigationStartingEventArgs e)
     {
+        if (_isWindowClosed || !_vm.Tabs.Contains(tab)) return;
         _activeNavigationIds[tab.Id] = e.NavigationId;
         if (!Uri.TryCreate(e.Uri, UriKind.Absolute, out var uri)) { e.Cancel = true; return; }
 
@@ -471,6 +502,7 @@ public sealed partial class MainWindow
             catch (Exception ex) { Debug.WriteLine($"Redirect prompt failed: {ex.GetType().Name}"); return; }
             if (choice == ContentDialogResult.Primary &&
                 !_isWindowClosed &&
+                _vm.Tabs.Contains(tab) &&
                 _webViews.TryGetValue(tab.Id, out var web) &&
                 web.CoreWebView2 is not null)
             {
@@ -493,6 +525,7 @@ public sealed partial class MainWindow
             try { if (await dialog.ShowAsync() == ContentDialogResult.Primary) await Launcher.LaunchUriAsync(uri); }
             catch (Exception ex) { Debug.WriteLine($"External protocol prompt failed: {ex.GetType().Name}"); }
         }
+        if (_isWindowClosed || !_vm.Tabs.Contains(tab)) return;
         tab.IsLoading = true;
         tab.Error = null;
         if (ReferenceEquals(tab, _vm.SelectedTab))
@@ -506,6 +539,7 @@ public sealed partial class MainWindow
 
     private async Task OnNavigationCompletedAsync(BrowserTab tab, WebView2 web, CoreWebView2NavigationCompletedEventArgs e)
     {
+        if (!IsCurrentTabWebView(tab, web)) return;
         // A new navigation can supersede the initial about:blank load. Ignore the
         // older completion so it cannot hide progress or replace the current page.
         if (_activeNavigationIds.TryGetValue(tab.Id, out var activeNavigationId) && activeNavigationId != e.NavigationId)
@@ -573,13 +607,14 @@ public sealed partial class MainWindow
         try { await ApplyCosmeticFiltersAsync(tab, web); } catch (Exception ex) { Debug.WriteLine($"Cosmetic filters failed: {ex.GetType().Name}"); }
         // The window can close while those awaits are in flight; stop before any
         // further model mutation or UI refresh.
-        if (_isWindowClosed) return;
+        if (!IsCurrentTabWebView(tab, web)) return;
         try
         {
             if (!_isPrivate && _vm.Settings.HistoryEnabled && Uri.TryCreate(tab.Url, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https")
                 await _history.RecordVisitAsync(tab.Url, tab.Title, _pendingTypedQuery);
         }
         catch (Exception ex) { Debug.WriteLine($"History record failed: {ex.GetType().Name}"); }
+        if (!IsCurrentTabWebView(tab, web)) return;
         _pendingTypedQuery = null;
         RefreshTabLists();
         UpdateNavigationState(web, tab);
@@ -591,6 +626,7 @@ public sealed partial class MainWindow
         {
             var y = tab.ScrollPosition;
             tab.ScrollPosition = 0;
+            if (!IsCurrentTabWebView(tab, web)) return;
             try { await web.ExecuteScriptAsync($"window.scrollTo(0,{y.ToString(System.Globalization.CultureInfo.InvariantCulture)})"); }
             catch (Exception ex) { Debug.WriteLine($"Scroll restore failed: {ex.GetType().Name}"); }
         }
@@ -635,10 +671,11 @@ public sealed partial class MainWindow
         })();
         """;
 
-    private async void OnWebMessageReceived(BrowserTab tab, CoreWebView2WebMessageReceivedEventArgs e)
+    private async Task OnWebMessageReceivedAsync(BrowserTab tab, CoreWebView2WebMessageReceivedEventArgs e)
     {
         try
         {
+            if (_isWindowClosed || !_vm.Tabs.Contains(tab)) return;
             using var json = JsonDocument.Parse(e.WebMessageAsJson);
             if (!json.RootElement.TryGetProperty("kind", out var kind)) return;
             if (kind.GetString() == "dirty-form") { tab.MayHaveUnsavedFormInput = true; return; }
