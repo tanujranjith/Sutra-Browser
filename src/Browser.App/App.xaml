@@ -10,12 +10,16 @@
             <CornerRadius x:Key="SutraControlCornerRadius">8</CornerRadius>
             <Thickness x:Key="SutraPagePadding">24</Thickness>
             <x:Double x:Key="SutraToolbarHeight">52</x:Double>
-            <Color x:Key="SutraChromeColor">#0B0D0F</Color>
-            <Color x:Key="SutraToolbarColor">#101316</Color>
-            <Color x:Key="SutraSurfaceColor">#15191D</Color>
-            <Color x:Key="SutraTextColor">#F4F4F2</Color>
-            <Color x:Key="SutraTextSecondaryColor">#A7ADB2</Color>
-            <Color x:Key="SutraAccentColor">#F47A22</Color>
+            <Color x:Key="SutraChromeColor">#081322</Color>
+            <Color x:Key="SutraToolbarColor">#0C192C</Color>
+            <Color x:Key="SutraSurfaceColor">#0D1B2E</Color>
+            <Color x:Key="SutraTextColor">#F4F6FF</Color>
+            <Color x:Key="SutraTextSecondaryColor">#AABBDC</Color>
+            <Color x:Key="SutraAccentColor">#6252F5</Color>
+            <Color x:Key="SystemAccentColor">#6252F5</Color>
+            <Color x:Key="SystemAccentColorLight1">#8E81FF</Color>
+            <Color x:Key="SystemAccentColorLight2">#B7AEFF</Color>
+            <Color x:Key="SystemAccentColorDark1">#4D3ED2</Color>
             <Color x:Key="SutraBorderColor">#1CFFFFFF</Color>
             <SolidColorBrush x:Key="SutraChromeBrush" Color="{StaticResource SutraChromeColor}" />
             <SolidColorBrush x:Key="SutraToolbarBrush" Color="{StaticResource SutraToolbarColor}" />

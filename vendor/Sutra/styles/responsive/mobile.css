@@ -1,0 +1,2571 @@
+/* =========================================================================
+   NoteFlow Atelier — Mobile Optimization Layer
+   Loaded after styles.css, macos26-redesign.css, microinteractions.css.
+   Goal: a coherent, touch-friendly mobile experience on phones (<=640px),
+   small tablets (<=768px), and large tablets (<=1024px).
+   ========================================================================= */
+
+/* -------------------------------------------------------------------------
+   1. Safe-area insets for notched / home-indicator devices
+   ------------------------------------------------------------------------- */
+@supports (padding: max(0px)) {
+    body {
+        padding-left: env(safe-area-inset-left, 0);
+        padding-right: env(safe-area-inset-right, 0);
+    }
+}
+
+/* -------------------------------------------------------------------------
+   2. Touch-device hover suppression
+   On touch devices :hover styles "stick" after a tap. Disable transform/
+   shadow hover changes and keep only color/background changes minimal.
+   ------------------------------------------------------------------------- */
+@media (hover: none) and (pointer: coarse) {
+    button,
+    [role="button"],
+    a,
+    input,
+    select,
+    textarea {
+        touch-action: manipulation;
+    }
+
+    .neumo-btn:hover,
+    .neumo-card:hover,
+    .glass-card:hover,
+    .icon-btn:hover,
+    .quick-app-btn:hover,
+    .view-tab:hover,
+    .view-more-toggle:hover,
+    .view-tab-theme:hover,
+    .toolbar-btn:hover,
+    .sidebar-shortcut:hover,
+    .page-item:hover,
+    .preset-btn:hover,
+    .today-hero-menu-item:hover {
+        transform: none !important;
+        box-shadow: none !important;
+    }
+    /* Active feedback for taps — short-lived */
+    .neumo-btn:active,
+    .icon-btn:active,
+    .toolbar-btn:active,
+    .quick-app-btn:active,
+    .view-tab:active,
+    .preset-btn:active {
+        transform: scale(0.97) !important;
+        transition: transform 0.08s ease !important;
+    }
+}
+
+/* -------------------------------------------------------------------------
+   3. Form/input zoom prevention on iOS
+   iOS Safari zooms in when an input has a font-size below 16px. Bump
+   text-typed inputs/textareas/selects to >=16px on small viewports.
+   ------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+    input[type="text"],
+    input[type="search"],
+    input[type="email"],
+    input[type="number"],
+    input[type="tel"],
+    input[type="url"],
+    input[type="password"],
+    input[type="date"],
+    input[type="time"],
+    input[type="datetime-local"],
+    textarea,
+    select,
+    .modal-input,
+    .neumo-input,
+    .search-input {
+        font-size: 16px !important;
+    }
+}
+
+/* -------------------------------------------------------------------------
+   4. Tablet layout (<=1024px) — compact desktop refinements
+   ------------------------------------------------------------------------- */
+@media (max-width: 1024px) {
+    :root {
+        --top-nav-height: 76px;
+    }
+
+    /* Ensure floating toolbar uses full width when sidebar drawer is closed */
+    body:not(.sidebar-open) .toolbar-wrapper {
+        left: 16px !important;
+        max-width: calc(100% - 32px) !important;
+    }
+
+    /* Window chrome dots are decorative and waste space on small screens */
+    .top-nav .window-chrome {
+        display: none !important;
+    }
+}
+
+/* -------------------------------------------------------------------------
+   5. Phone & small-tablet layout (<=768px)
+   ------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+    :root {
+        --top-nav-height: 64px;
+        --sidebar-width: min(86vw, 320px);
+    }
+
+    html, body {
+        overflow-x: hidden;
+        -webkit-text-size-adjust: 100%;
+    }
+
+    body.sidebar-open,
+    body.mobile-more-open {
+        overflow: hidden !important;
+        overscroll-behavior: none;
+    }
+
+    /* ---- Sidebar drawer ---- */
+    /* Sidebar must sit ABOVE the overlay so it remains interactive.
+       styles.css forces overlay z-index: 4800 !important, so we go higher. */
+    .sidebar {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        bottom: 0 !important;
+        height: 100dvh !important;
+        width: var(--sidebar-width) !important;
+        min-width: var(--sidebar-width) !important;
+        max-width: 86vw !important;
+        z-index: 4900 !important;
+        transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+        box-shadow: 8px 0 28px rgba(0, 0, 0, 0.35);
+        padding-top: calc(env(safe-area-inset-top, 0px) + 12px) !important;
+        padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 12px) !important;
+        overflow-y: auto !important;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .sidebar-resize-handle {
+        display: none !important;
+    }
+
+    /* Sidebar overlay scrim — keep below the sidebar but above page chrome.
+       Do not blur the backdrop here: iOS Safari can composite a fixed
+       backdrop-filter across the sidebar layer too, making the entire open
+       drawer look blurred. The translucent scrim still separates the drawer
+       from the page without obscuring the drawer's contents. */
+    .sidebar-overlay {
+        background: rgba(0, 0, 0, 0.5) !important;
+        -webkit-backdrop-filter: none !important;
+        backdrop-filter: none !important;
+    }
+
+    /* Toggle button — make it a clear FAB-style anchor on the left.
+       z-index must clear the sidebar (4900) so the close affordance stays tappable. */
+    .sidebar-toggle-btn {
+        position: fixed !important;
+        top: calc(env(safe-area-inset-top, 0px) + 12px) !important;
+        left: calc(env(safe-area-inset-left, 0px) + 12px) !important;
+        width: 44px !important;
+        height: 44px !important;
+        border-radius: 22px !important;
+        z-index: 5200 !important;
+        font-size: 16px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    /* When the sidebar is open the toggle still pins to the left edge of viewport */
+    body.sidebar-open .sidebar-toggle-btn {
+        left: calc(var(--sidebar-width) + 8px) !important;
+        max-width: calc(100vw - 80px) !important;
+    }
+
+    /* ---- Main content fills viewport when sidebar is a drawer ---- */
+    .main-content {
+        margin-left: 0 !important;
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    /* ---- Top nav ---- */
+    .top-nav {
+        margin: 8px 8px 6px !important;
+        /* Symmetric horizontal padding (60px both sides) so the brand label
+           with margin:auto centers visually in the viewport rather than in an
+           offset area. The 60px on the left clears the sidebar toggle FAB. */
+        padding: 8px 60px !important;
+        gap: 8px !important;
+        flex-wrap: wrap !important;
+        position: sticky;
+        top: env(safe-area-inset-top, 0px);
+        z-index: 1180;
+    }
+
+    .top-nav .app-brand {
+        gap: 8px;
+        /* Center the brand horizontally in the viewport. .nav-left is a CSS
+           grid on mobile, so we use justify-self (the grid horizontal axis).
+           The top-nav has symmetric horizontal padding so the brand lands
+           visually at the center of the viewport. */
+        justify-self: center !important;
+        align-self: center !important;
+        /* The base CSS reserves ~52px of left padding for the .app-brand-ring
+           icon. Since the ring is hidden on mobile, that padding pushes the
+           label off-center. Zero it. */
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+    .top-nav .app-brand-copy {
+        text-align: center;
+    }
+    .top-nav .app-brand-copy .brand-sub {
+        display: none; /* the subtitle wastes space on phones */
+    }
+    .top-nav .brand-label {
+        font-size: 14px;
+    }
+    /* Hide the decorative ring icon on the left of the brand on mobile so the
+       label can sit truly centered without an asymmetric pre-icon. */
+    .top-nav .app-brand-ring {
+        display: none !important;
+    }
+    .nav-divider {
+        display: none !important;
+    }
+
+    /* Tabs row scrolls horizontally; hide the native scrollbar.
+       styles.css forces `overflow: visible !important` on .view-tabs at desktop scope
+       (so popover menus can escape) — we must reassert horizontal scroll on mobile. */
+    .tabs-shell {
+        width: 100%;
+        overflow: visible !important;
+    }
+    .view-tabs {
+        width: 100% !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        flex-wrap: nowrap !important;
+        -webkit-overflow-scrolling: touch;
+        padding: 4px 4px 6px 4px;
+        scroll-snap-type: x proximity;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    .view-tabs::-webkit-scrollbar { display: none; height: 0; }
+
+    .view-tab {
+        flex: 0 0 auto;
+        padding: 10px 14px !important;
+        min-height: 44px !important;
+        height: auto !important;
+        font-size: 12px !important;
+        white-space: nowrap;
+        scroll-snap-align: center;
+    }
+
+    /* Hide the embedded clock + integrations dock on small phones to free room */
+    .tabs-shell .tab-clock-embed,
+    .integrations-dock,
+    .view-tab-theme {
+        display: none !important;
+    }
+
+    /* The mobile current-tab toggle is provided in styles.css; keep it visible */
+    .view-tabs-toggle {
+        min-height: 44px !important;
+    }
+
+    #notifBellBtn,
+    .notif-bell-btn {
+        min-width: 44px !important;
+        min-height: 44px !important;
+    }
+
+    /* ---- Floating editing toolbar ---- */
+    .toolbar-wrapper {
+        left: 8px !important;
+        right: 8px !important;
+        max-width: calc(100% - 16px) !important;
+        top: calc(var(--top-nav-height-mobile, 64px) + env(safe-area-inset-top, 0px) + 8px) !important;
+        height: 52px !important;
+        border-radius: 14px !important;
+        padding: 4px 8px !important;
+    }
+    .toolbar {
+        gap: 4px !important;
+        padding: 0 4px !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        scrollbar-width: none;
+    }
+    .toolbar::-webkit-scrollbar { display: none; }
+    .toolbar-btn {
+        min-width: 40px !important;
+        min-height: 40px !important;
+        padding: 8px 10px !important;
+        flex: 0 0 auto;
+    }
+    .toolbar-scroll-btn { display: none !important; }
+    .toolbar-separator {
+        height: 24px !important;
+        margin: 0 2px !important;
+    }
+
+    /* Editor surface — give it room beneath the floating toolbar */
+    .editor-container {
+        padding: calc(var(--top-nav-height-mobile, 64px) + 76px + env(safe-area-inset-top, 0px)) 12px calc(env(safe-area-inset-bottom, 0px) + 24px) 12px !important;
+        max-width: 100% !important;
+    }
+    .page-title-input {
+        font-size: 26px !important;
+        margin-top: 8px !important;
+    }
+    .editor {
+        font-size: 16px;
+        line-height: 1.6;
+    }
+
+    /* ---- Today / dashboard ---- */
+    .today-hero-header,
+    .view-header {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+    }
+    .today-hero-date h2,
+    #todayLabel {
+        font-size: 22px !important;
+        line-height: 1.2 !important;
+    }
+    .today-header-actions {
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+        justify-content: flex-start !important;
+    }
+    .today-header-actions .neumo-btn {
+        min-height: 40px;
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+
+    .today-dashboard-surface,
+    .today-grid,
+    .summary-grid,
+    .student-hub-metrics,
+    .college-hub-grid,
+    .business-grid,
+    .life-grid {
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+    }
+
+    /* ---- Modals — bottom-sheet style on phones ---- */
+    .modal {
+        align-items: flex-end !important;
+        padding: 0 !important;
+    }
+    .modal.active {
+        display: flex !important;
+    }
+    .modal-content {
+        width: 100% !important;
+        max-width: 100% !important;
+        max-height: 92dvh !important;
+        margin: 0 !important;
+        border-radius: 18px 18px 0 0 !important;
+        padding: 18px 16px calc(env(safe-area-inset-bottom, 0px) + 16px) 16px !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+    .modal-content::before {
+        /* drag-handle affordance */
+        content: "";
+        display: block;
+        width: 40px;
+        height: 4px;
+        margin: 0 auto 10px;
+        border-radius: 99px;
+        background: var(--surface-border);
+    }
+    .modal-title { font-size: 18px !important; }
+
+    /* New Page selector — full-screen sheet on mobile for better hierarchy */
+    #newPageModal {
+        align-items: stretch !important;
+    }
+    #newPageModal .new-page-modal-content {
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+    }
+    #newPageModal .new-page-modal-content::before {
+        display: none !important;
+    }
+    #newPageModal .new-page-modal-header {
+        padding-top: calc(env(safe-area-inset-top, 0px) + 12px) !important;
+    }
+    #newPageModal .new-page-modal-footer {
+        padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 12px) !important;
+    }
+
+    /* Academic deadline modal — same bottom-sheet treatment */
+    .acad-modal-overlay {
+        align-items: flex-end !important;
+        padding: 0 !important;
+    }
+    .acad-modal-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        max-height: 92dvh !important;
+        margin: 0 !important;
+        border-radius: 18px 18px 0 0 !important;
+        padding: 16px 14px calc(env(safe-area-inset-bottom, 0px) + 16px) !important;
+        overflow-y: auto !important;
+    }
+    .acad-modal-body {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+    }
+    .acad-modal-footer {
+        flex-direction: column-reverse;
+        gap: 8px;
+    }
+    .acad-modal-footer .neumo-btn {
+        width: 100%;
+        min-height: 44px;
+    }
+
+    /* Generic dialog/popover overflow handling */
+    .theme-panel,
+    .todo-panel,
+    .nf-select-menu,
+    .today-hero-menu {
+        max-width: calc(100vw - 16px) !important;
+    }
+
+    /* ---- "More tabs" overflow popover ----
+       Important: the parent `.view-tabs` uses `overflow-x: auto` for horizontal
+       tab scrolling, which forces `overflow-y` to clip too — so an absolutely
+       positioned menu gets cut at the row's bottom edge. Use `position: fixed`
+       to escape all ancestor overflow contexts. The exact x/y is computed and
+       applied inline by the JS shim in Sutra.html (see
+       bindMoreViewsTouchFallback). */
+    .view-more {
+        position: relative !important;
+    }
+    .view-more-menu {
+        position: fixed !important;
+        min-width: 200px !important;
+        max-width: calc(100vw - 24px) !important;
+        max-height: 60vh !important;
+        overflow-y: auto !important;
+        padding: 6px !important;
+        border-radius: 14px !important;
+        background: var(--bg-elevated, var(--glass-01)) !important;
+        border: 1px solid var(--surface-border) !important;
+        box-shadow: 0 14px 32px rgba(0, 0, 0, 0.45) !important;
+        z-index: 9000 !important;
+    }
+    .view-more-menu .view-tab {
+        width: 100% !important;
+        min-height: 44px !important;
+        text-align: left !important;
+        justify-content: flex-start !important;
+        padding: 10px 12px !important;
+        font-size: 13px !important;
+    }
+}
+
+/* Portaled "More tabs" menu — applies regardless of viewport size since the
+   JS portals the menu to <body> on init. The styles.css base rule says
+   `.view-more-menu { display: none }`, and `.view-more.open .view-more-menu`
+   no longer matches once the menu is moved out of the wrapper, so we
+   gate visibility on a `.open` class set on the menu itself. */
+.view-more-menu.view-more-menu--portal {
+    display: none !important;
+}
+.view-more-menu.view-more-menu--portal.open {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+}
+
+@media (max-width: 768px) {
+    /* Just keep this empty block placeholder — real rules live above. */
+
+    /* ---- Hide the focus-mode (fullscreen) FAB on mobile ----
+       On phones the app already occupies the full viewport, so the
+       fullscreen toggle is redundant and just clutters the right edge. */
+    #focusModeQuickToggle,
+    .focus-mode-quick-toggle,
+    .focus-mode-fab {
+        display: none !important;
+    }
+
+    /* ---- Flow chat assistant button ----
+       The bottom-right of the screen on mobile is shared with the storage bar
+       (z-index 3200) and the all-tasks drawer (z-index 2600). Bring the chatbot
+       above both, give it a guaranteed visible spot above the save bar, and grow
+       the touch target for finger taps. */
+    .chatbot-btn {
+        z-index: 3300 !important;
+        width: 52px !important;
+        height: 52px !important;
+        right: calc(env(safe-area-inset-right, 0px) + 12px) !important;
+        left: auto !important;
+        /* sit above the ~106px storage bar with a comfortable gap */
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 124px) !important;
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28) !important;
+    }
+    .chatbot-btn img {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+    }
+    /* When the chat panel is open, anchor it from the top under the nav */
+    .chatbot-panel {
+        z-index: 3400 !important;
+    }
+
+    /* ---- Tables (College tracker etc.) — horizontal scroll with hint shadow ---- */
+    .college-section table,
+    .college-tracker table,
+    .college-app table,
+    .acad-table,
+    table.data-table,
+    .business-table,
+    .life-table {
+        display: block !important;
+        max-width: 100%;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        font-size: 13px;
+    }
+    .college-section table th,
+    .college-section table td,
+    .college-tracker table th,
+    .college-tracker table td,
+    table.data-table th,
+    table.data-table td {
+        padding: 8px 10px !important;
+        white-space: nowrap;
+    }
+
+    /* ---- Forms & inline rows ---- */
+    .hw-inline-add,
+    .form-grid,
+    .acad-form-row,
+    .row-grid {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+    }
+    .modal-input,
+    .neumo-input,
+    select,
+    textarea {
+        min-height: 44px;
+    }
+
+    /* ---- Sidebar shortcuts & focus timer trim ---- */
+    .focus-timer .timer-display {
+        font-size: 26px;
+    }
+    .focus-timer .timer-controls .icon-btn {
+        width: 36px;
+        height: 36px;
+    }
+    .timer-presets .preset-btn {
+        min-height: 36px;
+        padding: 6px 10px;
+    }
+    .timer-custom-input {
+        flex-wrap: wrap;
+    }
+
+    /* ---- Touch targets — minimum 40-44px for interactive icons ---- */
+    .icon-btn,
+    .quick-app-btn,
+    .view-tab,
+    .neumo-btn,
+    .preset-btn,
+    .new-page-btn,
+    .page-item-actions-toggle,
+    .sidebar-shortcut-add,
+    button[aria-label] {
+        min-height: 40px;
+    }
+
+    /* Float-positioned floating buttons get safe-area padding */
+    .chatbot-btn,
+    .scroll-to-top,
+    .fab,
+    .save-btn-floating {
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 18px) !important;
+    }
+}
+
+/* -------------------------------------------------------------------------
+   6. Small phone (<=480px) — tighten further
+   ------------------------------------------------------------------------- */
+@media (max-width: 480px) {
+    :root {
+        --top-nav-height: 60px;
+        --sidebar-width: min(88vw, 300px);
+    }
+
+    .top-nav {
+        margin: 6px 6px 4px !important;
+        /* Symmetric padding so margin:auto centers the brand in the viewport. */
+        padding: 6px 56px !important;
+        border-radius: 14px !important;
+    }
+    .top-nav .app-brand {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+    .top-nav .brand-label {
+        font-size: 13px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .view-tab {
+        padding: 8px 12px !important;
+        font-size: 11px !important;
+    }
+
+    /* Hero / today header simplifications */
+    .today-hero-date h2,
+    #todayLabel {
+        font-size: 20px !important;
+    }
+    .today-hero-date .eyebrow {
+        font-size: 10px;
+    }
+    .today-header-actions {
+        gap: 6px !important;
+    }
+    .today-header-actions .neumo-btn {
+        font-size: 12px;
+        padding: 8px 10px;
+    }
+    .today-header-actions .neumo-btn .fas { margin-right: 4px; }
+
+    /* Collapse the Quick Capture button to its icon on phones (header space) */
+    .today-header-actions #todayQuickCaptureBtn {
+        font-size: 0;
+        width: 40px;
+        padding: 0;
+        justify-content: center;
+    }
+    .today-header-actions #todayQuickCaptureBtn .fas {
+        font-size: 14px;
+        margin: 0;
+    }
+
+    /* Toolbar: keep it as a horizontal scroller with chunkier targets */
+    .toolbar-wrapper {
+        height: 50px !important;
+        border-radius: 12px !important;
+    }
+    .toolbar-btn {
+        min-width: 38px !important;
+        min-height: 38px !important;
+        padding: 6px 8px !important;
+    }
+    .toolbar-btn .fas { font-size: 13px; }
+
+    .editor-container {
+        padding-top: calc(var(--top-nav-height-mobile, 60px) + 70px + env(safe-area-inset-top, 0px)) !important;
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+    }
+    .page-title-input {
+        font-size: 22px !important;
+    }
+    .editor {
+        font-size: 15px;
+    }
+
+    /* Hide labels on quick-launch buttons in tab bar (already hidden via integrations-dock display:none) */
+
+    /* Cards & glass surfaces — tighter padding */
+    .glass-card,
+    .neumo-card {
+        padding: 14px !important;
+        border-radius: 14px !important;
+    }
+
+    /* Today daily-brief: stack inner items */
+    .today-daily-brief {
+        padding: 14px !important;
+    }
+
+    /* Homework lanes — single column */
+    .hw-lanes,
+    .hw-dashboard-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Timer compact */
+    .focus-timer {
+        padding: 12px !important;
+    }
+    .focus-timer .timer-display {
+        font-size: 24px;
+    }
+}
+
+/* -------------------------------------------------------------------------
+   7. Tiny phones (<=360px) — last-line refinements
+   ------------------------------------------------------------------------- */
+@media (max-width: 360px) {
+    :root {
+        --sidebar-width: 90vw;
+    }
+    .top-nav .brand-label {
+        font-size: 12px;
+    }
+    .view-tab {
+        padding: 8px 10px !important;
+    }
+    .today-hero-date h2,
+    #todayLabel {
+        font-size: 18px !important;
+    }
+    .today-header-actions .neumo-btn {
+        font-size: 11px;
+    }
+    .neumo-btn,
+    .icon-btn {
+        font-size: 12px;
+    }
+}
+
+/* -------------------------------------------------------------------------
+   8. Landscape phones — short viewports
+   ------------------------------------------------------------------------- */
+@media (max-width: 900px) and (max-height: 480px) and (orientation: landscape) {
+    .editor-container {
+        padding-top: calc(var(--top-nav-height-mobile, 60px) + 64px) !important;
+    }
+    .modal-content,
+    .acad-modal-card {
+        max-height: 96dvh !important;
+    }
+    .focus-timer {
+        padding: 10px !important;
+    }
+}
+
+/* -------------------------------------------------------------------------
+   9. Reduced-motion users — kill drawer/animation on top of native rules
+   ------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+    .sidebar,
+    .sidebar-overlay,
+    .modal-content,
+    .toolbar-wrapper,
+    .view-tab {
+        transition: none !important;
+        animation: none !important;
+    }
+}
+
+/* -------------------------------------------------------------------------
+   10. Print / accessibility — ensure mobile classes don't break print
+   ------------------------------------------------------------------------- */
+@media print {
+    .sidebar-toggle-btn,
+    .sidebar-overlay,
+    .toolbar-wrapper,
+    .chatbot-btn,
+    .top-nav { display: none !important; }
+    .main-content { margin: 0 !important; }
+}
+
+/* =========================================================================
+   11. Testing Hub mobile — section nav, exam tabs, SAT/ACT dashboards
+   ========================================================================= */
+@media (max-width: 768px) {
+    .testing-hub-shell {
+        padding: 12px !important;
+        max-width: 100% !important;
+    }
+    .testing-hub-header h2 {
+        font-size: 22px !important;
+    }
+    .testing-hub-subtitle {
+        font-size: 13px !important;
+        max-width: 100% !important;
+    }
+
+    /* Internal section nav — horizontal scroll without scrollbar */
+    .testing-hub-section-nav {
+        padding: 3px !important;
+        border-radius: 10px !important;
+        margin-bottom: 14px !important;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    .testing-hub-section-nav::-webkit-scrollbar { display: none; }
+    .testing-hub-section-tab {
+        padding: 8px 11px !important;
+        font-size: 12px !important;
+        min-height: 38px;
+    }
+    .testing-hub-section-tab .fas,
+    .testing-hub-section-tab i { font-size: 12px; }
+
+    /* Exam tabs row */
+    .testing-hub-exam-tabs {
+        padding: 4px 2px 10px !important;
+        margin-bottom: 14px !important;
+    }
+    .testing-hub-exam-tab {
+        padding: 7px 11px !important;
+        font-size: 12px !important;
+        min-height: 36px;
+    }
+
+    /* Exam dashboard cards — tighter padding */
+    .exam-dashboard {
+        padding: 16px !important;
+        border-radius: 12px !important;
+        margin-bottom: 14px !important;
+    }
+    .exam-dashboard-title { font-size: 18px !important; }
+    .exam-dashboard-desc { font-size: 12px !important; }
+
+    .exam-stats-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+    }
+    .exam-stat {
+        padding: 10px !important;
+        border-radius: 10px !important;
+    }
+    .exam-stat-label { font-size: 10px !important; }
+    .exam-stat-value { font-size: 18px !important; }
+
+    .exam-section { margin-top: 16px !important; }
+    .exam-section-title {
+        font-size: 13px !important;
+        flex-wrap: wrap;
+        gap: 6px !important;
+    }
+    .exam-form-grid {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+    }
+    .exam-add-btn {
+        min-height: 38px;
+        padding: 8px 12px !important;
+    }
+    .exam-empty {
+        font-size: 12px !important;
+        padding: 14px !important;
+    }
+    .exam-item-actions {
+        flex-wrap: wrap;
+        gap: 6px !important;
+    }
+    .exam-item-action { min-height: 36px; padding: 6px 10px !important; }
+
+    /* Practice test items / mistake items / task items — stack actions */
+    .practice-test-item,
+    .mistake-item,
+    .task-item-exam {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+    }
+    .practice-test-header,
+    .mistake-header {
+        flex-wrap: wrap;
+        gap: 6px !important;
+    }
+
+    /* SAT/ACT specialized dashboard */
+    .exam-callout-card {
+        padding: 12px !important;
+        border-radius: 10px !important;
+    }
+    .exam-callout-body { font-size: 12px !important; }
+    .exam-mastery-grid {
+        grid-template-columns: 1fr !important;
+        gap: 6px !important;
+    }
+    .exam-mastery-chip {
+        padding: 9px 11px !important;
+        min-height: 44px;
+    }
+    .exam-official-tests {
+        grid-template-columns: 1fr !important;
+    }
+    .exam-official-test {
+        min-height: 44px;
+        padding: 10px 12px !important;
+    }
+
+    /* Testing Hub summary panels (Practice / Mistakes / Resources) */
+    .testing-hub-summary-card {
+        padding: 16px !important;
+        border-radius: 12px !important;
+    }
+    .testing-hub-summary-stats {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+    }
+    .testing-hub-summary-stat {
+        padding: 10px !important;
+    }
+    .testing-hub-summary-exams {
+        grid-template-columns: 1fr !important;
+    }
+    .testing-hub-summary-exam-link {
+        min-height: 44px;
+    }
+
+    /* Testing Hub v2 (redesign) — mobile tightening */
+    .testing-hub-shell.th2 .th2-hero { gap: 12px !important; }
+    .th2-hero-actions { width: 100%; }
+    .th2-hero-actions .th2-btn-primary,
+    .th2-hero-actions .th2-btn-ghost { flex: 1 1 0; justify-content: center; min-height: 44px; }
+    .th2-dashboard-hero { padding: 16px !important; border-radius: 12px !important; }
+    .th2-dashboard-hero h3 { font-size: 18px !important; }
+    .th2-dashboard-hero-action .th2-btn-primary { min-height: 44px; }
+    .th2-kpi { padding: 12px 14px !important; min-height: 80px; }
+    .th2-kpi-value { font-size: 22px !important; }
+    .th2-exam-card { padding: 14px !important; }
+    .th2-exam-card-head { gap: 10px !important; }
+    .th2-exam-card-title h3 { font-size: 15px !important; }
+    .th2-exam-card-meta { grid-template-columns: repeat(2, 1fr) !important; gap: 6px !important; }
+    .th2-exam-card-actions .th2-card-action { min-height: 36px; padding: 8px 10px !important; }
+    .th2-detail-toolbar { padding: 8px 10px !important; }
+    .th2-detail-title { font-size: 13px !important; flex-basis: 100%; }
+    .exam-collapse-summary { padding: 12px 14px !important; font-size: 13px !important; }
+    .exam-collapse-body { padding: 12px 14px !important; }
+    .th2-summary-panel { padding: 14px !important; }
+    .th2-summary-panel-actions { width: 100%; }
+    .th2-filter-select { min-height: 38px; flex: 1 1 140px; }
+    .th2-practice-row,
+    .th2-mistake-row { padding: 10px 12px !important; }
+    .th2-practice-row-actions .th2-row-btn { min-height: 36px; padding: 7px 10px !important; }
+    .th2-subview-summary,
+    .th2-summary-header { padding: 14px 16px !important; }
+    .th2-modal { max-height: 92vh !important; }
+    .th2-modal-body { padding: 14px 16px !important; }
+    .th2-picker-grid { grid-template-columns: 1fr !important; }
+    .th2-modal-foot { padding: 12px 14px !important; flex-wrap: wrap; }
+    .th2-modal-foot .th2-btn-primary,
+    .th2-modal-foot .th2-btn-ghost { flex: 1 1 0; justify-content: center; min-height: 44px; }
+}
+
+/* =========================================================================
+   12. Cram Hub mobile — full-width form, single-column fields
+   ========================================================================= */
+@media (max-width: 768px) {
+    .cramhub-container {
+        padding: 0 !important;
+    }
+    .cramhub-header h2 {
+        font-size: 20px !important;
+    }
+    .cramhub-subtitle {
+        font-size: 12px !important;
+    }
+    .cramhub-create-card {
+        padding: 16px !important;
+        border-radius: 12px !important;
+        margin-bottom: 14px !important;
+    }
+    .cramhub-create-card h3 {
+        font-size: 15px !important;
+        margin-bottom: 6px !important;
+    }
+    .cramhub-section-help { font-size: 12px !important; }
+    .cramhub-form {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+    }
+    .cramhub-field {
+        grid-column: 1 / -1 !important;
+    }
+    .cramhub-field label {
+        font-size: 12px !important;
+    }
+    .cramhub-field input,
+    .cramhub-field select {
+        min-height: 44px;
+    }
+    .cramhub-range { min-height: 32px; }
+    .cramhub-btn-primary {
+        width: 100%;
+        min-height: 48px;
+        font-size: 14px !important;
+    }
+    .cramhub-section-head {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 4px;
+    }
+    .cramhub-sessions-list {
+        gap: 10px !important;
+    }
+    .cram-session-card {
+        padding: 14px !important;
+        border-radius: 12px !important;
+    }
+    .cram-session-card-title {
+        font-size: 15px !important;
+    }
+    .cram-session-detail {
+        padding: 14px !important;
+    }
+    .cram-block {
+        padding: 12px !important;
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 8px;
+    }
+    .cram-block-actions {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    .cram-block-actions button {
+        min-height: 38px;
+        padding: 8px 12px !important;
+    }
+    .cram-emergency-block {
+        padding: 14px !important;
+    }
+    .cram-emergency-block textarea {
+        min-height: 80px;
+    }
+    .cram-timer-modal {
+        width: calc(100vw - 24px) !important;
+        max-width: 360px !important;
+        padding: 18px !important;
+    }
+}
+
+/* =========================================================================
+   13. Settings mobile — single column, larger touch targets
+   ========================================================================= */
+@media (max-width: 768px) {
+    .cc-group,
+    .cc-group-stacked,
+    .settings-section,
+    .cc-section {
+        padding: 14px !important;
+    }
+    .cc-feature-toggle,
+    .feature-toggle-item {
+        min-height: 44px;
+        padding: 10px 12px !important;
+    }
+    .cc-grid,
+    .cc-group-grid,
+    .settings-grid {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+    }
+    .cc-btn,
+    .cc-btn-ghost,
+    .cc-btn-primary {
+        min-height: 44px;
+        padding: 10px 14px !important;
+        font-size: 13px !important;
+    }
+    /* Stacked storage/cloud actions */
+    .cc-stacked-actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+    .cc-stacked-actions .cc-btn {
+        width: 100%;
+    }
+}
+
+/* =========================================================================
+   14. Spaces switcher dropdown mobile
+   ========================================================================= */
+@media (max-width: 768px) {
+    .spaces-dropdown {
+        max-height: 60vh !important;
+    }
+    .spaces-dropdown-item,
+    .spaces-dropdown-action {
+        min-height: 44px;
+        padding: 10px 12px !important;
+        font-size: 14px !important;
+    }
+    .spaces-current {
+        min-height: 44px;
+        padding: 10px 12px !important;
+    }
+    .spaces-current-name {
+        font-size: 14px;
+    }
+}
+
+/* =========================================================================
+   15. Review workspace mobile — deck cards, study session UI
+   ========================================================================= */
+@media (max-width: 768px) {
+    .review-mount {
+        padding: 0 !important;
+    }
+    .review-dashboard,
+    .review-header {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+    }
+    .review-stat,
+    .review-stat-card {
+        padding: 12px !important;
+    }
+    .review-deck-list,
+    .review-deck-grid {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+    }
+    .review-deck-card {
+        padding: 14px !important;
+    }
+    .review-card-face,
+    .review-study-card {
+        padding: 18px !important;
+        min-height: 200px !important;
+        font-size: 16px;
+    }
+    .review-grade-buttons,
+    .review-actions {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    .review-grade-buttons button,
+    .review-actions button {
+        flex: 1 1 calc(50% - 6px);
+        min-height: 48px;
+        font-size: 13px;
+    }
+}
+
+/* =========================================================================
+   16. Locked-pages overlay mobile
+   ========================================================================= */
+@media (max-width: 768px) {
+    .lp-overlay,
+    .locked-page-screen {
+        padding: 16px !important;
+    }
+    .lp-card,
+    .locked-page-card {
+        max-width: 100% !important;
+        padding: 20px 16px !important;
+        border-radius: 14px !important;
+    }
+    .lp-pin-input,
+    .locked-page-pin {
+        font-size: 24px !important;
+        min-height: 56px !important;
+    }
+    .lp-actions button,
+    .locked-page-card button {
+        width: 100%;
+        min-height: 44px;
+    }
+}
+
+/* =========================================================================
+   17. Tutorial overlay mobile — full-screen step card on phones
+   ========================================================================= */
+@media (max-width: 768px) {
+    .tutorial-card,
+    .ts-card,
+    .tutorial-step-card {
+        max-width: calc(100vw - 24px) !important;
+        margin: 12px !important;
+        padding: 16px !important;
+        border-radius: 14px !important;
+        font-size: 13px !important;
+    }
+    .tutorial-card .ts-title,
+    .tutorial-step-title {
+        font-size: 15px !important;
+    }
+    .tutorial-card button,
+    .tutorial-step-card button {
+        min-height: 44px;
+        padding: 10px 14px !important;
+    }
+}
+
+/* =========================================================================
+   18. Page list / breadcrumbs / sidebar shortcuts on mobile
+   ========================================================================= */
+@media (max-width: 768px) {
+    .page-item {
+        min-height: 40px;
+        padding-top: 8px !important;
+        padding-bottom: 8px !important;
+        font-size: 14px !important;
+    }
+    .page-item-actions-toggle {
+        min-width: 32px;
+        min-height: 32px;
+    }
+    /* Breadcrumbs — wrap, smaller fonts */
+    .breadcrumbs {
+        font-size: 11px !important;
+        flex-wrap: wrap;
+        gap: 4px !important;
+        padding: 6px 12px !important;
+    }
+    .breadcrumb-link {
+        max-width: 120px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    /* Sidebar shortcuts — wider tap targets */
+    .sidebar-shortcut,
+    .sidebar-shortcut-btn {
+        min-height: 40px;
+        padding: 8px 10px !important;
+    }
+}
+
+/* =========================================================================
+   19. Editor enhancements for mobile — comfortable reading + writing
+   ========================================================================= */
+@media (max-width: 768px) {
+    /* Inline tag and metadata chips wrap rather than overflow */
+    .tags-container,
+    .page-tags-container,
+    .page-temporary-meta {
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+        padding: 8px 12px !important;
+    }
+    .tag-chip,
+    .nf-chip {
+        font-size: 12px !important;
+        padding: 4px 8px !important;
+    }
+    /* Comments panel becomes a bottom drawer on phones */
+    .comments-panel {
+        position: fixed !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        top: auto !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 65dvh !important;
+        max-height: 65dvh !important;
+        border-radius: 18px 18px 0 0 !important;
+        z-index: 4000 !important;
+    }
+    /* Document outline drawer treatment */
+    .doc-outline-panel {
+        position: fixed !important;
+        left: 0 !important;
+        right: 0 !important;
+        top: auto !important;
+        bottom: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 50dvh !important;
+        border-radius: 18px 18px 0 0 !important;
+        z-index: 4000 !important;
+    }
+    /* Find/replace bar */
+    .find-replace-panel {
+        left: 8px !important;
+        right: 8px !important;
+        width: auto !important;
+        max-width: calc(100vw - 16px) !important;
+        flex-wrap: wrap;
+        gap: 6px !important;
+    }
+    .find-replace-panel input {
+        flex: 1 1 100%;
+    }
+}
+
+/* =========================================================================
+   20. Calendar / Timeline mobile — fewer columns, larger date cells
+   ========================================================================= */
+@media (max-width: 768px) {
+    .timeline-grid,
+    .calendar-grid,
+    .nf-calendar-grid {
+        font-size: 12px !important;
+    }
+    .calendar-day,
+    .nf-calendar-day {
+        min-height: 56px !important;
+        padding: 4px !important;
+    }
+    .calendar-day-event,
+    .nf-calendar-event {
+        font-size: 10px !important;
+        padding: 2px 4px !important;
+    }
+    .nf-date-nav {
+        min-height: 40px;
+    }
+}
+
+/* =========================================================================
+   21. Storage bar / bottom dock — keep usable on phones
+   ========================================================================= */
+@media (max-width: 768px) {
+    .storage-options,
+    .save-bar {
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+        padding: 8px 10px calc(env(safe-area-inset-bottom, 0px) + 8px) !important;
+    }
+    .storage-options .neumo-btn,
+    .save-bar .neumo-btn {
+        min-height: 40px;
+        flex: 1 1 auto;
+        font-size: 12px !important;
+    }
+}
+
+/* =========================================================================
+   22. Universal touch-target floor for any button missed above
+   ========================================================================= */
+@media (hover: none) and (pointer: coarse) {
+    button:not(.tiny-btn):not(.exam-mastery-chip),
+    a[role="button"],
+    [role="tab"],
+    .clickable {
+        min-height: 36px;
+    }
+}
+
+/* =========================================================================
+   23. Tiny phones (<=360px) — final compaction pass for new modules
+   ========================================================================= */
+@media (max-width: 360px) {
+    .testing-hub-section-tab { padding: 7px 9px !important; font-size: 11px !important; }
+    .testing-hub-section-tab .fas { display: none; }
+    .testing-hub-exam-tab { padding: 6px 9px !important; font-size: 11px !important; }
+    .exam-stats-grid { grid-template-columns: 1fr !important; }
+    .exam-pacing-row { grid-template-columns: 1.4fr 0.8fr 0.8fr !important; padding: 8px 10px !important; font-size: 11px !important; }
+    .exam-mastery-chip { padding: 8px 10px !important; }
+    .cramhub-create-card h3 { font-size: 14px !important; }
+    .exam-callout-card { padding: 10px !important; }
+
+    /* Testing Hub v2 tightening on tiny phones */
+    .th2-kpi-grid { grid-template-columns: 1fr !important; }
+    .th2-kpi-value { font-size: 20px !important; }
+    .th2-strip-chip { padding: 6px 10px !important; font-size: 12px !important; }
+    .th2-row-date { margin-left: 0 !important; flex-basis: 100%; }
+}
+
+/* =========================================================================
+   24. Tablet refinements (769–1024px) — overrides for desktop rules that
+       compute against the viewport and break at narrow tablet widths.
+   ========================================================================= */
+@media (min-width: 769px) and (max-width: 1024px) {
+    /* styles.css :L2636 uses `max-width: min(100vw - 420px, 1120px)` which
+       collapses to ~349–604px on small tablets, cropping the tab pill more
+       aggressively than necessary. Give it back room by reserving less. */
+    .view-tabs {
+        max-width: calc(100vw - 240px) !important;
+    }
+    /* Today dashboard — desktop targets 1fr 1fr 360px which is cramped on
+       tablets; reflow to a 2-up grid that drops the rail under content. */
+    .today-grid,
+    .today-dashboard-surface {
+        grid-template-columns: 1fr 1fr !important;
+    }
+}
+
+/* =========================================================================
+   25. Inline-style modal grids (Sutra.html L5735+, L5799, L5825,
+       L5843) — multiple `grid-template-columns: 1fr 1fr` written inline. On
+       phones these collapse the inputs to ~140px each which is unusable.
+       Stack to a single column. The inline attribute selector targets only
+       the offending pattern without touching desktop layouts.
+   ========================================================================= */
+@media (max-width: 640px) {
+    .modal-content [style*="grid-template-columns: 1fr 1fr"],
+    .modal-content [style*="grid-template-columns:1fr 1fr"] {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+    }
+    /* Color input was sized at 38px height inline — give it room next to the
+       category select when reflowed in single column. */
+    .modal-content input[type="color"] {
+        width: 100%;
+        height: 44px !important;
+    }
+    /* Weekday selector wraps awkwardly on phones — use a tighter grid. */
+    .weekday-selector {
+        display: grid !important;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+    }
+    .weekday-selector label {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        min-height: 36px;
+        padding: 4px 6px;
+        font-size: 12px;
+        border-radius: 8px;
+        background: var(--surface-bg, rgba(255,255,255,0.04));
+        border: 1px solid var(--surface-border, rgba(255,255,255,0.08));
+    }
+}
+
+/* =========================================================================
+   26. Command palette & quick-capture — full-width sheet on mobile so the
+       on-screen keyboard does not cover the input.
+   ========================================================================= */
+@media (max-width: 640px) {
+    .command-palette-modal,
+    .quick-capture-modal {
+        align-items: flex-start !important;
+        padding: 0 !important;
+    }
+    .command-palette-modal .modal-content,
+    .quick-capture-modal .modal-content,
+    .command-palette-modal > .command-palette-card,
+    .quick-capture-modal > .quick-capture-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin-top: calc(env(safe-area-inset-top, 0px) + 12px) !important;
+        border-radius: 16px !important;
+        max-height: 76dvh !important;
+    }
+    /* Global search sheet. The overlay ROOT must keep full-viewport coverage
+       (inset 0) so the backdrop dismisses taps over the whole screen and the
+       focus trap cannot leak; sheet positioning lives on the CARD. Reconciled
+       with styles/features/global-search.css, which owns in-card behavior. */
+    .global-search-panel {
+        left: 0 !important;
+        right: 0 !important;
+        top: 0 !important;
+        bottom: 0 !important;
+        width: 100% !important;
+        max-width: none !important;
+        max-height: none !important;
+        overflow: visible !important;
+        padding: 0 !important;
+        align-items: flex-start !important;
+    }
+    .global-search-panel .global-search-card {
+        width: calc(100% - 16px) !important;
+        max-width: calc(100% - 16px) !important;
+        margin-top: calc(env(safe-area-inset-top, 0px) + 12px) !important;
+        margin-bottom: env(safe-area-inset-bottom, 0px);
+        max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 24px) !important;
+        border-radius: 16px !important;
+    }
+    /* Inputs inside the palette must be tall enough to not crowd the caret */
+    .command-palette-modal .modal-input,
+    .quick-capture-modal .modal-input,
+    .global-search-panel input[type="text"],
+    .global-search-panel input[type="search"] {
+        min-height: 48px;
+    }
+}
+
+/* =========================================================================
+   27. Drawers and side-panels — class dashboard, deadline radar,
+       homework paste-import, business entity, student onboarding.
+   ========================================================================= */
+@media (max-width: 640px) {
+    #classDashboardDrawer,
+    #deadlineRadarModal,
+    #homeworkPasteImportModal,
+    #businessEntityModal,
+    #studentOnboardingOverlay {
+        align-items: flex-end !important;
+        padding: 0 !important;
+    }
+    #classDashboardDrawer .class-dashboard-card,
+    #classDashboardDrawer .modal-content,
+    #deadlineRadarModal .modal-content,
+    #homeworkPasteImportModal .modal-content,
+    #businessEntityModal .modal-content,
+    #studentOnboardingOverlay .modal-content {
+        width: 100% !important;
+        max-width: 100% !important;
+        max-height: 92dvh !important;
+        border-radius: 18px 18px 0 0 !important;
+        margin: 0 !important;
+        padding: 18px 16px calc(env(safe-area-inset-bottom, 0px) + 16px) 16px !important;
+    }
+    #classDashboardDrawer .class-dashboard-card {
+        height: auto !important;
+        min-height: 0 !important;
+        padding: 0 !important;
+    }
+    /* The student onboarding card is sized differently — let it breathe */
+    #studentOnboardingOverlay .student-onboarding-card,
+    .student-onboarding-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        max-height: 92dvh !important;
+        border-radius: 18px 18px 0 0 !important;
+        padding: 20px 16px calc(env(safe-area-inset-bottom, 0px) + 16px) 16px !important;
+        overflow-y: auto !important;
+    }
+}
+
+/* =========================================================================
+   28. FAB / floating button stacking — multiple overlap the bottom-right
+       corner on phones: chatbot, add-task FAB, save-bar storage actions,
+       scroll-to-top. Make sure they don't pile on each other.
+   ========================================================================= */
+@media (max-width: 768px) {
+    /* Add-task FAB — keep it the primary right-corner action so it sits
+       above the storage bar but below the chatbot launcher. */
+    .fab-container,
+    #addTaskBtn {
+        right: calc(env(safe-area-inset-right, 0px) + 16px) !important;
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 148px) !important;
+        z-index: 3250 !important;
+    }
+    .fab-container .fab-label {
+        display: none !important;
+    }
+    /* Scroll-to-top sits to the left of the FAB column when present */
+    .scroll-to-top {
+        right: calc(env(safe-area-inset-right, 0px) + 76px) !important;
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 148px) !important;
+    }
+}
+
+/* =========================================================================
+   29. Editor — quality-of-life on mobile keyboards & long pages.
+   ========================================================================= */
+@media (max-width: 640px) {
+    /* Prevent the editor surface from feeling cramped under the toolbar
+       when the on-screen keyboard is up. */
+    .editor {
+        min-height: 60dvh;
+    }
+    /* Tables inside the editor: allow horizontal scroll and remove the
+       margin that pushes them off-screen. */
+    .editor table {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    /* Floating per-block toolbars (slash command, block menus) — keep them
+       inside the viewport even when invoked near the right edge. */
+    .slash-menu,
+    .block-menu,
+    .editor-block-actions {
+        max-width: calc(100vw - 16px) !important;
+    }
+    /* Page meta header — wrap chips instead of forcing a horizontal scroll */
+    .page-meta,
+    .page-temporary-meta,
+    .page-header-meta {
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+    }
+}
+
+/* =========================================================================
+   30. Settings — bottom-anchored save bar visibility, section grids.
+   ========================================================================= */
+@media (max-width: 640px) {
+    /* Settings categories: stack columns and keep the save bar above the
+       safe-area inset and above the chatbot launcher. */
+    .settings-mount,
+    .cc-shell,
+    .cc-page,
+    .view-settings .view-content {
+        padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 96px) !important;
+    }
+    /* If a Save bar floats — keep it inside the viewport */
+    .cc-save-bar,
+    .settings-save-bar,
+    .floating-save-bar {
+        left: 8px !important;
+        right: 8px !important;
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 12px) !important;
+        width: auto !important;
+        border-radius: 14px !important;
+        padding: 10px 12px !important;
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+    }
+}
+
+/* =========================================================================
+   31. Calendar / Timeline mobile — agenda fallback for week grid that is
+       too dense to be usable on phones.
+   ========================================================================= */
+@media (max-width: 640px) {
+    /* Hard cap weekly grids: small phones cannot render 7 columns with any
+       meaningful event labels. Switch to a compact 7-column header strip
+       with day cells stacked underneath if the design supplies a mobile
+       container — otherwise the existing min-height keeps cells tappable. */
+    .nf-calendar-week,
+    .timeline-week-grid {
+        font-size: 11px !important;
+    }
+    /* Timeline day blocks — keep readable padding even when stacked */
+    .timeline-block,
+    .nf-event-block {
+        padding: 6px 8px !important;
+        font-size: 11px !important;
+        min-height: 32px;
+    }
+    /* Date navigation chevrons get real touch targets */
+    .nf-date-nav button,
+    .calendar-nav-btn {
+        min-width: 40px;
+        min-height: 40px;
+    }
+}
+
+/* =========================================================================
+   32. Page-title input — prevent overflow when the title is long. The
+       app's editor lets users type unbounded titles; on mobile the input
+       should wrap to keep the page from horizontally scrolling.
+   ========================================================================= */
+@media (max-width: 640px) {
+    .page-title-input {
+        width: 100% !important;
+        max-width: 100% !important;
+        white-space: normal !important;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+}
+
+/* =========================================================================
+   33. Sidebar polish — make the drawer feel intentional, not vestigial.
+   ========================================================================= */
+@media (max-width: 768px) {
+    /* Headings inside the sidebar drawer get a comfortable rhythm */
+    .sidebar-header {
+        padding-top: 4px !important;
+    }
+    .sidebar-header .app-title {
+        font-size: 15px !important;
+    }
+    .sidebar-header .app-title-sub {
+        font-size: 11px !important;
+        opacity: 0.75;
+    }
+    /* Tighten search input spacing */
+    .sidebar-search {
+        margin-top: 8px !important;
+    }
+    /* Pages list grows to fill available drawer height comfortably */
+    .pages-list {
+        max-height: none !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+    /* New-page button — comfortable tap target, no overflow */
+    .sidebar-new-page .new-page-btn {
+        width: 100% !important;
+        min-height: 46px;
+        font-size: 14px !important;
+    }
+    .sidebar-new-page-row .new-page-btn {
+        width: auto !important;
+        flex: 1 1 auto;
+    }
+    .sidebar-new-page-row .new-folder-btn {
+        min-width: 0;
+        min-height: 46px;
+        padding-inline: 10px;
+    }
+    /* Sidebar shortcuts header — keep the add-button visible */
+    .sidebar-shortcuts-header .sidebar-shortcut-add {
+        min-width: 36px;
+        min-height: 36px;
+    }
+}
+
+/* =========================================================================
+   34. Tutorial overlay positioning on mobile — never get clipped by the
+       sidebar drawer when the user opens it during a tutorial step.
+   ========================================================================= */
+@media (max-width: 640px) {
+    .tutorial-card,
+    .ts-card,
+    .tutorial-step-card {
+        position: fixed !important;
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 16px) !important;
+        top: auto !important;
+        left: 12px !important;
+        right: 12px !important;
+        margin: 0 !important;
+        max-height: 70dvh;
+        overflow-y: auto;
+    }
+}
+
+/* =========================================================================
+   35. Final safety — kill horizontal overflow at the root, no matter what
+       any deep component decides to do.
+   ========================================================================= */
+@media (max-width: 768px) {
+    html, body {
+        max-width: 100vw;
+        overflow-x: hidden !important;
+    }
+    /* Common containers that may inherit a wider min-width from desktop. */
+    .app-container,
+    .main-content,
+    .view,
+    .view-content,
+    .editor-container {
+        max-width: 100vw;
+        min-width: 0;
+    }
+}
+
+/* =========================================================================
+   36. Mobile polish pass (2026-06-11) — bottom chrome, header actions,
+       Notes toolbar clearance. This file is the LAST stylesheet Sutra loads,
+       so these sections are the final arbiter over the inline override blocks
+       in Sutra.html and the #storageOptions id-level rules in styles.css.
+   ========================================================================= */
+
+/* ---- 36a. Storage bar: one compact row [✓][Save Locally][Export][Import].
+        The previous grid stacked the status full-width plus two button rows
+        (~106px tall) and forced ~140px of dead clearance under every view.
+        Also applies to landscape phones (short viewports), where every
+        vertical pixel matters even though the width exceeds 768px. */
+@media (max-width: 768px), (max-height: 480px) and (orientation: landscape) {
+    #storageOptions,
+    .storage-options {
+        grid-template-columns: auto 1.4fr 1fr 1fr !important;
+        gap: 6px !important;
+        padding: 6px 8px !important;
+        align-items: stretch !important;
+    }
+    #storageOptions .taskbar-save-status,
+    .storage-options .taskbar-save-status {
+        display: flex !important;
+        grid-column: auto !important;
+        width: auto !important;
+        min-width: 34px !important;
+        margin: 0 !important;
+        padding: 6px !important;
+    }
+    /* Icon-only save state: the checkmark carries the meaning. */
+    #storageOptions .taskbar-save-status span,
+    .storage-options .taskbar-save-status span {
+        display: none !important;
+    }
+    #storageOptions .storage-btn,
+    .storage-options .storage-btn {
+        min-height: 44px !important;
+        padding: 6px 8px !important;
+        font-size: 12px !important;
+        white-space: nowrap !important;
+    }
+    #storageOptions .btn-text,
+    .storage-options .btn-text {
+        font-size: 12px !important;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* The bar is a single ~56px row now, so views need far less reserved
+       bottom clearance (Sutra.html hardening block sets 116–172px). */
+    :root {
+        --responsive-bottom-clearance: 84px;
+        --responsive-short-bottom-clearance: 96px;
+    }
+
+    /* ---- Floating buttons stack neatly above the slim storage bar ---- */
+    .chatbot-btn {
+        right: calc(env(safe-area-inset-right, 0px) + 12px) !important;
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 78px) !important;
+    }
+    .feedback-fab {
+        right: calc(env(safe-area-inset-right, 0px) + 12px) !important;
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 142px) !important;
+    }
+    .chatbot-panel {
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 140px) !important;
+    }
+}
+
+/* Export/Import go icon-only when the row gets genuinely tight; "Save
+   Locally" keeps its label. The buttons keep their title attributes. */
+@media (max-width: 400px) {
+    #exportFileBtn .btn-text,
+    #importFileBtn .btn-text {
+        display: none !important;
+    }
+}
+
+/* ---- 36b. Assistant quick-action chips: one horizontally-scrollable row
+        instead of a 2–3-row wrap that pushes content below the fold. ---- */
+@media (max-width: 1024px) {
+    .view-flow-row {
+        flex-wrap: nowrap !important;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        padding-bottom: 2px;
+    }
+    .view-flow-row::-webkit-scrollbar { display: none; }
+    .view-flow-btn {
+        flex: 0 0 auto;
+        min-height: 36px;
+        white-space: nowrap;
+    }
+
+    /* ---- Notes: the chips row clears the fixed formatting toolbar, and the
+            editor container stops double-reserving that space. The sibling
+            selector keeps the original toolbar clearance when the assistant
+            (and therefore the chips row) is disabled. ---- */
+    #view-notes .view-flow-row {
+        margin-top: 64px;
+    }
+    #view-notes > .view-flow-row ~ .editor-container,
+    #view-notes > .view-flow-row ~ #notesEditorContainer {
+        padding-top: 12px !important;
+    }
+}
+
+/* ---- 36c. Header action rows: 2-up grid on phones, never one full-width
+        button per row — view content belongs above the fold. ---- */
+@media (max-width: 768px) {
+    .today-header-actions,
+    .collegeapp-header-actions,
+    .college-header-actions,
+    .life-header-actions,
+    #view-homework .hw-header-actions {
+        width: 100%;
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 8px !important;
+    }
+    .today-header-actions > *,
+    .collegeapp-header-actions > *,
+    .college-header-actions > *,
+    .life-header-actions > *,
+    #view-homework .hw-header-actions > * {
+        width: 100% !important;
+        justify-content: center !important;
+        min-height: 44px;
+    }
+
+    /* Title/search inputs reach a comfortable touch height. */
+    .page-title-input,
+    #settingsSearchInput {
+        min-height: 40px;
+    }
+}
+
+/* ---- 36c-2. Calendar header controls: tidy 2-up grid.
+        [Today | ‹ date ›] / [Day · Week · Month] / [+ Block | …] ---- */
+@media (max-width: 768px) {
+    #view-timeline .timeline-date-stepper {
+        display: flex;
+        align-items: stretch;
+        gap: 4px;
+        min-width: 0;
+    }
+    #view-timeline .timeline-date-stepper > * {
+        min-width: 0;
+    }
+    #view-timeline .timeline-date-stepper .timeline-date-input {
+        flex: 1 1 auto;
+        width: auto !important;
+    }
+    #view-timeline .timeline-mode-switcher {
+        grid-column: 1 / -1;
+        display: flex;
+        width: 100%;
+    }
+    #view-timeline .timeline-mode-switcher .timeline-mode-tab {
+        flex: 1 1 0;
+        min-height: 42px;
+    }
+    #view-timeline #addBlockBtn {
+        grid-column: auto !important;
+        min-height: 44px;
+    }
+    #view-timeline .timeline-more-wrap {
+        display: flex;
+        align-items: stretch;
+    }
+    #view-timeline .timeline-more-btn {
+        width: 100%;
+        min-height: 44px;
+    }
+
+    /* Pin/favorite star buttons on dashboard cards: full touch size. */
+    .pin-star-btn {
+        min-width: 36px;
+        min-height: 36px;
+    }
+
+    /* Toasts pop above the bottom storage bar instead of underneath it. */
+    .toast {
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 76px) !important;
+        max-width: calc(100vw - 24px);
+    }
+
+    /* Course Hub: kebab menus get a real touch target; the course filter
+       select needs room for its chevron so it doesn't overlap the label. */
+    .cw-course-menu {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 36px;
+        min-height: 36px;
+    }
+    .cw-filter {
+        min-height: 44px;
+        padding-right: 30px !important;
+    }
+
+    /* New Page template-category pills: a single scrollable row with enough
+       height that pills aren't clipped mid-glyph. */
+    .template-picker-category-tabs {
+        display: flex;
+        flex-wrap: nowrap !important;
+        overflow-x: auto;
+        overflow-y: visible;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding: 6px 4px 10px;
+        min-height: 52px;
+        align-items: center;
+    }
+    .template-picker-category-tabs::-webkit-scrollbar { display: none; }
+    .template-category-pill {
+        flex: 0 0 auto;
+        min-height: 38px;
+        white-space: nowrap;
+    }
+
+    /* Every college/life data-table wrapper scrolls horizontally; the tables
+       keep their intentional min-widths for legibility. */
+    .college-table-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        max-width: 100%;
+    }
+
+}
+
+/* Close / per-item action buttons across panels: real touch targets on ANY
+   touch device — including landscape phones wider than the 768px breakpoint. */
+@media (max-width: 768px), (hover: none) and (pointer: coarse) {
+    #notifCloseBtn,
+    .notif-action-btn,
+    #exportOptionsCloseBtn,
+    .new-page-close-btn,
+    .comments-panel-close,
+    .find-replace-close,
+    .google-feedback-close,
+    #toolbarTimeGear,
+    #addSidebarShortcutBtn,
+    .hw-course-remove,
+    .hw-task-menu-btn,
+    .cw-course-menu,
+    .pin-star-btn {
+        min-width: 40px !important;
+        min-height: 40px !important;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    #googleFeedbackOpenExternalLink {
+        min-height: 36px;
+        display: inline-flex;
+        align-items: center;
+    }
+}
+
+/* ---- 36c-3. Landscape phones (short viewports): the vertical FAB stack
+        would cover half the screen height — lay the floating buttons out
+        side-by-side just above the storage bar, and drop the redundant
+        fullscreen toggle like portrait phones do. ---- */
+@media (max-height: 480px) and (orientation: landscape) {
+    #focusModeQuickToggle,
+    .focus-mode-quick-toggle,
+    .focus-mode-fab {
+        display: none !important;
+    }
+    .chatbot-btn {
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 70px) !important;
+        right: calc(env(safe-area-inset-right, 0px) + 12px) !important;
+    }
+    .feedback-fab {
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 70px) !important;
+        right: calc(env(safe-area-inset-right, 0px) + 74px) !important;
+    }
+    .toast {
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 70px) !important;
+    }
+    .chatbot-panel {
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 70px) !important;
+    }
+}
+
+/* ---- 36d. Floating panels that anchored to desktop edges ---- */
+@media (max-width: 640px) {
+    /* Font settings panel: fixed top-right popover becomes a bottom sheet. */
+    #fontSettingsPanel {
+        top: auto !important;
+        left: 8px !important;
+        right: 8px !important;
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 8px) !important;
+        min-width: 0 !important;
+        max-height: 70dvh;
+        overflow-y: auto;
+        border-radius: 16px !important;
+    }
+    /* Spaces switcher dropdown: bottom sheet above the sidebar drawer. */
+    .spaces-dropdown {
+        position: fixed !important;
+        left: 8px !important;
+        right: 8px !important;
+        top: auto !important;
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 8px) !important;
+        width: auto !important;
+        max-width: none !important;
+        max-height: 60dvh !important;
+        overflow-y: auto !important;
+        border-radius: 16px !important;
+        z-index: 5400 !important;
+    }
+}
+
+/* ==========================================================================
+   Mobile bottom navigation (window.SutraMobileNav) — phones only
+   ========================================================================== */
+.sutra-bottom-nav { display: none; }
+@media (max-width: 640px) {
+    /* Phones use one canonical navigation surface. The bottom bar is derived
+       from the real desktop tabs and its More sheet owns the remaining top-bar
+       actions, so keeping the desktop tab strip visible only duplicates state. */
+    .top-nav {
+        display: none !important;
+    }
+    body:not(.sidebar-open) #sidebarToggle {
+        display: none !important;
+    }
+    /* Notes keeps its page-list drawer one tap away. The rest of the phone
+       workspace stays on the unified bottom navigation, while the Notes view
+       gets the familiar directional handle for its contextual page list. */
+    body[data-view="notes"]:not(.sidebar-open) #sidebarToggle {
+        display: flex !important;
+    }
+    .main-content {
+        /* The desktop top navigation is hidden on phones. Keep the first
+           workspace row below iOS's translucent status/Dynamic Island area. */
+        padding-top: max(16px, env(safe-area-inset-top, 0px)) !important;
+    }
+    .toolbar-wrapper {
+        top: calc(env(safe-area-inset-top, 0px) + 8px) !important;
+    }
+
+    .sutra-bottom-nav {
+        display: flex;
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: var(--z-nav, 2400);
+        gap: 2px;
+        min-height: 74px;
+        padding: 7px 10px calc(7px + env(safe-area-inset-bottom, 0px));
+        background: color-mix(in srgb, var(--bg-primary, #ffffff) 96%, transparent);
+        border-top: 1px solid color-mix(in srgb, var(--surface-border, rgba(127, 127, 127, 0.2)) 72%, transparent);
+        box-shadow: 0 -8px 24px color-mix(in srgb, #2b261f 7%, transparent);
+        -webkit-backdrop-filter: blur(18px);
+        backdrop-filter: blur(18px);
+    }
+    .sutra-bn-item,
+    .sutra-bn-capture {
+        flex: 1 1 0;
+        min-width: 0;
+        height: 56px;
+        min-height: 56px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        margin: 0;
+        border: 0;
+        padding: 4px 2px;
+        border-radius: 12px;
+        background: transparent;
+        box-shadow: none;
+        cursor: pointer;
+        color: var(--text-muted, #8a8f98);
+        font-size: 0.66rem;
+        line-height: 1.1;
+        position: relative;
+    }
+    .sutra-bn-item i { font-size: 1.05rem; }
+    .sutra-bn-item span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sutra-bn-item.active { color: var(--accent-strong, var(--accent, #6fa7ff)); }
+    .sutra-bn-item:active { background: rgba(127, 127, 127, 0.12); }
+    .sutra-bn-capture {
+        color: var(--text-primary, #25231f);
+    }
+    .sutra-bn-capture i {
+        display: grid;
+        width: 38px;
+        height: 38px;
+        margin-top: -8px;
+        place-items: center;
+        border: 1px solid color-mix(in srgb, var(--accent-strong, var(--accent, #9d7643)) 38%, transparent);
+        border-radius: 50%;
+        background: color-mix(in srgb, var(--accent, #d8c4a1) 78%, var(--bg-elevated, #fff));
+        font-size: 0.95rem;
+    }
+    .sutra-bn-capture span { margin-top: -1px; }
+    .sutra-bn-capture:active { transform: translateY(1px); }
+    .sutra-mobile-nav-badge {
+        position: absolute;
+        top: 2px;
+        right: max(4px, 16%);
+        min-width: 17px;
+        height: 17px;
+        display: inline-grid;
+        place-items: center;
+        padding: 0 4px;
+        border: 2px solid var(--bg-primary, #fff);
+        border-radius: 999px;
+        background: var(--danger, #d94b4b);
+        color: #fff;
+        font: 700 0.62rem/1 system-ui, sans-serif;
+        overflow: visible;
+    }
+    .sutra-mobile-nav-badge[hidden] { display: none !important; }
+    /* Keep content clear of the fixed bar. */
+    body { padding-bottom: calc(var(--sutra-mobile-nav-height, 4.75rem) + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* =========================================================================
+   37. Mobile optimization pass (2026-07-03) — whole-site audit fixes.
+       Driven by scripts/mobile-audit.mjs findings across all views at
+       360/390/430/landscape. Sections: bottom-chrome stacking, storage bar
+       single row, custom-select chevron room, touch-target floors.
+   ========================================================================= */
+
+/* ---- 37a. Storage bar: save status + Save/Export/Import/Cloud share
+        one measured row. Cloud includes Sync and backups. ---- */
+@media (max-width: 768px), (max-height: 480px) and (orientation: landscape) {
+    #storageOptions,
+    .storage-options {
+        grid-template-columns: auto minmax(0, 2fr) repeat(3, minmax(0, 1fr)) !important;
+    }
+}
+
+/* Tiny phones: the floppy icon costs the exact pixels "Save Locally" needs
+   to render untruncated; the label alone reads better than "Save Loc…". */
+@media (max-width: 400px) {
+    #saveLocalBtn i {
+        display: none !important;
+    }
+}
+
+/* Phones: Export/Import/Sutra Cloud go icon-only (titles keep the meaning);
+   "Save Locally" is the primary action and keeps its label. */
+@media (max-width: 640px) {
+    #exportFileBtn .btn-text,
+    #importFileBtn .btn-text,
+    #sutraCloudOpenBtn .btn-text,
+    #sutraSyncOpenBtn .btn-text {
+        display: none !important;
+    }
+}
+
+/* ---- 37b. Bottom chrome stacking (phones with the bottom tab bar).
+        styles.css pins #storageOptions at bottom:10px, but the bottom nav
+       (~58px, --z-nav) sits on top of it. Lift the bar clear of the
+        nav and move the toast above both. app.js syncResponsiveViewport()
+        measures the real bar/nav rects for the FAB stack; the values here
+        are the pre-JS fallback. ---- */
+@media (max-width: 640px) {
+    #storageOptions,
+    .storage-options {
+        bottom: calc(
+            env(safe-area-inset-bottom, 0px)
+            + var(--sutra-mobile-nav-height, 4.75rem)
+            + var(--sutra-space-2, 0.5rem)
+        ) !important;
+    }
+    .chatbot-btn {
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 138px) !important;
+    }
+    .feedback-fab {
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 202px) !important;
+    }
+    .chatbot-panel {
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 196px) !important;
+    }
+    .toast {
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 136px) !important;
+    }
+    /* Bar (56) + nav (58) both live below the content now; reserve enough
+       scroll clearance that the last card clears the storage bar. */
+    :root {
+        --responsive-bottom-clearance: 100px;
+        --responsive-short-bottom-clearance: 112px;
+    }
+}
+
+/* ---- 37c. Custom selects (select-enhancer): styles.css's ≤640px compaction
+        sets the trigger to `padding: 10px 12px`, but the chevron is absolutely
+        positioned at right:14px — it lands on the label's last characters in
+        every enhanced select site-wide. Restore room for it. ---- */
+@media (max-width: 640px) {
+    .nf-select .nf-select-trigger {
+        padding-right: 34px !important;
+    }
+}
+
+/* ---- 37d. Touch-target floors for controls the audit flagged under 32px. ---- */
+@media (hover: none) and (pointer: coarse) {
+    /* Homework table row actions (24×24 authored). min-* clamps the authored
+       width even though homework-redesign.css loads after this file. */
+    .hw-table-icon-btn {
+        min-width: 32px;
+        min-height: 32px;
+        font-size: 12px;
+    }
+    /* Assistant composer chip icons (28×28 authored). */
+    .flow-chip-icon {
+        min-width: 34px;
+        min-height: 34px;
+    }
+    /* View-tabs "+" add button (28×28 authored) — the one control the audit
+       flags on every view. Grow the hit area without disturbing the nav row
+       height (siblings stay ~36px). */
+    .view-tab-add {
+        min-width: 40px;
+        min-height: 40px;
+    }
+    /* Range sliders — 16px tracks are hard to
+       grab; padding grows the hit area without changing the visual track. */
+    input[type="range"] {
+        min-height: 32px;
+        padding-top: 8px;
+        padding-bottom: 8px;
+    }
+}
+
+/* ---- 37g. All-sections sheet for the phone bottom bar. The previous More
+        action targeted a hidden legacy toggle, so advanced destinations were
+        technically present but not presented as a usable mobile surface. ---- */
+.sutra-mobile-more-overlay {
+    display: none;
+}
+
+@media (max-width: 640px) {
+    .sutra-mobile-more-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: var(--z-overlay, 9000);
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        padding: max(12px, env(safe-area-inset-top, 0px))
+            max(8px, env(safe-area-inset-right, 0px))
+            env(safe-area-inset-bottom, 0px)
+            max(8px, env(safe-area-inset-left, 0px));
+        background: rgba(6, 10, 18, 0.58);
+        -webkit-backdrop-filter: blur(8px);
+        backdrop-filter: blur(8px);
+        opacity: 0;
+        transition: opacity 180ms ease;
+    }
+    .sutra-mobile-more-overlay[hidden] {
+        display: none !important;
+    }
+    .sutra-mobile-more-overlay.open {
+        opacity: 1;
+    }
+    .sutra-mobile-more-sheet {
+        width: min(100%, 520px);
+        max-height: min(82dvh, 720px);
+        display: grid;
+        grid-template-rows: auto auto minmax(0, 1fr);
+        overflow: hidden;
+        border: 1px solid var(--surface-border, var(--border));
+        border-radius: 22px 22px 0 0;
+        background: var(--bg-elevated, var(--bg-primary));
+        color: var(--text-primary);
+        box-shadow: 0 -18px 50px rgba(0, 0, 0, 0.3);
+        transform: translateY(24px);
+        transition: transform 180ms ease;
+    }
+    .sutra-mobile-more-overlay.open .sutra-mobile-more-sheet {
+        transform: translateY(0);
+    }
+    .sutra-mobile-more-header {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        min-height: 60px;
+        padding: 10px 12px 8px 18px;
+        border-bottom: 1px solid var(--surface-border, var(--border));
+        background: inherit;
+    }
+    .sutra-mobile-more-header h2 {
+        margin: 0;
+        font-size: 1.05rem;
+    }
+    .sutra-mobile-more-close {
+        width: 44px;
+        height: 44px;
+        display: inline-grid;
+        place-items: center;
+        flex: 0 0 auto;
+        border: 0;
+        border-radius: 50%;
+        background: var(--surface-bg-hover, rgba(127, 127, 127, 0.14));
+        color: inherit;
+        font: 500 1.6rem/1 system-ui, sans-serif;
+    }
+    .sutra-mobile-more-actions {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        padding: 12px 12px 4px;
+    }
+    .sutra-mobile-more-action {
+        position: relative;
+        min-width: 0;
+        min-height: 64px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 8px 6px;
+        border: 1px solid color-mix(in srgb, var(--accent, #d8c4a1) 28%, var(--surface-border, var(--border)));
+        border-radius: 14px;
+        background: color-mix(in srgb, var(--accent, #d8c4a1) 8%, var(--surface-bg, var(--bg-secondary)));
+        color: var(--text-primary);
+        font: inherit;
+        font-size: 0.76rem;
+        text-align: center;
+    }
+    .sutra-mobile-more-action i {
+        color: var(--accent-strong, var(--accent));
+        font-size: 1rem;
+    }
+    .sutra-mobile-action-badge {
+        position: absolute;
+        top: 5px;
+        right: 8px;
+        min-width: 18px;
+        height: 18px;
+        display: inline-grid;
+        place-items: center;
+        padding: 0 4px;
+        border-radius: 999px;
+        background: var(--danger, #d94b4b);
+        color: #fff;
+        font: 700 0.62rem/1 system-ui, sans-serif;
+    }
+    .sutra-mobile-action-badge[hidden] { display: none !important; }
+    .sutra-mobile-more-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        min-width: 0;
+        padding: 12px 12px calc(16px + env(safe-area-inset-bottom, 0px));
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+    }
+    .sutra-mobile-more-item {
+        min-width: 0;
+        min-height: 52px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border: 1px solid var(--surface-border, var(--border));
+        border-radius: 13px;
+        background: var(--surface-bg, var(--bg-secondary));
+        color: var(--text-primary);
+        font: inherit;
+        text-align: left;
+    }
+    .sutra-mobile-more-item i {
+        width: 20px;
+        flex: 0 0 20px;
+        color: var(--text-secondary);
+        text-align: center;
+    }
+    .sutra-mobile-more-item span {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+    .sutra-mobile-more-item.active {
+        border-color: color-mix(in srgb, var(--accent) 58%, var(--surface-border));
+        background: color-mix(in srgb, var(--accent) 12%, var(--surface-bg));
+        color: var(--accent-strong, var(--accent));
+    }
+}
+
+@media (max-width: 359px) {
+    .sutra-mobile-more-actions,
+    .sutra-mobile-more-list {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sutra-mobile-more-overlay,
+    .sutra-mobile-more-sheet {
+        transition: none !important;
+    }
+}
+
+/* ---- 37e. Timeline header: the date stepper shares a half-width grid cell
+        with "Today", squeezing the date trigger to "Sel…". Give the stepper
+        its own full row. ---- */
+@media (max-width: 640px) {
+    #view-timeline .timeline-date-stepper {
+        grid-column: 1 / -1;
+    }
+}
+
+/* ---- 37f. Assistant chat actions: always visible on touch devices
+        (no hover state to reveal them) ---- */
+@media (hover: none) and (pointer: coarse) {
+    .asst-chat-item .asst-chat-item-actions {
+        opacity: 1;
+        pointer-events: auto;
+    }
+}
+
+/* ---- 37g. Notes phone editor chrome. Keep the formatting rail pinned to
+   the viewport rather than letting older toolbar rules place it mid-document.
+   The page-list drawer control gets its own row, so neither control covers the
+   note title or first editable line. ---- */
+@media (max-width: 640px) {
+    body[data-view="notes"] #view-notes .toolbar-wrapper {
+        position: fixed !important;
+        top: calc(env(safe-area-inset-top, 0px) + 8px) !important;
+        left: 8px !important;
+        right: 8px !important;
+        width: auto !important;
+        max-width: calc(100vw - 16px) !important;
+        height: 52px !important;
+        min-height: 52px !important;
+        padding: 4px 8px !important;
+        z-index: 2600 !important;
+    }
+    body[data-view="notes"] #sidebarToggle,
+    body[data-view="notes"] #sidebarToggle.collapsed {
+        top: calc(env(safe-area-inset-top, 0px) + 68px) !important;
+        left: calc(env(safe-area-inset-left, 0px) + 12px) !important;
+        width: 44px !important;
+        height: 44px !important;
+        z-index: 2601 !important;
+    }
+    body[data-view="notes"] #view-notes .toolbar {
+        width: 100% !important;
+        min-width: 0 !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        overscroll-behavior-x: contain;
+        -webkit-overflow-scrolling: touch;
+    }
+    body[data-view="notes"] #view-notes .toolbar > .toolbar-btn,
+    body[data-view="notes"] #view-notes .toolbar > .toolbar-field,
+    body[data-view="notes"] #view-notes .toolbar > .toolbar-size-stepper {
+        flex: 0 0 auto !important;
+    }
+    body[data-view="notes"] #view-notes .notes-toolbar-overflow {
+        order: 20;
+        margin-left: auto;
+    }
+    body[data-view="notes"] #view-notes .editor-container,
+    body[data-view="notes"] #notesEditorContainer {
+        padding-top: calc(env(safe-area-inset-top, 0px) + 124px) !important;
+        padding-bottom: calc(var(--sutra-mobile-nav-height, 4.75rem) + 5rem) !important;
+    }
+}
+
+/* ---- 37h. Life is an active grid, so its feature padding bypasses the
+   shared view clearance. Keep the final tracker card scrollable above the
+   fixed Save bar and phone navigation. ---- */
+@media (max-width: 640px) {
+    #view-life.active {
+        padding-bottom: calc(var(--sutra-mobile-nav-height, 4.75rem) + 5rem) !important;
+        scroll-padding-bottom: calc(var(--sutra-mobile-nav-height, 4.75rem) + 5.5rem);
+    }
+}
+
+/* Homework row actions must stay inside the reachable phone viewport. The
+   assignment list can scroll behind the fixed shell, so an absolute menu at
+   the end of a row is not a usable mobile control. */
+@media (max-width: 640px) {
+    #view-homework .hw-assignment-menu-wrap .hw-task-menu {
+        position: fixed !important;
+        left: 12px !important;
+        right: 12px !important;
+        top: auto !important;
+        bottom: calc(var(--sutra-mobile-nav-height, 4.75rem) + 5.5rem + env(safe-area-inset-bottom, 0px)) !important;
+        width: auto !important;
+        max-height: min(55vh, 360px) !important;
+        overflow-y: auto !important;
+        z-index: 3000 !important;
+    }
+}
+
+/* Keep the fixed save bar and phone navigation from covering the last
+   Timeline row on short screens. */
+@media (max-width: 640px) {
+    #view-timeline.active {
+        padding-bottom: calc(var(--sutra-mobile-nav-height, 4.75rem) + 7rem + env(safe-area-inset-bottom, 0px)) !important;
+        scroll-padding-bottom: calc(var(--sutra-mobile-nav-height, 4.75rem) + 7rem + env(safe-area-inset-bottom, 0px));
+    }
+    #view-timeline .timeline-event-title {
+        overflow-wrap: anywhere;
+        white-space: normal;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+        overflow: hidden;
+    }
+    #view-timeline .timeline-event-source {
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+}

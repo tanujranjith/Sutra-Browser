@@ -1,0 +1,12 @@
+{
+  "version": 3,
+  "pages": { "corrupt": true },
+  "tasks": [],
+  "timeBlocks": [],
+  "homeworkWorkspace": {
+    "schemaVersion": 2,
+    "courses": [{ "id": "history", "name": "History" }],
+    "tasks": [{ "id": "essay", "title": "Essay", "courseId": "missing-course" }]
+  },
+  "pluginData": { "unknownSafeField": "keep" }
+}

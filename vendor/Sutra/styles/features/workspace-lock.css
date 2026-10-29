@@ -1,0 +1,48 @@
+/* Critical privacy-gate CSS: this file loads before the workspace body. */
+.sutra-workspace-lock-screen { display: none; }
+html[data-sutra-workspace-locked="true"] body { overflow: hidden !important; }
+html[data-sutra-workspace-locked="true"] body > :not(#sutraWorkspaceLockScreen) { visibility: hidden !important; pointer-events: none !important; user-select: none !important; }
+html[data-sutra-workspace-locked="true"] #sutraWorkspaceLockScreen { visibility: visible !important; pointer-events: auto !important; user-select: auto !important; display: grid; }
+
+.sutra-workspace-lock-screen {
+  position: fixed;
+  z-index: 2147483647;
+  inset: 0;
+  min-height: 100dvh;
+  place-items: center;
+  padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+  color: #f7f4ea;
+  background: radial-gradient(circle at 50% 18%, rgba(99,91,223,.28), transparent 38%), #07111f;
+  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+.sutra-workspace-lock-card { width: min(410px, 100%); padding: 32px; text-align: center; border: 1px solid rgba(255,255,255,.16); border-radius: 24px; background: rgba(17,27,43,.92); box-shadow: 0 28px 80px rgba(0,0,0,.45); }
+.sutra-workspace-lock-card img { border-radius: 17px; box-shadow: 0 8px 25px rgba(99,91,223,.35); }
+.sutra-workspace-lock-eyebrow { margin: 18px 0 5px; color: #afaaff; font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.sutra-workspace-lock-card h1 { margin: 0; color: #fff; font-size: clamp(27px, 6vw, 36px); }
+.sutra-workspace-lock-card > p:not(.sutra-workspace-lock-eyebrow) { color: #bbc4d1; line-height: 1.5; }
+#sutraWorkspaceUnlockForm { display: grid; gap: 10px; margin-top: 24px; text-align: left; }
+#sutraWorkspaceUnlockForm label { font-size: 13px; font-weight: 700; }
+#sutraWorkspaceUnlockPin { min-height: 50px; padding: 10px 14px; color: #fff; background: #0b1726; border: 1px solid #526175; border-radius: 10px; font: 700 22px/1 ui-monospace, monospace; letter-spacing: .28em; text-align: center; }
+#sutraWorkspaceUnlockPin:focus { outline: 3px solid #8b82ff; outline-offset: 2px; }
+#sutraWorkspaceUnlockForm button { min-height: 48px; margin-top: 3px; color: #fff; background: #635bdf; border: 0; border-radius: 10px; font-weight: 800; cursor: pointer; }
+.sutra-workspace-lock-error { min-height: 21px; margin: 12px 0 0 !important; color: #ffb4ab !important; font-size: 13px; }
+.sutra-workspace-lock-disclosure { margin: 14px 0 0 !important; font-size: 11px; }
+
+.sutra-workspace-lock-dialog { width: min(430px, calc(100vw - 32px)); padding: 0; color: var(--text-primary, #173d2b); background: var(--bg-primary, #fff); border: 1px solid var(--border-color, #d7d3c7); border-radius: 16px; box-shadow: 0 28px 80px rgba(0,0,0,.4); }
+.sutra-workspace-lock-dialog::backdrop { background: rgba(4,10,18,.7); backdrop-filter: blur(8px); }
+.sutra-workspace-lock-dialog form { display: grid; gap: 12px; padding: 22px; }
+.sutra-workspace-lock-dialog h2 { margin: 0; }
+.sutra-workspace-lock-dialog p { margin: 0; color: var(--text-secondary, #687079); line-height: 1.45; }
+.sutra-workspace-lock-dialog label { display: grid; gap: 6px; font-size: 13px; font-weight: 700; }
+.sutra-workspace-lock-dialog input { min-height: 44px; padding: 8px 11px; color: inherit; background: var(--bg-secondary, #fbfaf5); border: 1px solid var(--border-color, #d7d3c7); border-radius: 8px; font: 700 18px ui-monospace, monospace; letter-spacing: .18em; }
+.sutra-workspace-lock-dialog menu { display: flex; justify-content: flex-end; gap: 8px; margin: 4px 0 0; padding: 0; }
+.sutra-workspace-lock-dialog button { min-height: 40px; padding: 7px 13px; color: inherit; background: transparent; border: 1px solid var(--border-color, #d7d3c7); border-radius: 8px; cursor: pointer; }
+.sutra-workspace-lock-dialog button[data-primary] { color: #fff; background: var(--accent-color, #635bdf); border-color: var(--accent-color, #635bdf); }
+.sutra-workspace-lock-dialog [data-lock-dialog-error] { min-height: 18px; color: var(--danger-color, #b42318); font-size: 12px; }
+
+@media (forced-colors: active) {
+  .sutra-workspace-lock-screen, .sutra-workspace-lock-card, #sutraWorkspaceUnlockPin { forced-color-adjust: auto; color: CanvasText; background: Canvas; border-color: CanvasText; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sutra-workspace-lock-screen, .sutra-workspace-lock-screen * { animation: none !important; transition: none !important; }
+}

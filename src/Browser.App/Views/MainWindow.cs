@@ -1,5 +1,6 @@
 using Browser.App.ViewModels;
 using System.Diagnostics;
+using Browser.App.Diagnostics;
 using Browser.Core.Branding;
 using Browser.Core.Privacy;
 using Browser.Core.Settings;
@@ -32,7 +33,7 @@ public sealed partial class MainWindow : Window
     private readonly SessionSnapshotRepository _sessionSnapshots;
     private readonly WindowSessionRepository _windowSessions;
     private readonly IServiceProvider _dataServices;
-    private readonly Guid _sessionWindowId = Guid.NewGuid();
+    private readonly Guid _sessionWindowId;
     private readonly List<Browser.Core.Diagnostics.StartupPhaseTiming> _startupTimings = [];
     private readonly Browser.Core.Diagnostics.HealthHistory _healthHistory = new();
     private TimeSpan _lastCpuTotal = TimeSpan.Zero;
@@ -40,6 +41,7 @@ public sealed partial class MainWindow : Window
     private double _lastCpuPercent;
     private readonly TaskCompletionSource<bool> _ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly Browser.Core.Sessions.BrowserSession? _launchSession;
+    private readonly bool _showWorkspaceOnLaunch;
     private readonly SettingsRepository _settingsRepository;
     private readonly AppStateRepository _appState;
     private readonly HistoryRepository _history;
@@ -71,6 +73,7 @@ public sealed partial class MainWindow : Window
     // manager) can invalidate their refresh state without generic close logic
     // knowing about them.
     private readonly Dictionary<Guid, Action> _nativePageClosedHandlers = [];
+    private readonly Dictionary<Guid, Action> _nativePageActivatedHandlers = [];
     private bool _focusMode;
     private bool _utilitySidebarVisibleBeforeFocus;
     private readonly Dictionary<Guid, ulong> _activeNavigationIds = [];
@@ -102,16 +105,25 @@ public sealed partial class MainWindow : Window
     private readonly HashSet<Guid> _readerTabs = [];
     private readonly HashSet<Guid> _translationOfferedTabs = [];
     private readonly List<KeyboardAccelerator> _customAccelerators = [];
-    private ContentBlockRuleSet _contentBlockRules = ContentBlockRuleSet.Parse(BuiltInContentFilters.Rules);
+    private ContentBlockRuleSet _contentBlockRules = ContentFilterRuleSetCache.BuiltIn;
     private readonly Grid _root = new();
     private readonly Grid _contentGrid = new();
     private readonly Grid _toolbar = new();
     private readonly TabView _horizontalTabs = new();
+    private readonly Border _browserToolbarHost = new();
     private readonly Border _verticalPane = new();
     private readonly StackPanel _verticalGroupHost = new() { Spacing = 5 };
     private readonly TextBlock _verticalHeading = new();
     private readonly Button _sidebarToggle = new();
     private readonly Grid _browserHost = new();
+    private readonly Grid _workspaceHost = new() { Visibility = Visibility.Collapsed };
+    private WebView2? _sutraWorkspaceView;
+    private bool _workspaceVisible;
+    private readonly List<Browser.Core.Privacy.ElementHideRule> _elementHideRules = [];
+    private Guid? _elementPickerTabId;
+    private string? _elementPickerHost;
+    private string? _elementPickerOrigin;
+    private string? _elementPickerNonce;
     private readonly AutoSuggestBox _address = new();
     private readonly ProgressBar _progress = new();
     private readonly TextBlock _status = new();
@@ -174,12 +186,10 @@ public sealed partial class MainWindow : Window
     private bool _privateAiEnabled;
     private bool _allowClose;
     private bool _refreshingTabs;
-    private bool _bootAnimationStarted;
-    private Storyboard? _bootAnimation;
     private int _activationVersion;
     private string? _pendingTypedQuery;
 
-    public MainWindow(bool isPrivate = false, string? initialUrl = null, bool restoreSession = true, string profileName = "Default", Browser.Core.Sessions.BrowserSession? launchSession = null, IServiceProvider? dataServices = null)
+    public MainWindow(bool isPrivate = false, string? initialUrl = null, bool restoreSession = true, string profileName = "Default", Browser.Core.Sessions.BrowserSession? launchSession = null, IServiceProvider? dataServices = null, bool showWorkspaceOnLaunch = false, Guid? restoredWindowId = null)
     {
         _dataServices = dataServices ?? App.Services;
         _sessions = _dataServices.GetRequiredService<SessionRepository>();
@@ -200,6 +210,8 @@ public sealed partial class MainWindow : Window
         _secureStore = _dataServices.GetRequiredService<Browser.Core.Passwords.ISecureCredentialStore>();
         _isPrivate = isPrivate;
         _launchSession = isPrivate ? null : launchSession;
+        _sessionWindowId = Browser.Core.Integration.SutraDesktopStartupPolicy.ResolveWindowId(isPrivate ? null : restoredWindowId);
+        _showWorkspaceOnLaunch = Browser.Core.Integration.SutraDesktopStartupPolicy.ShouldOpenWorkspace(isPrivate, initialUrl is not null, launchSession is not null, showWorkspaceOnLaunch);
         _profileName = isPrivate ? "Private" : string.IsNullOrWhiteSpace(profileName) ? "Default" : profileName;
         // Keep browser shortcuts functional without WinUI's transient accelerator
         // badges appearing over arbitrary page or sidebar content.
@@ -217,6 +229,7 @@ public sealed partial class MainWindow : Window
         BuildInterface();
         Content = _root;
         ExtendsContentIntoTitleBar = true;
+        SetTitleBar(_desktopTitleBar);
         try { SystemBackdrop = new MicaBackdrop(); } catch { }
         try
         {
@@ -230,23 +243,32 @@ public sealed partial class MainWindow : Window
         _root.Loaded += async (_, _) =>
         {
             if (_isWindowClosed) return;
-            StartBootAnimation();
-            try { await InitializeAsync(); _ready.TrySetResult(true); }
+            try
+            {
+                await InitializeAsync();
+                _ready.TrySetResult(true);
+                if (!_isPrivate) _ = CheckForUpdatesQuietlyAsync();
+            }
             catch (Exception ex)
             {
                 // Startup must never terminate the process on corrupt local data
                 // (session/settings/SQLite). Fall back to a single fresh tab so the
                 // window is always usable; the type-only log avoids leaking paths.
+                PrivacySafeDiagnosticLog.Record("window-startup-failed", ex);
                 Debug.WriteLine($"Sutra startup containment: {ex.GetType().Name}");
                 try { if (!_isWindowClosed) EnsureEmergencyTab(); } catch { }
                 try { if (!_isWindowClosed) ShowStatus("Sutra started with a fresh tab because the saved session could not be read.", InfoBarSeverity.Warning, 7000); } catch { }
             }
             finally
             {
+                if (!_isWindowClosed) _root.IsHitTestVisible = true;
                 _ready.TrySetResult(false);
-                try { await FinishBootAnimationAsync(); }
+                try { if (!_isWindowClosed) await FinishBootOverlayAsync(); }
                 catch (Exception ex) { Debug.WriteLine($"Boot animation cleanup failed: {ex.GetType().Name}"); }
             }
+            // Warm the optional workspace without switching away from browsing.
+            if (!_isWindowClosed && _showWorkspaceOnLaunch)
+                ObserveUiCallback("Startup workspace", EnsureSutraWorkspaceAsync);
         };
         _root.ActualThemeChanged += (_, _) =>
         {
@@ -257,6 +279,7 @@ public sealed partial class MainWindow : Window
             _root.DispatcherQueue.TryEnqueue(() =>
             {
                 _themeRefreshQueued = false;
+                if (_isWindowClosed) return;
                 ApplyCustomization();
                 if (_pageOverlay.Visibility == Visibility.Visible) _pageOverlay.Background = ManagerPageBackground();
             });
@@ -265,9 +288,9 @@ public sealed partial class MainWindow : Window
 
     private void BuildInterface()
     {
-        _root.RowDefinitions.Add(new() { Height = new(44) });
         _root.RowDefinitions.Add(new() { Height = new(52) });
-        _root.RowDefinitions.Add(new() { Height = GridLength.Auto });
+        _root.RowDefinitions.Add(new() { Height = new(0) });
+        _root.RowDefinitions.Add(new() { Height = new(0) });
         _root.RowDefinitions.Add(new() { Height = new(1, GridUnitType.Star) });
         _root.RowDefinitions.Add(new() { Height = new(2) });
 
@@ -275,11 +298,11 @@ public sealed partial class MainWindow : Window
         var titleBar = BuildTitleBar();
         Grid.SetRow(titleBar, 0);
         _root.Children.Add(titleBar);
-        SetTitleBar(titleBar);
 
-        var toolbar = BuildToolbar();
-        Grid.SetRow(toolbar, 1);
-        _root.Children.Add(toolbar);
+        var browserChrome = new StackPanel();
+        browserChrome.Children.Add(_horizontalTabs);
+        browserChrome.Children.Add(BuildToolbar());
+        _browserToolbarHost.Child = browserChrome;
 
         _bookmarkBar.Padding = new(8, 3, 8, 4);
         _bookmarkBar.BorderThickness = new(0, 0, 0, 1);
@@ -302,11 +325,11 @@ public sealed partial class MainWindow : Window
         bookmarkBarLayout.Children.Add(bookmarkScroll);
         bookmarkBarLayout.Children.Add(_bookmarkBarAll);
         _bookmarkBar.Child = bookmarkBarLayout;
-        Grid.SetRow(_bookmarkBar, 2);
-        _root.Children.Add(_bookmarkBar);
+
 
         BuildContentArea();
-        Grid.SetRow(_contentGrid, 3);
+        Grid.SetRow(_contentGrid, 1);
+        Grid.SetRowSpan(_contentGrid, 3);
         _root.Children.Add(_contentGrid);
 
         _progress.IsIndeterminate = true;
@@ -315,7 +338,10 @@ public sealed partial class MainWindow : Window
         Grid.SetRow(_progress, 4);
         _root.Children.Add(_progress);
 
-        BuildBootOverlay();
+        // Keep the browser chrome available while its initial tab loads.
+        _bootOverlay.Visibility = Visibility.Collapsed;
+        // Session/settings commands become available once their saved state is read.
+        _root.IsHitTestVisible = false;
         AddShortcuts();
     }
 
@@ -328,7 +354,26 @@ public sealed partial class MainWindow : Window
         _bootOverlay.IsHitTestVisible = true;
         Grid.SetRowSpan(_bootOverlay, 6);
 
-        var logoTransform = new RotateTransform { CenterX = 58, CenterY = 58, Angle = -4 };
+        var blueWash = new LinearGradientBrush
+        {
+            StartPoint = new Windows.Foundation.Point(0, 1),
+            EndPoint = new Windows.Foundation.Point(1, 0.52)
+        };
+        blueWash.GradientStops.Add(new GradientStop { Color = Windows.UI.Color.FromArgb(42, 28, 64, 174), Offset = 0 });
+        blueWash.GradientStops.Add(new GradientStop { Color = Windows.UI.Color.FromArgb(18, 28, 64, 174), Offset = 0.45 });
+        blueWash.GradientStops.Add(new GradientStop { Color = Windows.UI.Color.FromArgb(0, 28, 64, 174), Offset = 1 });
+        _bootOverlay.Children.Add(new Border { Background = blueWash, IsHitTestVisible = false });
+
+        var violetWash = new LinearGradientBrush
+        {
+            StartPoint = new Windows.Foundation.Point(1, 1),
+            EndPoint = new Windows.Foundation.Point(0, 0.52)
+        };
+        violetWash.GradientStops.Add(new GradientStop { Color = Windows.UI.Color.FromArgb(42, 77, 34, 158), Offset = 0 });
+        violetWash.GradientStops.Add(new GradientStop { Color = Windows.UI.Color.FromArgb(18, 77, 34, 158), Offset = 0.45 });
+        violetWash.GradientStops.Add(new GradientStop { Color = Windows.UI.Color.FromArgb(0, 77, 34, 158), Offset = 1 });
+        _bootOverlay.Children.Add(new Border { Background = violetWash, IsHitTestVisible = false });
+
         var logoFrame = new Border
         {
             Width = 116,
@@ -337,10 +382,9 @@ public sealed partial class MainWindow : Window
             Background = new SolidColorBrush(Windows.UI.Color.FromArgb(34, 255, 255, 255)),
             BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(70, 255, 255, 255)),
             BorderThickness = new(1),
-            RenderTransform = logoTransform,
             Child = new Image
             {
-                Source = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage(new Uri("ms-appx:///Assets/sutra-icon.png")),
+                Source = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage(new Uri(AppBrand.DesktopIconUri)),
                 Width = 94,
                 Height = 94,
                 HorizontalAlignment = HorizontalAlignment.Center,
@@ -386,43 +430,9 @@ public sealed partial class MainWindow : Window
         _root.Children.Add(_bootOverlay);
     }
 
-    private void StartBootAnimation()
-    {
-        if (_bootAnimationStarted) return;
-        _bootAnimationStarted = true;
-        var sway = new DoubleAnimation
-        {
-            From = -4,
-            To = 4,
-            Duration = new Duration(TimeSpan.FromMilliseconds(950)),
-            AutoReverse = true,
-            RepeatBehavior = RepeatBehavior.Forever
-        };
-        var pulse = new DoubleAnimation
-        {
-            From = .62,
-            To = 1,
-            Duration = new Duration(TimeSpan.FromMilliseconds(800)),
-            AutoReverse = true,
-            RepeatBehavior = RepeatBehavior.Forever
-        };
-        var logoFrame = (_bootOverlay.Children[0] as StackPanel)?.Children[0];
-        var subtitle = (_bootOverlay.Children[0] as StackPanel)?.Children[2];
-        if (logoFrame is null || subtitle is null) return;
-        _bootAnimation = new Storyboard();
-        Storyboard.SetTarget(sway, logoFrame);
-        Storyboard.SetTargetProperty(sway, "(UIElement.RenderTransform).(RotateTransform.Angle)");
-        Storyboard.SetTarget(pulse, subtitle);
-        Storyboard.SetTargetProperty(pulse, "Opacity");
-        _bootAnimation.Children.Add(sway);
-        _bootAnimation.Children.Add(pulse);
-        _bootAnimation.Begin();
-    }
-
-    private async Task FinishBootAnimationAsync()
+    private async Task FinishBootOverlayAsync()
     {
         if (_bootOverlay.Visibility != Visibility.Visible) return;
-        _bootAnimation?.Stop();
         var finished = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var fade = new DoubleAnimation { To = 0, Duration = new Duration(TimeSpan.FromMilliseconds(360)) };
         fade.Completed += (_, _) => finished.TrySetResult(true);
@@ -436,57 +446,7 @@ public sealed partial class MainWindow : Window
         _bootOverlay.IsHitTestVisible = false;
     }
 
-    private Grid BuildTitleBar()
-    {
-        var bar = new Grid { Padding = new(14, 0, 140, 0), Background = ChromeBrush("SutraChromeBrush") };
-        bar.ColumnDefinitions.Add(new() { Width = GridLength.Auto });
-        bar.ColumnDefinitions.Add(new() { Width = GridLength.Auto });
-        bar.ColumnDefinitions.Add(new() { Width = GridLength.Auto });
-        bar.ColumnDefinitions.Add(new() { Width = new(1, GridUnitType.Star) });
-        var icon = new TextBlock
-        {
-            Text = "◆",
-            FontSize = 13,
-            Foreground = ChromeBrush("SutraAccentBrush"),
-            Margin = new(0, 0, 8, 0),
-            VerticalAlignment = VerticalAlignment.Center
-        };
-        bar.Children.Add(icon);
-        var name = new TextBlock
-        {
-            Text = AppBrand.Name,
-            FontSize = 12,
-            FontWeight = FontWeights.SemiBold,
-            VerticalAlignment = VerticalAlignment.Center
-        };
-        Grid.SetColumn(name, 1);
-        bar.Children.Add(name);
-        var identity = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-        Grid.SetColumn(identity, 2); bar.Children.Add(identity);
-        if (_isPrivate || !_profileName.Equals("Default", StringComparison.OrdinalIgnoreCase))
-        {
-            var badge = new Border
-            {
-                Background = new SolidColorBrush(Windows.UI.Color.FromArgb(38, 124, 92, 255)),
-                CornerRadius = new(10),
-                Padding = new(8, 2, 8, 2),
-                Margin = new(10, 0, 0, 0),
-                VerticalAlignment = VerticalAlignment.Center,
-                Child = new TextBlock { Text = _isPrivate ? "Private" : _profileName, FontSize = 11, FontWeight = FontWeights.SemiBold }
-            };
-            badge.HorizontalAlignment = HorizontalAlignment.Left;
-            identity.Children.Add(badge);
-        }
-        identity.Children.Add(_workspaceIdentity);
-        _horizontalTabs.Height = 44;
-        _horizontalTabs.Margin = new(16, 0, 0, 0);
-        _horizontalTabs.Background = new SolidColorBrush(Colors.Transparent);
-        _horizontalTabs.BorderThickness = new(0);
-        _horizontalTabs.HorizontalAlignment = HorizontalAlignment.Stretch;
-        Grid.SetColumn(_horizontalTabs, 3);
-        bar.Children.Add(_horizontalTabs);
-        return bar;
-    }
+    private Grid BuildTitleBar() => BuildDesktopTitleBar();
 
     private void ConfigureHorizontalTabs()
     {
@@ -590,8 +550,31 @@ public sealed partial class MainWindow : Window
         AutomationProperties.SetName(_address, "Search or enter address");
         _address.Height = 36;
         _address.CornerRadius = new(10);
+        _address.GotFocus += (_, _) => _addressEditing = true;
+        _address.LostFocus += (_, _) => _addressEditing = false;
         _address.QueryIcon = new SymbolIcon(Symbol.Find);
-        _address.QuerySubmitted += (_, e) => Navigate(e.ChosenSuggestion?.ToString() ?? e.QueryText);
+        _address.SuggestionChosen += (box, e) =>
+        {
+            if (e.SelectedItem is ListViewItem { Tag: Browser.Core.Search.LocalSuggestion suggestion })
+            {
+                _selectedAddressSuggestion = suggestion;
+                box.Text = suggestion.Url;
+            }
+        };
+        _address.QuerySubmitted += async (_, e) =>
+        {
+            _addressEditing = false;
+            var suggestion = (e.ChosenSuggestion as ListViewItem)?.Tag as Browser.Core.Search.LocalSuggestion;
+            suggestion ??= _selectedAddressSuggestion?.Url == e.QueryText ? _selectedAddressSuggestion : null;
+            _selectedAddressSuggestion = null;
+            _address.ItemsSource = null;
+            if (suggestion is { Kind: Browser.Core.Search.LocalSuggestionKind.OpenTab, TabId: { } id })
+            {
+                if (FindTab(id) is { } tab) await ActivateTabAsync(tab);
+                else ShowStatus("That tab is no longer open.");
+            }
+            else Navigate(suggestion?.Url ?? e.QueryText);
+        };
         _address.TextChanged += AddressTextChanged;
         ConfigureAddressMenu();
 
@@ -625,65 +608,15 @@ public sealed partial class MainWindow : Window
         _contentGrid.ColumnDefinitions.Add(new() { Width = new(1, GridUnitType.Star) });
         _contentGrid.ColumnDefinitions.Add(new() { Width = new(0) });
 
-        _verticalPane.BorderThickness = new(0, 0, 1, 0);
-        _verticalPane.BorderBrush = ResourceBrush("CardStrokeColorDefaultBrush");
-        var verticalGrid = new Grid { Padding = new(6, 8, 6, 6) };
-        verticalGrid.RowDefinitions.Add(new() { Height = GridLength.Auto });
-        verticalGrid.RowDefinitions.Add(new() { Height = new(1, GridUnitType.Star) });
-        verticalGrid.RowDefinitions.Add(new() { Height = GridLength.Auto });
-        var sidebarHeader = new Grid { Margin = new(5, 0, 4, 6) };
-        sidebarHeader.ColumnDefinitions.Add(new() { Width = new(1, GridUnitType.Star) });
-        sidebarHeader.ColumnDefinitions.Add(new() { Width = GridLength.Auto });
-        _verticalHeading.Text = "Tabs";
-        _verticalHeading.FontSize = 12;
-        _verticalHeading.Opacity = .65;
-        _verticalHeading.VerticalAlignment = VerticalAlignment.Center;
-        sidebarHeader.Children.Add(_verticalHeading);
-        _sidebarToggle.Content = new SymbolIcon(Symbol.Back);
-        ToolTipService.SetToolTip(_sidebarToggle, "Collapse sidebar");
-        AutomationProperties.SetName(_sidebarToggle, "Collapse or expand tab sidebar");
-        _sidebarToggle.Width = 28; _sidebarToggle.Height = 28; _sidebarToggle.Padding = new(0); _sidebarToggle.CornerRadius = new(7);
-        _sidebarToggle.Click += async (_, _) =>
-        {
-            _vm.Settings = _vm.Settings with { SidebarCollapsed = !_vm.Settings.SidebarCollapsed };
-            ApplyTabLayout(); RefreshTabLists();
-            if (!_isPrivate) await SaveSettingsSafeAsync();
-        };
-        _verticalPane.PointerEntered += (_, _) => ExpandSidebarOnHover();
-        _verticalPane.PointerExited += (_, e) =>
-        {
-            var pt = e.GetCurrentPoint(_verticalPane);
-            var insidePane = pt.Position.X >= 0 && pt.Position.Y >= 0 && pt.Position.X <= Math.Max(1, _verticalPane.ActualWidth) && pt.Position.Y <= Math.Max(1, _verticalPane.ActualHeight);
-            DispatcherQueue.TryEnqueue(() =>
-            {
-                if (insidePane) return;
-                _sidebarHoverExpanded = false;
-                ApplyTabLayout(); RefreshTabLists();
-            });
-        };
-        Grid.SetColumn(_sidebarToggle, 1); sidebarHeader.Children.Add(_sidebarToggle);
-        verticalGrid.Children.Add(sidebarHeader);
-        var verticalScroll = new ScrollViewer { Content = _verticalGroupHost, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
-        Grid.SetRow(verticalScroll, 1);
-        verticalGrid.Children.Add(verticalScroll);
-        var newVertical = new Button
-        {
-            Content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Children = { new SymbolIcon(Symbol.Add), new TextBlock { Text = "New tab" } } },
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            HorizontalContentAlignment = HorizontalAlignment.Left,
-            Margin = new(2, 6, 2, 0),
-            CornerRadius = new(8)
-        };
-        newVertical.Click += (_, _) => NewTab(activate: true);
-        Grid.SetRow(newVertical, 2);
-        verticalGrid.Children.Add(newVertical);
-        var sidebarSurface = new Grid();
-        sidebarSurface.Children.Add(verticalGrid);
-        var resizeHandle = BuildSidebarResizeHandle();
-        resizeHandle.HorizontalAlignment = HorizontalAlignment.Right;
-        sidebarSurface.Children.Add(resizeHandle);
-        _verticalPane.Child = sidebarSurface;
-        _contentGrid.Children.Add(_verticalPane);
+        _contentGrid.RowDefinitions.Add(new() { Height = GridLength.Auto });
+        _contentGrid.RowDefinitions.Add(new() { Height = GridLength.Auto });
+        _contentGrid.RowDefinitions.Add(new() { Height = new(1, GridUnitType.Star) });
+        BuildDesktopSidebar();
+        Grid.SetColumn(_browserToolbarHost, 1);
+        _browserToolbarHost.Margin = new(0, 0, 6, 0);
+        _contentGrid.Children.Add(_browserToolbarHost);
+        Grid.SetColumn(_bookmarkBar, 1); Grid.SetRow(_bookmarkBar, 1);
+        _contentGrid.Children.Add(_bookmarkBar);
 
         Grid.SetColumn(_browserHost, 1);
         _browserHost.Background = ResourceBrush("SolidBackgroundFillColorBaseBrush");
@@ -693,6 +626,9 @@ public sealed partial class MainWindow : Window
         startup.Children.Add(new ProgressRing { IsActive = true, Width = 18, Height = 18, HorizontalAlignment = HorizontalAlignment.Center });
         _browserHost.Children.Add(startup);
         _contentGrid.Children.Add(_browserHost);
+        Grid.SetColumn(_workspaceHost, 1);
+        _workspaceHost.Background = ResourceBrush("SolidBackgroundFillColorBaseBrush");
+        _contentGrid.Children.Add(_workspaceHost);
         BuildCopilotPanel();
         Grid.SetColumn(_copilotPanel, 2);
         _contentGrid.Children.Add(_copilotPanel);
@@ -759,20 +695,34 @@ public sealed partial class MainWindow : Window
         Grid.SetColumn(_statusBubble, 1);
         Canvas.SetZIndex(_statusBubble, 24);
         _contentGrid.Children.Add(_statusBubble);
+
+        foreach (var child in _contentGrid.Children.OfType<FrameworkElement>())
+        {
+            if (child == _verticalPane || child == _browserToolbarHost || child == _bookmarkBar) continue;
+            if (child == _workspaceHost || child == _utilitySidebar || child == _copilotPanel)
+            {
+                Grid.SetRow(child, 0); Grid.SetRowSpan(child, 3);
+            }
+            else Grid.SetRow(child, 2);
+        }
+        _browserHost.Margin = new(0, 0, 6, 6);
+        _workspaceHost.Margin = new(6, 0, 6, 6);
+        Grid.SetColumn(_webViewInitializationHost, 1); Grid.SetRow(_webViewInitializationHost, 2);
+        _contentGrid.Children.Add(_webViewInitializationHost);
     }
 
     private Border BuildSidebarResizeHandle()
     {
         var handle = new Border
         {
-            Width = 14,
+            Width = 6,
             HorizontalAlignment = HorizontalAlignment.Right,
             VerticalAlignment = VerticalAlignment.Stretch,
-            Background = new SolidColorBrush(Windows.UI.Color.FromArgb(35, 128, 128, 128))
+            Background = new SolidColorBrush(Windows.UI.Color.FromArgb(0, 128, 128, 128))
         };
         ToolTipService.SetToolTip(handle, "Drag to resize sidebar");
         handle.PointerEntered += (_, _) => handle.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(110, 128, 128, 128));
-        handle.PointerExited += (_, _) => handle.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(35, 128, 128, 128));
+        handle.PointerExited += (_, _) => handle.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(0, 128, 128, 128));
 
         var dragging = false;
         var startX = 0d;
@@ -788,7 +738,7 @@ public sealed partial class MainWindow : Window
         handle.PointerMoved += (_, e) =>
         {
             if (!dragging) return;
-            var width = (int)Math.Round(Math.Clamp(startWidth + e.GetCurrentPoint(_contentGrid).Position.X - startX, 180, 520));
+            var width = (int)Math.Round(Math.Clamp(startWidth + e.GetCurrentPoint(_contentGrid).Position.X - startX, 208, 520));
             _vm.Settings = _vm.Settings with { SidebarWidth = width };
             ApplyTabLayout();
             e.Handled = true;
@@ -816,22 +766,42 @@ public sealed partial class MainWindow : Window
         AddMenu(flyout, "New window", OpenNewWindow, "Ctrl+N", Symbol.NewWindow);
         AddMenu(flyout, "New private window", OpenPrivateWindow, "Ctrl+Shift+N", Symbol.ProtectedDocument);
         AddMenu(flyout, "Reopen closed tab", ReopenClosed, "Ctrl+Shift+T", Symbol.OpenFile);
+        AddMenu(flyout, "Recently closed tabs", async () => await ShowRecentlyClosedAsync(), null, Symbol.Undo);
         AddMenu(flyout, "Search tabs", async () => await SearchTabsAsync(), null, Symbol.Find);
         AddMenu(flyout, "Organize tabs by site", async () => await SuggestDomainGroupsAsync(true), null, Symbol.Tag);
         AddMenu(flyout, "Command palette", async () => await ShowCommandPaletteAsync(), "Ctrl+Shift+P", Symbol.AllApps);
         AddMenu(flyout, "Workspaces", async () => await ShowWorkspacesAsync(), null, Symbol.Library);
         AddMenu(flyout, "Library", async () => await ShowLibrarySearchAsync(), null, Symbol.Library);
+        if (!_isPrivate)
+        {
+            var capture = new MenuFlyoutSubItem { Text = "Save to Sutra", Icon = new SymbolIcon(Symbol.Save) };
+            foreach (var (label, action) in new (string, Func<Task>)[]
+            {
+                ("Save to Collection", CaptureCollectionToSutraAsync),
+                ("Annotate selection", AddResearchAnnotationToSutraAsync),
+                ("Save PDF to Sutra", ImportPdfToSutraAsync)
+            })
+            {
+                var item = new MenuFlyoutItem { Text = label };
+                item.Click += async (_, _) => await action();
+                capture.Items.Add(item);
+            }
+            flyout.Items.Add(capture);
+        }
         AddMenu(flyout, "Save for offline reading", async () => await SaveOfflineArticleAsync(), null, Symbol.SaveLocal);
         AddMenu(flyout, "Offline library", async () => await ShowOfflineLibraryAsync(), null, Symbol.SaveLocal);
         AddMenu(flyout, "Session recovery", async () => await ShowSessionRecoveryAsync(), null, Symbol.Undo);
         AddMenu(flyout, "Web panels", async () => await ShowWebPanelsAsync(), null, Symbol.DockRight);
+        if (!_isPrivate) AddMenu(flyout, "Extensions", async () => await ShowExtensionsAsync(), null, Symbol.Add);
         AddMenu(flyout, "Profiles", async () => await ShowProfilesAsync(), null, Symbol.Contact);
         AddMenu(flyout, "Keyboard shortcuts", async () => await ShowKeyboardShortcutsAsync(), null, Symbol.Keyboard);
         AddMenu(flyout, "Reading list", async () => await ShowReadingListAsync(), null, Symbol.Document);
         AddMenu(flyout, _vm.Settings.SidebarCollapsed ? "Expand tab sidebar" : "Collapse tab sidebar", async () => await ToggleTabSidebarAsync(), null, Symbol.DockLeft);
         AddMenu(flyout, "Sidebar", async () => await ToggleUtilitySidebarAsync(), null, Symbol.DockRight);
-        AddMenu(flyout, "Customize browser", async () => await ShowCustomizationAsync(), null, Symbol.Setting);
+        AddMenu(flyout, "Settings", async () => await ShowSettingsAsync(), null, Symbol.Setting);
         flyout.Items.Add(new MenuFlyoutSeparator());
+        AddMenu(flyout, "Page zoom", async () => await ShowPageZoomAsync(), null, Symbol.ZoomIn);
+        AddMenu(flyout, "Search shortcuts", async () => await ShowSearchAliasesAsync(), null, Symbol.Find);
         AddMenu(flyout, "Site information", async () => await ShowSiteInformationAsync(), null, Symbol.ProtectedDocument);
         AddMenu(flyout, "Split view", () => BuildSplitViewMenu().ShowAt(_more), null, Symbol.View);
         AddMenu(flyout, "Media controls", async () => await ShowMediaHubAsync(), null, Symbol.Play);
@@ -861,20 +831,36 @@ public sealed partial class MainWindow : Window
 
     private static Button IconButton(Symbol symbol, string tooltip)
     {
-        var button = new Button { Content = new SymbolIcon(symbol), Width = 36, Height = 36, Padding = new(0), CornerRadius = new(8) };
+        var button = new Button { Content = new Viewbox { Width = 18, Height = 18, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Child = new SymbolIcon(symbol) }, HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center, Width = 36, Height = 36, Padding = new(0), CornerRadius = new(8) };
         ToolTipService.SetToolTip(button, tooltip);
         // Icon-only buttons need a real name for keyboard users and screen readers.
         AutomationProperties.SetName(button, tooltip);
         return button;
     }
 
+    private void FocusAddressBar()
+    {
+        _addressEditing = true;
+        _address.Focus(FocusState.Keyboard);
+        if (Microsoft.UI.Xaml.Input.FocusManager.GetFocusedElement(_root.XamlRoot) is TextBox text) text.SelectAll();
+    }
+
     private static void Add(Grid grid, FrameworkElement element, int column) { Grid.SetColumn(element, column); grid.Children.Add(element); }
 
     private static void AddMenu(MenuFlyout flyout, string text, Action action, string? shortcut = null, Symbol? icon = null)
+        => AddMenu(flyout, text, (Func<Task>)(() => { action(); return Task.CompletedTask; }), shortcut, icon);
+
+    private static void AddMenu(MenuFlyout flyout, string text, Func<Task> action, string? shortcut = null, Symbol? icon = null)
     {
         var item = new MenuFlyoutItem { Text = text, KeyboardAcceleratorTextOverride = shortcut };
         if (icon is not null) item.Icon = new SymbolIcon(icon.Value);
-        item.Click += (_, _) => action();
+        var running = false;
+        item.Click += (_, _) =>
+        {
+            if (running) return;
+            running = true;
+            _ = ObserveUiCallbackAsync("Menu action", async () => { try { await action(); } finally { running = false; } });
+        };
         flyout.Items.Add(item);
     }
 
@@ -890,6 +876,7 @@ public sealed partial class MainWindow : Window
         // WinUI accelerator collection prevents the framework from rendering its
         // transient "Ctrl+L" hint over webpages.
         Shortcut(VirtualKey.T, VirtualKeyModifiers.Control, async () => await OpenNewTabAndFocusAddressAsync());
+        Shortcut(VirtualKey.K, VirtualKeyModifiers.Control, async () => await ShowLibrarySearchAsync());
         Shortcut(VirtualKey.Z, VirtualKeyModifiers.Control | VirtualKeyModifiers.Menu, async () => await SutraSaveAsync());
         Shortcut(VirtualKey.N, VirtualKeyModifiers.Control, OpenNewWindow);
         Shortcut(VirtualKey.N, VirtualKeyModifiers.Control | VirtualKeyModifiers.Shift, OpenPrivateWindow);
@@ -919,7 +906,7 @@ public sealed partial class MainWindow : Window
     private void Shortcut(VirtualKey key, VirtualKeyModifiers modifiers, Action action)
     {
         var accelerator = new KeyboardAccelerator { Key = key, Modifiers = modifiers };
-        accelerator.Invoked += (_, e) => { action(); e.Handled = true; };
+        accelerator.Invoked += (_, e) => { if (_root.IsHitTestVisible) action(); e.Handled = true; };
         _root.KeyboardAccelerators.Add(accelerator);
     }
 
@@ -1029,7 +1016,7 @@ public sealed partial class MainWindow : Window
             }
             _toolbar.Background = ChromeBrush("SutraToolbarBrush");
             _horizontalTabs.Background = new SolidColorBrush(Colors.Transparent);
-            _verticalPane.Background = ChromeBrush("SutraSurfaceBrush");
+            _verticalPane.Background = ChromeBrush("SutraChromeBrush");
             _bookmarkBar.Background = ChromeBrush("SutraToolbarBrush");
             _utilitySidebar.Background = ChromeBrush("SutraSurfaceBrush");
             _downloadShelf.Background = ChromeBrush("SutraSurfaceBrush");
@@ -1041,6 +1028,8 @@ public sealed partial class MainWindow : Window
             _statusBubble.BorderBrush = ChromeBrush("SutraBorderBrush");
         }
         catch { }
+        RefreshDesktopNavigation();
+        RefreshDesktopSidebar();
         ApplyCustomKeyboardShortcuts();
     }
 
@@ -1062,6 +1051,7 @@ public sealed partial class MainWindow : Window
 
     private void ShowStatus(string message, InfoBarSeverity severity = InfoBarSeverity.Informational, int milliseconds = 3500)
     {
+        if (_isWindowClosed) return;
         _status.Text = message;
         _notification.ActionButton = null;
         _notification.Message = message;
@@ -1157,6 +1147,13 @@ public sealed partial class MainWindow : Window
         {
         // From here on, no callback may update the UI of this window.
         _isWindowClosed = true;
+        CloseFindBar(false);
+        foreach (var callback in _nativePageClosedHandlers.Values.ToArray())
+        {
+            try { callback(); } catch (Exception ex) { Debug.WriteLine($"Page shutdown cleanup: {ex.GetType().Name}"); }
+        }
+        _nativePageClosedHandlers.Clear();
+        _nativePageActivatedHandlers.Clear();
         try { _aiCancellation?.Cancel(); } catch { }
 
         StopTimer(_maintenanceTimer);
@@ -1167,11 +1164,23 @@ public sealed partial class MainWindow : Window
         // Cancel lifetime work and let tracked in-flight passes unwind before any
         // control they can observe is released. Cancellation is normal shutdown.
         try { _windowLifetimeCts.Cancel(); } catch { }
+        try { await _assetWrites.StopAndDrainAsync(); }
+        catch (OperationCanceledException) { }
+        catch (Exception ex) { Debug.WriteLine($"Asset write cleanup: {ex.GetType().Name}"); }
         await DrainBackgroundWorkQuietlyAsync(_maintenanceWork);
         await DrainBackgroundWorkQuietlyAsync(_mediaRefreshWork);
 
         // The utility web-panel WebView is not a tab WebView; close it explicitly.
         try { CloseWebPanel(); } catch { }
+        try
+        {
+            if (_workspaceSidePanelOpen) CloseSutraSidePanel();
+            if (_sutraWorkspaceView?.Parent is Panel workspaceParent) workspaceParent.Children.Remove(_sutraWorkspaceView);
+            _sutraWorkspaceView?.Close();
+            _sutraWorkspaceView = null;
+            CleanupSutraPdfImports();
+        }
+        catch (Exception ex) { Debug.WriteLine($"Sutra workspace close failed: {ex.GetType().Name}"); }
         try { CloseAllTabWebViews(); } catch { }
 
         if (!_isPrivate && !_suppressPersistence)
@@ -1224,6 +1233,14 @@ public sealed partial class MainWindow : Window
 
     private void CloseAllTabWebViews()
     {
+        foreach (var id in _videoMiniPlayers.Keys.ToArray())
+            ObserveUiCallback("Close video mini-player", () => CloseVideoMiniPlayerAsync(id, restoreTab: false));
+        CancelAllPendingTabWebViewInitializations();
+        foreach (var pending in _webViewInitializationHost.Children.OfType<WebView2>().ToArray())
+        {
+            DetachWebView(pending);
+            try { pending.Close(); } catch { }
+        }
         foreach (var pair in _webViews.ToList())
         {
             _webViews.Remove(pair.Key);
@@ -1249,7 +1266,11 @@ public sealed partial class MainWindow : Window
     {
         try { await operation(); }
         catch (OperationCanceledException) { }
-        catch (Exception ex) { Debug.WriteLine($"{name} callback failed: {ex.GetType().Name}"); }
+        catch (Exception ex)
+        {
+            PrivacySafeDiagnosticLog.Record("ui-callback-failed", ex, name);
+            Debug.WriteLine($"{name} callback failed: {ex.GetType().Name}");
+        }
     }
 
     private bool IsCurrentTabWebView(BrowserTab tab, WebView2 web)

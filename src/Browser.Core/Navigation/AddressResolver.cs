@@ -54,6 +54,7 @@ public static class AddressResolver
         var alias = value[..separator].TrimStart('@', '!');
         var query = value[(separator + 1)..].Trim();
         if (!aliases.TryGetValue(alias, out var template) || string.IsNullOrWhiteSpace(query)) return null;
+        if (!SearchAliasPolicy.TryValidate(alias, template, out _, out template, out _)) return null;
         var target = template.Replace("{query}", Uri.EscapeDataString(query), StringComparison.OrdinalIgnoreCase);
         return Uri.TryCreate(target, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https"
             ? new NavigationTarget(uri, true, query)

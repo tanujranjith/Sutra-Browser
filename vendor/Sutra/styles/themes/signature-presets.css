@@ -1,0 +1,700 @@
+/* ===========================================================================
+   Signature presets — authored visual systems, not accent-color swaps.
+   Blueprint: technical drafting room. Paper: tactile print studio.
+   Arcade: luminous retro-future play space.
+   ========================================================================== */
+
+body:is(
+    [data-theme="blueprint"][data-theme-key="blueprint"],
+    [data-theme="paper"][data-theme-key="paper"],
+    [data-theme="arcade"][data-theme-key="arcade"]
+) {
+    position: relative;
+    isolation: isolate;
+    overflow-x: clip;
+}
+
+body:is(
+    [data-theme="blueprint"][data-theme-key="blueprint"],
+    [data-theme="paper"][data-theme-key="paper"],
+    [data-theme="arcade"][data-theme-key="arcade"]
+)::before,
+body:is(
+    [data-theme="blueprint"][data-theme-key="blueprint"],
+    [data-theme="paper"][data-theme-key="paper"],
+    [data-theme="arcade"][data-theme-key="arcade"]
+)::after {
+    content: "";
+    position: fixed;
+    pointer-events: none;
+    z-index: 0;
+}
+
+body:is(
+    [data-theme="blueprint"][data-theme-key="blueprint"],
+    [data-theme="paper"][data-theme-key="paper"],
+    [data-theme="arcade"][data-theme-key="arcade"]
+) .app-container {
+    position: relative;
+    z-index: 1;
+    isolation: isolate;
+    background: transparent;
+}
+
+body:is(
+    [data-theme="blueprint"][data-theme-key="blueprint"],
+    [data-theme="paper"][data-theme-key="paper"],
+    [data-theme="arcade"][data-theme-key="arcade"]
+) .view {
+    background-color: transparent !important;
+}
+
+/* --------------------------------------------------------------------------
+   Blueprint — measured, square, instrument-like
+   -------------------------------------------------------------------------- */
+
+body[data-theme="blueprint"][data-theme-key="blueprint"] {
+    color-scheme: dark;
+    --font-heading: "IBM Plex Mono", "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+    --font-body: "Inter", "Segoe UI", sans-serif;
+    --bg-primary: #06131f;
+    --bg-secondary: #092238;
+    --bg-hover: rgba(90, 215, 255, 0.1);
+    --bg-elevated: rgba(8, 29, 46, 0.95);
+    --editor-bg: rgba(5, 20, 33, 0.93);
+    --code-bg: #030d16;
+    --text-primary: #edf9ff;
+    --text-secondary: #bcd8e7;
+    --text-muted: #87adbf;
+    --accent: #5ad7ff;
+    --accent-rgb: 90, 215, 255;
+    --accent-strong: #25b9e8;
+    --accent-soft: rgba(90, 215, 255, 0.16);
+    --border: rgba(115, 218, 247, 0.25);
+    --glass-01: rgba(7, 28, 45, 0.88);
+    --glass-02: rgba(5, 21, 34, 0.91);
+    --glass-border: rgba(99, 210, 240, 0.25);
+    --surface-bg: rgba(90, 215, 255, 0.055);
+    --surface-bg-hover: rgba(90, 215, 255, 0.1);
+    --surface-bg-active: rgba(90, 215, 255, 0.16);
+    --surface-border: rgba(99, 210, 240, 0.21);
+    --surface-border-strong: rgba(99, 210, 240, 0.4);
+    --surface-bg-elevated: rgba(90, 215, 255, 0.04);
+    --surface-inset: rgba(90, 215, 255, 0.07);
+    --sidebar-bg: rgba(5, 22, 36, 0.95);
+    --button-bg: #153d58;
+    --button-bg-hover: #1b506f;
+    --button-border: rgba(103, 220, 250, 0.45);
+    --button-text: #eafaff;
+    --shadow-soft: 0 16px 36px rgba(0, 4, 8, 0.4), inset 0 1px rgba(170, 235, 255, 0.035);
+    --shadow-soft-lg: 0 28px 64px rgba(0, 4, 8, 0.52), inset 0 1px rgba(170, 235, 255, 0.04);
+    --theme-ui-surface: rgba(5, 24, 39, 0.91);
+    --theme-ui-surface-hover: rgba(9, 40, 62, 0.96);
+    --theme-ui-border: rgba(99, 210, 240, 0.3);
+    --theme-ui-text: #dff6ff;
+    --theme-ui-text-strong: #f5fcff;
+    --theme-ui-primary-bg: linear-gradient(145deg, #6be0ff, #35bfe9);
+    --theme-ui-primary-hover: linear-gradient(145deg, #8be8ff, #52cbed);
+    --theme-ui-primary-text: #03151f;
+    --theme-ui-primary-text-hover: #020d14;
+    --cc-surface: rgba(7, 28, 45, 0.95);
+    --cc-surface-quiet: rgba(7, 28, 45, 0.82);
+    --cc-border-soft: rgba(99, 210, 240, 0.22);
+    --cc-border-quiet: rgba(99, 210, 240, 0.12);
+    --cc-divider: rgba(99, 210, 240, 0.1);
+    background: linear-gradient(152deg, #081c2d, #04101b 58%, #020a11);
+}
+
+body[data-theme="blueprint"][data-theme-key="blueprint"]::before {
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(90, 215, 255, 0.075) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(90, 215, 255, 0.075) 1px, transparent 1px),
+        linear-gradient(rgba(90, 215, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(90, 215, 255, 0.025) 1px, transparent 1px);
+    background-size: 80px 80px, 80px 80px, 16px 16px, 16px 16px;
+    opacity: 0.52;
+}
+
+body[data-theme="blueprint"][data-theme-key="blueprint"]::after {
+    inset: 0;
+    background:
+        radial-gradient(circle at 86% 18%, transparent 0 56px, rgba(90, 215, 255, 0.13) 57px 58px, transparent 59px),
+        linear-gradient(90deg, transparent 85.7%, rgba(90, 215, 255, 0.12) 85.8% 86%, transparent 86.1%),
+        linear-gradient(transparent 17.8%, rgba(90, 215, 255, 0.12) 17.9% 18.1%, transparent 18.2%);
+    opacity: 0.52;
+    animation: blueprint-scan 18s linear infinite alternate;
+}
+
+body[data-theme="blueprint"][data-theme-key="blueprint"] .main-content {
+    background: linear-gradient(180deg, rgba(4, 17, 28, 0.7), rgba(3, 12, 20, 0.84)) !important;
+}
+
+body[data-theme="blueprint"][data-theme-key="blueprint"] :is(
+    .sidebar, .top-nav, .toolbar-wrapper, .storage-options, .theme-panel,
+    .chatbot-panel, .modal-content, .cw-modal-card, .all-tasks-drawer
+) {
+    background: linear-gradient(155deg, rgba(10, 35, 54, 0.95), rgba(4, 18, 30, 0.92)) !important;
+    border-color: rgba(90, 215, 255, 0.24) !important;
+    border-radius: 3px !important;
+    box-shadow: var(--shadow-soft) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(1.08) !important;
+    backdrop-filter: blur(16px) saturate(1.08) !important;
+}
+
+body[data-theme="blueprint"][data-theme-key="blueprint"] :is(
+    .view-tabs, .view-tab, .toolbar-btn, .neumo-btn, .btn, .cc-btn,
+    .glass-card, .neumo-card, .cc-card, .cc-section-card, .today-nextup-card,
+    .today-radar-card, .today-attention-card, .hw-assignment, .hw-lane,
+    input, textarea, select
+) {
+    border-radius: 3px !important;
+}
+
+body[data-theme="blueprint"][data-theme-key="blueprint"] :is(
+    .glass-card, .neumo-card, .cc-card, .cc-section-card, .today-nextup-card,
+    .today-radar-card, .today-attention-card, .hw-assignment, .hw-lane
+) {
+    background:
+        linear-gradient(90deg, rgba(90, 215, 255, 0.025) 1px, transparent 1px) 0 0 / 24px 24px,
+        linear-gradient(180deg, rgba(8, 31, 49, 0.94), rgba(5, 21, 34, 0.93)) !important;
+    border-color: rgba(90, 215, 255, 0.24) !important;
+    box-shadow: 0 12px 30px rgba(0, 4, 8, 0.32), inset 3px 0 rgba(90, 215, 255, 0.12) !important;
+}
+
+body[data-theme="blueprint"][data-theme-key="blueprint"] :is(
+    .sidebar .app-title span, .view-header h1, .today-greeting h1,
+    .cc-header h1, .theme-panel-title, .hw-header-bar h2
+) {
+    font-family: var(--font-heading);
+    letter-spacing: 0.075em;
+    text-transform: uppercase;
+}
+
+body[data-theme="blueprint"][data-theme-key="blueprint"] :is(.view-tab.active, .toolbar-btn.active, .cc-btn-primary, .btn-primary) {
+    color: #03151f !important;
+    background: linear-gradient(145deg, #6de1ff, #37bfe8) !important;
+    border-color: #9cecff !important;
+    box-shadow: 0 0 24px rgba(90, 215, 255, 0.2) !important;
+}
+
+body[data-theme="blueprint"][data-theme-key="blueprint"] :is(input, textarea, select, button, [tabindex]):focus-visible {
+    outline: 2px solid #78e1ff !important;
+    outline-offset: 3px;
+    box-shadow: 0 0 0 4px rgba(90, 215, 255, 0.15) !important;
+}
+
+/* --------------------------------------------------------------------------
+   Paper — tactile, warm, flat print-studio surfaces
+   -------------------------------------------------------------------------- */
+
+body[data-theme="paper"][data-theme-key="paper"] {
+    color-scheme: light;
+    --font-heading: "Playfair Display", Georgia, "Times New Roman", serif;
+    --font-body: "Avenir Next", "Segoe UI", sans-serif;
+    --bg-primary: #f5eee2;
+    --bg-secondary: #e8dece;
+    --bg-hover: rgba(74, 55, 39, 0.075);
+    --bg-elevated: #fbf6ed;
+    --editor-bg: rgba(255, 251, 244, 0.96);
+    --code-bg: #e9dfd0;
+    --text-primary: #211d18;
+    --text-secondary: #54493d;
+    --text-muted: #766756;
+    --accent: #c64d32;
+    --accent-rgb: 198, 77, 50;
+    --accent-strong: #9f3522;
+    --accent-soft: rgba(198, 77, 50, 0.13);
+    --border: rgba(56, 43, 32, 0.2);
+    --glass-01: rgba(245, 238, 226, 0.96);
+    --glass-02: rgba(251, 246, 237, 0.97);
+    --glass-border: rgba(56, 43, 32, 0.2);
+    --surface-bg: rgba(63, 47, 34, 0.035);
+    --surface-bg-hover: rgba(63, 47, 34, 0.065);
+    --surface-bg-active: rgba(198, 77, 50, 0.1);
+    --surface-border: rgba(56, 43, 32, 0.17);
+    --surface-border-strong: rgba(56, 43, 32, 0.3);
+    --surface-bg-elevated: rgba(255, 255, 255, 0.38);
+    --surface-inset: rgba(56, 43, 32, 0.045);
+    --sidebar-bg: #e8dece;
+    --button-bg: #27221d;
+    --button-bg-hover: #3b322a;
+    --button-border: #27221d;
+    --button-text: #fffaf1;
+    --shadow-soft: 5px 6px 0 rgba(56, 43, 32, 0.13);
+    --shadow-soft-lg: 9px 11px 0 rgba(56, 43, 32, 0.16);
+    background: #eee4d5;
+}
+
+body[data-theme="paper"][data-theme-key="paper"]::before {
+    inset: 0;
+    background:
+        radial-gradient(circle at 20% 18%, rgba(94, 67, 45, 0.09) 0 0.55px, transparent 0.8px),
+        radial-gradient(circle at 78% 64%, rgba(94, 67, 45, 0.065) 0 0.5px, transparent 0.75px),
+        repeating-linear-gradient(96deg, rgba(102, 73, 48, 0.025) 0 1px, transparent 1px 7px);
+    background-size: 7px 7px, 11px 11px, auto;
+    opacity: 0.6;
+}
+
+body[data-theme="paper"][data-theme-key="paper"]::after {
+    inset: 16px;
+    border: 1px solid rgba(198, 77, 50, 0.11);
+    box-shadow: inset 0 0 0 5px rgba(255, 255, 255, 0.15);
+}
+
+body[data-theme="paper"][data-theme-key="paper"] .main-content {
+    background: rgba(245, 238, 226, 0.84) !important;
+}
+
+body[data-theme="paper"][data-theme-key="paper"] :is(
+    .sidebar, .top-nav, .toolbar-wrapper, .storage-options, .theme-panel,
+    .chatbot-panel, .modal-content, .cw-modal-card, .all-tasks-drawer
+) {
+    background: #f7f0e5 !important;
+    border-color: rgba(56, 43, 32, 0.2) !important;
+    border-radius: 7px !important;
+    box-shadow: var(--shadow-soft) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+}
+
+body[data-theme="paper"][data-theme-key="paper"] .sidebar {
+    background:
+        repeating-linear-gradient(180deg, transparent 0 31px, rgba(80, 58, 40, 0.035) 32px),
+        #e8dece !important;
+    border-right: 1px solid rgba(56, 43, 32, 0.24) !important;
+}
+
+body[data-theme="paper"][data-theme-key="paper"] :is(
+    .glass-card, .neumo-card, .cc-card, .cc-section-card, .today-nextup-card,
+    .today-radar-card, .today-attention-card, .hw-assignment, .hw-lane
+) {
+    background: #fbf5eb !important;
+    border: 1px solid rgba(56, 43, 32, 0.22) !important;
+    border-radius: 7px !important;
+    box-shadow: 5px 6px 0 rgba(56, 43, 32, 0.12) !important;
+}
+
+body[data-theme="paper"][data-theme-key="paper"] :is(
+    .sidebar .app-title span, .view-header h1, .today-greeting h1,
+    .cc-header h1, .theme-panel-title, .hw-header-bar h2
+) {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    letter-spacing: -0.015em;
+}
+
+body[data-theme="paper"][data-theme-key="paper"] :is(.view-tabs, .integrations-dock) {
+    background: #ebe1d2 !important;
+    border: 1px solid rgba(56, 43, 32, 0.18) !important;
+    box-shadow: none !important;
+}
+
+body[data-theme="paper"][data-theme-key="paper"] :is(.view-tab.active, .toolbar-btn.active, .cc-btn-primary, .btn-primary) {
+    color: #fffaf1 !important;
+    background: #b9442d !important;
+    border-color: #8f2f1e !important;
+    box-shadow: 3px 3px 0 rgba(86, 35, 23, 0.2) !important;
+}
+
+body[data-theme="paper"][data-theme-key="paper"] :is(input, textarea, select, .modal-input, .global-search) {
+    color: var(--text-primary);
+    background: #fffaf2 !important;
+    border-color: rgba(56, 43, 32, 0.25) !important;
+    border-radius: 5px !important;
+    box-shadow: inset 2px 2px 0 rgba(56, 43, 32, 0.045);
+}
+
+body[data-theme="paper"][data-theme-key="paper"] :is(input, textarea, select, button, [tabindex]):focus-visible {
+    outline: 3px solid #a93824 !important;
+    outline-offset: 3px;
+    box-shadow: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   Arcade — saturated neon, curved translucent bento surfaces
+   -------------------------------------------------------------------------- */
+
+body[data-theme="arcade"][data-theme-key="arcade"] {
+    color-scheme: dark;
+    --font-heading: "Avenir Next", "Trebuchet MS", "Segoe UI", sans-serif;
+    --font-body: "Inter", "Segoe UI", sans-serif;
+    --bg-primary: #110725;
+    --bg-secondary: #251048;
+    --bg-hover: rgba(255, 101, 212, 0.13);
+    --bg-elevated: rgba(31, 12, 61, 0.92);
+    --editor-bg: rgba(21, 8, 44, 0.92);
+    --code-bg: #0d051d;
+    --text-primary: #fff4ff;
+    --text-secondary: #e5cef1;
+    --text-muted: #bca1cd;
+    --accent: #ff65d4;
+    --accent-rgb: 255, 101, 212;
+    --accent-strong: #ed3dc1;
+    --accent-soft: rgba(255, 101, 212, 0.19);
+    --border: rgba(199, 135, 255, 0.23);
+    --arcade-cyan: #6ef7ff;
+    --arcade-orange: #ffb45f;
+    --glass-01: rgba(36, 13, 70, 0.76);
+    --glass-02: rgba(23, 8, 49, 0.82);
+    --glass-border: rgba(210, 150, 255, 0.26);
+    --surface-bg: rgba(255, 255, 255, 0.075);
+    --surface-bg-hover: rgba(255, 255, 255, 0.12);
+    --surface-bg-active: rgba(255, 101, 212, 0.17);
+    --surface-border: rgba(210, 150, 255, 0.21);
+    --surface-border-strong: rgba(210, 150, 255, 0.39);
+    --surface-bg-elevated: rgba(255, 255, 255, 0.055);
+    --surface-inset: rgba(255, 255, 255, 0.075);
+    --sidebar-bg: rgba(24, 8, 53, 0.9);
+    --button-bg: linear-gradient(135deg, #ff66d4, #9c54ff);
+    --button-bg-hover: linear-gradient(135deg, #ff85df, #b274ff);
+    --button-border: rgba(255, 190, 240, 0.55);
+    --button-text: #1b0827;
+    --shadow-soft: 0 18px 46px rgba(4, 0, 14, 0.44), 0 0 28px rgba(121, 61, 211, 0.08);
+    --shadow-soft-lg: 0 32px 78px rgba(4, 0, 14, 0.58), 0 0 44px rgba(255, 101, 212, 0.08);
+    --theme-ui-surface: rgba(27, 9, 55, 0.84);
+    --theme-ui-surface-hover: rgba(48, 18, 87, 0.92);
+    --theme-ui-border: rgba(220, 157, 255, 0.3);
+    --theme-ui-text: #f9eaff;
+    --theme-ui-text-strong: #fff7ff;
+    --theme-ui-primary-bg: linear-gradient(135deg, #ff70d7, #ad61ff 65%, #6ef7ff);
+    --theme-ui-primary-hover: linear-gradient(135deg, #ff91e2, #c07fff 65%, #8ffaff);
+    --theme-ui-primary-text: #1c0829;
+    --theme-ui-primary-text-hover: #100419;
+    --cc-surface: rgba(31, 12, 61, 0.94);
+    --cc-surface-quiet: rgba(31, 12, 61, 0.78);
+    --cc-border-soft: rgba(220, 157, 255, 0.22);
+    --cc-border-quiet: rgba(220, 157, 255, 0.12);
+    --cc-divider: rgba(220, 157, 255, 0.1);
+    background:
+        radial-gradient(70% 58% at 10% 0%, rgba(110, 247, 255, 0.16), transparent 64%),
+        radial-gradient(76% 64% at 96% 6%, rgba(255, 101, 212, 0.2), transparent 62%),
+        linear-gradient(160deg, #25104a, #100522 58%, #070212);
+}
+
+body[data-theme="arcade"][data-theme-key="arcade"]::before {
+    inset: 0;
+    background:
+        radial-gradient(circle at 13% 18%, rgba(110, 247, 255, 0.18), transparent 20%),
+        radial-gradient(circle at 86% 14%, rgba(255, 101, 212, 0.22), transparent 24%),
+        radial-gradient(circle at 62% 74%, rgba(161, 91, 255, 0.18), transparent 28%);
+    filter: blur(12px);
+    animation: arcade-glow-drift 24s ease-in-out infinite alternate;
+}
+
+body[data-theme="arcade"][data-theme-key="arcade"]::after {
+    left: -18vw;
+    right: -18vw;
+    bottom: -20vh;
+    height: 54vh;
+    background-image:
+        repeating-linear-gradient(90deg, rgba(110, 247, 255, 0.13) 0 1px, transparent 1px 56px),
+        repeating-linear-gradient(0deg, rgba(255, 101, 212, 0.13) 0 1px, transparent 1px 44px);
+    transform: perspective(520px) rotateX(61deg) scale(1.16);
+    transform-origin: 50% 100%;
+    opacity: 0.6;
+    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 48%);
+    mask-image: linear-gradient(to bottom, transparent, #000 48%);
+    animation: arcade-grid-breathe 18s ease-in-out infinite alternate;
+}
+
+body[data-theme="arcade"][data-theme-key="arcade"] .main-content {
+    background: linear-gradient(180deg, rgba(17, 6, 37, 0.62), rgba(7, 2, 17, 0.78)) !important;
+}
+
+body[data-theme="arcade"][data-theme-key="arcade"] :is(
+    .sidebar, .top-nav, .toolbar-wrapper, .storage-options, .theme-panel,
+    .chatbot-panel, .modal-content, .cw-modal-card, .all-tasks-drawer
+) {
+    background: linear-gradient(145deg, rgba(48, 17, 85, 0.83), rgba(19, 6, 43, 0.86)) !important;
+    border-color: rgba(219, 156, 255, 0.25) !important;
+    box-shadow: var(--shadow-soft) !important;
+    -webkit-backdrop-filter: blur(22px) saturate(1.25) !important;
+    backdrop-filter: blur(22px) saturate(1.25) !important;
+}
+
+body[data-theme="arcade"][data-theme-key="arcade"] :is(
+    .glass-card, .neumo-card, .cc-card, .cc-section-card, .today-nextup-card,
+    .today-radar-card, .today-attention-card, .hw-assignment, .hw-lane
+) {
+    background: linear-gradient(145deg, rgba(58, 21, 95, 0.76), rgba(23, 8, 52, 0.84)) !important;
+    border-color: rgba(219, 156, 255, 0.23) !important;
+    border-radius: 20px !important;
+    box-shadow: 0 20px 48px rgba(3, 0, 12, 0.4), inset 0 1px rgba(255, 255, 255, 0.055) !important;
+}
+
+body[data-theme="arcade"][data-theme-key="arcade"] :is(
+    .sidebar .app-title span, .view-header h1, .today-greeting h1,
+    .cc-header h1, .theme-panel-title, .hw-header-bar h2
+) {
+    font-family: var(--font-heading);
+    font-weight: 800;
+    letter-spacing: -0.025em;
+}
+
+body[data-theme="arcade"][data-theme-key="arcade"] :is(.view-header h1, .today-greeting h1, .cc-header h1) {
+    color: transparent;
+    background: linear-gradient(100deg, #fff2ff, #ff79da 58%, #6ef7ff);
+    -webkit-background-clip: text;
+    background-clip: text;
+}
+
+body[data-theme="arcade"][data-theme-key="arcade"] :is(.view-tab.active, .toolbar-btn.active, .cc-btn-primary, .btn-primary) {
+    color: #1b0827 !important;
+    background: linear-gradient(135deg, #ff75d9, #b25fff 68%, #6ef7ff) !important;
+    border-color: rgba(255, 214, 249, 0.58) !important;
+    box-shadow: 0 0 26px rgba(255, 101, 212, 0.25), 0 12px 30px rgba(5, 0, 18, 0.38) !important;
+}
+
+/* The shared shell still has several light-theme defaults with higher local
+   specificity. Give the two dark signature presets one deliberate control
+   language so inactive navigation, selectors, and Today actions remain
+   readable instead of inheriting pale fills or dark labels. */
+body:is(
+    [data-theme="blueprint"][data-theme-key="blueprint"],
+    [data-theme="arcade"][data-theme-key="arcade"]
+) :is(
+    .view-tab:not(.active), .toolbar-btn:not(.active), .quick-app-btn,
+    .custom-shortcut-btn, .tabs-shell .tab-clock-embed,
+    .tabs-shell .tab-clock-gear, .neumo-btn:not(.today-hero-primary):not(.tnu-primary),
+    .btn:not(.btn-primary), .todo-filter-btn, .theme-switcher-btn,
+    .new-page-btn, .quick-new-page-btn,
+    .storage-btn:not(.primary)
+) {
+    color: var(--theme-ui-text) !important;
+    background: var(--theme-ui-surface) !important;
+    border-color: var(--theme-ui-border) !important;
+}
+
+body:is(
+    [data-theme="blueprint"][data-theme-key="blueprint"],
+    [data-theme="arcade"][data-theme-key="arcade"]
+) :is(
+    .view-tab:not(.active), .toolbar-btn:not(.active), .quick-app-btn,
+    .custom-shortcut-btn, .tabs-shell .tab-clock-embed,
+    .tabs-shell .tab-clock-gear, .neumo-btn:not(.today-hero-primary):not(.tnu-primary),
+    .btn:not(.btn-primary), .todo-filter-btn, .theme-switcher-btn,
+    .new-page-btn, .quick-new-page-btn,
+    .storage-btn:not(.primary)
+):hover {
+    color: var(--theme-ui-text-strong) !important;
+    background: var(--theme-ui-surface-hover) !important;
+}
+
+body:is(
+    [data-theme="blueprint"][data-theme-key="blueprint"],
+    [data-theme="arcade"][data-theme-key="arcade"]
+) :is(input:not([type="checkbox"]):not([type="radio"]), textarea, select, .global-search, .radar-filter) {
+    color: var(--text-primary) !important;
+    background: var(--theme-ui-surface) !important;
+    border-color: var(--theme-ui-border) !important;
+}
+
+body[data-theme="blueprint"][data-theme-key="blueprint"] select option {
+    color: #edf9ff;
+    background: #071b2c;
+}
+
+body[data-theme="arcade"][data-theme-key="arcade"] select option {
+    color: #fff4ff;
+    background: #1b0937;
+}
+
+body[data-theme="blueprint"][data-theme-key="blueprint"] :is(
+    .view-tab.active, .toolbar-btn.active, .cc-btn-primary, .btn-primary,
+    .today-hero-primary, .tnu-primary, .storage-btn.primary
+) {
+    color: #03151f !important;
+    background: linear-gradient(145deg, #6de1ff, #37bfe8) !important;
+    border-color: #9cecff !important;
+}
+
+body[data-theme="arcade"][data-theme-key="arcade"] :is(
+    .view-tab.active, .toolbar-btn.active, .cc-btn-primary, .btn-primary,
+    .today-hero-primary, .tnu-primary, .storage-btn.primary
+) {
+    color: #1b0827 !important;
+    background: linear-gradient(135deg, #ff75d9, #b25fff 68%, #6ef7ff) !important;
+    border-color: rgba(255, 214, 249, 0.58) !important;
+}
+
+body[data-theme="blueprint"][data-theme-key="blueprint"] #view-today.today-redesign :is(
+    .today-header-actions .today-hero-primary, .tnu-actions .tnu-primary
+) {
+    color: #03151f !important;
+    background: linear-gradient(145deg, #7be5ff, #36bde6) !important;
+    border-color: #9cecff !important;
+}
+
+body[data-theme="paper"][data-theme-key="paper"] #view-today.today-redesign :is(
+    .today-header-actions .today-hero-primary, .tnu-actions .tnu-primary
+) {
+    color: #fffaf1 !important;
+    background: linear-gradient(180deg, #b6442d, #8f2f1f) !important;
+    border-color: #7f281a !important;
+}
+
+body[data-theme="arcade"][data-theme-key="arcade"] #view-today.today-redesign :is(
+    .today-header-actions .today-hero-primary, .tnu-actions .tnu-primary
+) {
+    color: #1b0827 !important;
+    background: linear-gradient(135deg, #ff83dc, #b96cff 68%, #7ff8ff) !important;
+    border-color: rgba(255, 214, 249, 0.7) !important;
+}
+
+body[data-theme="blueprint"][data-theme-key="blueprint"] .today-mobile-focus-cta {
+    color: #03151f !important;
+    background: #5ad7ff !important;
+    border-color: #9cecff !important;
+}
+
+body[data-theme="paper"][data-theme-key="paper"] .today-mobile-focus-cta {
+    color: #fffaf1 !important;
+    background: #983220 !important;
+    border-color: #7f281a !important;
+}
+
+body[data-theme="arcade"][data-theme-key="arcade"] .today-mobile-focus-cta {
+    color: #1b0827 !important;
+    background: #ff65d4 !important;
+    border-color: #ffc4ee !important;
+}
+
+body:is(
+    [data-theme="blueprint"][data-theme-key="blueprint"],
+    [data-theme="arcade"][data-theme-key="arcade"]
+) :is(.tnu-count, .tnu-count span) {
+    color: var(--text-secondary) !important;
+}
+
+body:is(
+    [data-theme="blueprint"][data-theme-key="blueprint"],
+    [data-theme="arcade"][data-theme-key="arcade"]
+) .tnu-count strong {
+    color: var(--text-primary) !important;
+}
+
+body[data-theme="paper"][data-theme-key="paper"] :is(.new-page-btn, .quick-new-page-btn) {
+    color: #fffaf1 !important;
+    background: #27221d !important;
+    border-color: #27221d !important;
+    box-shadow: 3px 4px 0 rgba(56, 43, 32, 0.17) !important;
+}
+
+body[data-theme="paper"][data-theme-key="paper"] :is(.new-page-btn, .quick-new-page-btn):hover {
+    color: #fffaf1 !important;
+    background: #3b322a !important;
+}
+
+body[data-theme="arcade"][data-theme-key="arcade"] :is(input, textarea, select, button, [tabindex]):focus-visible {
+    outline: 2px solid var(--arcade-cyan) !important;
+    outline-offset: 3px;
+    box-shadow: 0 0 0 4px rgba(110, 247, 255, 0.14), 0 0 24px rgba(110, 247, 255, 0.18) !important;
+}
+
+/* Authored picker previews. */
+.preset-card[data-theme="blueprint"] .preset-preview {
+    background:
+        linear-gradient(rgba(90, 215, 255, 0.12) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(90, 215, 255, 0.12) 1px, transparent 1px),
+        #071b2a !important;
+    background-size: 12px 12px;
+}
+
+.preset-card[data-theme="paper"] .preset-preview {
+    background:
+        radial-gradient(circle, rgba(71, 51, 35, 0.11) 0 0.6px, transparent 0.8px) 0 0 / 7px 7px,
+        linear-gradient(150deg, #fffaf1, #e7dccb) !important;
+}
+
+.preset-card[data-theme="arcade"] .preset-preview {
+    background:
+        radial-gradient(circle at 20% 20%, rgba(110, 247, 255, 0.7), transparent 30%),
+        radial-gradient(circle at 82% 20%, rgba(255, 101, 212, 0.72), transparent 34%),
+        linear-gradient(150deg, #35115d, #0c031e) !important;
+}
+
+.preset-card:is([data-theme="blueprint"], [data-theme="paper"], [data-theme="arcade"]) .preset-color {
+    opacity: 0;
+}
+
+@keyframes blueprint-scan {
+    from { transform: translateY(-1.5%); opacity: 0.38; }
+    to { transform: translateY(1.5%); opacity: 0.58; }
+}
+
+@keyframes arcade-glow-drift {
+    from { transform: translate3d(-1%, 0, 0) scale(1); }
+    to { transform: translate3d(1.5%, -1%, 0) scale(1.06); }
+}
+
+@keyframes arcade-grid-breathe {
+    from { opacity: 0.46; }
+    to { opacity: 0.68; }
+}
+
+@media (max-width: 1024px) {
+    body[data-theme="paper"][data-theme-key="paper"]::after { inset: 6px; }
+    body[data-theme="blueprint"][data-theme-key="blueprint"]::after { opacity: 0.32; }
+    body[data-theme="arcade"][data-theme-key="arcade"]::after { height: 38vh; opacity: 0.4; }
+    body[data-theme="arcade"][data-theme-key="arcade"] :is(.sidebar, .top-nav, .toolbar-wrapper, .storage-options) {
+        -webkit-backdrop-filter: blur(15px) saturate(1.16) !important;
+        backdrop-filter: blur(15px) saturate(1.16) !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body:is(
+        [data-theme="blueprint"][data-theme-key="blueprint"],
+        [data-theme="paper"][data-theme-key="paper"],
+        [data-theme="arcade"][data-theme-key="arcade"]
+    )::before,
+    body:is(
+        [data-theme="blueprint"][data-theme-key="blueprint"],
+        [data-theme="paper"][data-theme-key="paper"],
+        [data-theme="arcade"][data-theme-key="arcade"]
+    )::after {
+        animation: none;
+    }
+}
+
+body.motion-off:is(
+    [data-theme="blueprint"][data-theme-key="blueprint"],
+    [data-theme="paper"][data-theme-key="paper"],
+    [data-theme="arcade"][data-theme-key="arcade"]
+)::before,
+body.motion-off:is(
+    [data-theme="blueprint"][data-theme-key="blueprint"],
+    [data-theme="paper"][data-theme-key="paper"],
+    [data-theme="arcade"][data-theme-key="arcade"]
+)::after {
+    animation: none;
+}
+
+body.focus-mode:is(
+    [data-theme="blueprint"][data-theme-key="blueprint"],
+    [data-theme="paper"][data-theme-key="paper"],
+    [data-theme="arcade"][data-theme-key="arcade"]
+)::before,
+body.focus-mode:is(
+    [data-theme="blueprint"][data-theme-key="blueprint"],
+    [data-theme="paper"][data-theme-key="paper"],
+    [data-theme="arcade"][data-theme-key="arcade"]
+)::after {
+    opacity: 0.12;
+}
+
+@media (forced-colors: active), print {
+    body:is(
+        [data-theme="blueprint"][data-theme-key="blueprint"],
+        [data-theme="paper"][data-theme-key="paper"],
+        [data-theme="arcade"][data-theme-key="arcade"]
+    )::before,
+    body:is(
+        [data-theme="blueprint"][data-theme-key="blueprint"],
+        [data-theme="paper"][data-theme-key="paper"],
+        [data-theme="arcade"][data-theme-key="arcade"]
+    )::after {
+        display: none;
+    }
+}

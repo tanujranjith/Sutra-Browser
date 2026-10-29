@@ -1,3 +1,4 @@
+using Browser.Core.Branding;
 using Browser.AI.Providers;
 using Browser.Core.BrowserEngine;
 using Browser.Core.Passwords;
@@ -6,7 +7,9 @@ using Browser.Data.Repositories;
 using Browser.Platform.Windows.Security;
 using Browser.Platform.Windows.Storage;
 using Browser.Platform.Windows.Cef;
+using Browser.Platform.Windows.Updates;
 using Browser.Platform.Windows.WebView;
+using Browser.App.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.Web.WebView2.Core;
@@ -33,6 +36,7 @@ public partial class App : Application
         // shown.
         UnhandledException += (_, e) =>
         {
+            PrivacySafeDiagnosticLog.Record("ui-unhandled", e.Exception);
             if (e.Exception is OperationCanceledException)
             {
                 System.Diagnostics.Debug.WriteLine($"Contained cancellation during UI callback: {e.Exception.GetType().Name}");
@@ -43,13 +47,29 @@ public partial class App : Application
             }
             e.Handled = true;
         };
+        AppDomain.CurrentDomain.UnhandledException += (_, e) =>
+            PrivacySafeDiagnosticLog.Record("domain-unhandled", e.ExceptionObject as Exception, e.IsTerminating ? "terminating" : "continuing");
+        TaskScheduler.UnobservedTaskException += (_, e) =>
+            PrivacySafeDiagnosticLog.Record("unobserved-task", e.Exception.GetBaseException());
     }
 
     protected override async void OnLaunched(LaunchActivatedEventArgs args)
     {
         try
         {
-            var paths = new BrowserPaths();
+            var paths = new BrowserPaths(
+#if DEBUG
+                Environment.GetEnvironmentVariable("SUTRA_TEST_DATA_ROOT")
+#else
+                null
+#endif
+            );
+            if (new BrowserUpdateService(paths).TryStartPendingUpdate())
+            {
+                // The updater waits for this process to exit before replacing files.
+                Environment.Exit(0);
+                return;
+            }
             var launchArguments = Environment.GetCommandLineArgs().Skip(1).ToList();
             if (!await InitializePrivacyAsync(paths, launchArguments)) return;
             var services = new ServiceCollection();
@@ -83,9 +103,10 @@ public partial class App : Application
             // Never leak raw exception text on the startup screen: messages can
             // contain local file paths or provider details. Log the type for
             // diagnostics and show an actionable summary instead.
+            PrivacySafeDiagnosticLog.Record("application-startup-failed", ex);
             System.Diagnostics.Debug.WriteLine($"Sutra startup failed: {ex.GetType().Name}");
-            var window = new Window { Title = "Sutra Browser — startup error", Content = new Microsoft.UI.Xaml.Controls.StackPanel { Margin = new(32), Children = {
-                new Microsoft.UI.Xaml.Controls.TextBlock { Text = "Sutra Browser could not start.", FontSize = 18, TextWrapping = TextWrapping.Wrap },
+            var window = new Window { Title = $"{AppBrand.Name} — startup error", Content = new Microsoft.UI.Xaml.Controls.StackPanel { Margin = new(32), Children = {
+                new Microsoft.UI.Xaml.Controls.TextBlock { Text = $"{AppBrand.Name} could not start.", FontSize = 18, TextWrapping = TextWrapping.Wrap },
                 new Microsoft.UI.Xaml.Controls.TextBlock { Text = "Local browser data could not be opened, or the browser engine failed to initialize.\nClose Sutra completely and try again. If this keeps happening, close all Sutra windows and delete the browser data folder only if you accept losing local history, bookmarks, and saved passwords.", Margin = new(0, 12, 0, 0), TextWrapping = TextWrapping.Wrap },
                 new Microsoft.UI.Xaml.Controls.TextBlock { Text = $"Diagnostic code: {ex.GetType().Name}", Margin = new(0, 12, 0, 0), Opacity = .6 }
             } } };
@@ -155,14 +176,52 @@ public partial class App : Application
             var ordered = saved.OrderByDescending(w => w.SavedAt).Take(Browser.Core.Sessions.MultiWindowSessionPolicy.MaximumWindowsToRestore).ToList();
             var first = ordered[0];
             var firstWindow = await OpenPreparedWindowAsync(false, null, true, first.ProfileName,
-                Browser.Core.Sessions.MultiWindowSessionPolicy.WithoutTemporary(first.Session));
+                Browser.Core.Sessions.MultiWindowSessionPolicy.WithoutTemporary(first.Session), showWorkspaceOnLaunch: true, restoredWindowId: first.WindowId);
             if (firstWindow is null) { OpenWindow(false, null, true); return; }
+            try { await firstWindow.WaitForStartupContentAsync(); }
+            catch (OperationCanceledException) { return; }
+            catch (TimeoutException)
+            {
+                if (ordered.Count > 1) firstWindow.ShowMemoryRestoreDeferredMessage(ordered.Count - 1);
+                return;
+            }
+            var restoredWindowCount = 1;
+            var deferredWindowCount = 0;
             foreach (var extra in ordered.Skip(1))
             {
                 if (_killSwitchStarted) break;
-                try { await OpenPreparedWindowAsync(false, null, false, extra.ProfileName, Browser.Core.Sessions.MultiWindowSessionPolicy.WithoutTemporary(extra.Session)); }
+                // Re-check system pressure after each window starts: every window
+                // creates at least one WebView even when its other tabs stay asleep.
+                // The saved rows remain intact when a window is deferred and will be
+                // considered again on the next launch.
+                var snapshot = SystemResourceSnapshotProvider.Capture();
+                if (!Browser.Core.Diagnostics.AdaptiveMemoryPolicy.CanRestoreAnotherWindow(
+                    restoredWindowCount,
+                    Browser.Core.Sessions.MultiWindowSessionPolicy.MaximumWindowsToRestore,
+                    snapshot))
+                {
+                    deferredWindowCount = ordered.Count - restoredWindowCount;
+                    break;
+                }
+                try
+                {
+                    var restored = await OpenPreparedWindowAsync(false, null, false, extra.ProfileName,
+                        Browser.Core.Sessions.MultiWindowSessionPolicy.WithoutTemporary(extra.Session), restoredWindowId: extra.WindowId);
+                    if (restored is not null)
+                    {
+                        restoredWindowCount++;
+                        await restored.WaitForStartupContentAsync();
+                    }
+                }
+                catch (OperationCanceledException) { break; }
+                catch (TimeoutException)
+                {
+                    deferredWindowCount = ordered.Count - restoredWindowCount;
+                    break;
+                }
                 catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Extra window restore failed: {ex.GetType().Name}"); }
             }
+            if (deferredWindowCount > 0) firstWindow.ShowMemoryRestoreDeferredMessage(deferredWindowCount);
         }
         catch (Exception ex)
         {
@@ -174,7 +233,7 @@ public partial class App : Application
     internal void OpenSessionWindow(Browser.Core.Sessions.BrowserSession session, string profileName)
         => _ = OpenPreparedWindowAsync(false, null, false, profileName, Browser.Core.Workspaces.WorkspacePolicy.Instantiate(session));
 
-    internal async Task<MainWindow?> OpenPreparedWindowAsync(bool isPrivate, string? initialUrl, bool restoreSession, string profileName, Browser.Core.Sessions.BrowserSession? session = null)
+    internal async Task<MainWindow?> OpenPreparedWindowAsync(bool isPrivate, string? initialUrl, bool restoreSession, string profileName, Browser.Core.Sessions.BrowserSession? session = null, bool showWorkspaceOnLaunch = false, Guid? restoredWindowId = null)
     {
         if (_killSwitchStarted) return null;
         try
@@ -182,7 +241,7 @@ public partial class App : Application
             _profileLibraries ??= new ProfileLibraries(Services);
             var data = await _profileLibraries.GetAsync(isPrivate ? "Default" : profileName);
             if (_killSwitchStarted) return null;
-            var window = new MainWindow(isPrivate, initialUrl, restoreSession, profileName, session, data);
+            var window = new MainWindow(isPrivate, initialUrl, restoreSession, profileName, session, data, showWorkspaceOnLaunch, restoredWindowId);
             TrackAndActivate(window);
             return window;
         }

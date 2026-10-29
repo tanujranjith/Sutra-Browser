@@ -101,6 +101,7 @@ public sealed partial class MainWindow
 
     private async Task ToggleCopilotAsync()
     {
+        if (_workspaceSidePanelOpen) CloseSutraSidePanel();
         if (_utilitySidebar.Visibility == Visibility.Visible)
         {
             // Collapsing the utility sidebar must release a live panel WebView,

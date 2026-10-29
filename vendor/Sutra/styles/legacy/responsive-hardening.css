@@ -1,0 +1,241 @@
+/* Extracted from Sutra.html inline <style data-sutra-inline-style-legacy="responsive-hardening">.
+   Loaded by a <link> at the SAME cascade position in Sutra.html, so the
+   visual result is identical. Legacy block kept whole; split incrementally. */
+        :root {
+            --responsive-shell-gutter: clamp(8px, 1.5vw, 20px);
+            --responsive-bottom-clearance: clamp(116px, 17vh, 172px);
+            --responsive-short-bottom-clearance: clamp(132px, 20vh, 196px);
+        }
+
+        .main-content,
+        .view,
+        .view > *,
+        .top-nav,
+        .tabs-shell,
+        .view-tabs,
+        .toolbar-wrapper,
+        #view-timeline .timeline-wrapper,
+        #collegeappDashboard,
+        #lifeDashboard,
+        #businessDashboardRoot,
+        #hwMainArea,
+        .atelier-settings-workspace,
+        .ap-study-view-shell {
+            min-width: 0;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+
+        #view-timeline .timeline-mode-switcher {
+            max-width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        @media (min-width: 1920px) {
+            #view-today .today-dashboard-surface,
+            #view-timeline .timeline-wrapper,
+            #view-collegeapp > *,
+            #view-life > *,
+            #view-business > *,
+            #view-settings > *,
+            #view-homework > *,
+            #view-apstudy > * {
+                width: 100%;
+                max-width: 1840px;
+                margin-left: auto;
+                margin-right: auto;
+            }
+        }
+
+        @media (max-width: 1366px), (max-height: 760px) {
+            .view {
+                padding-bottom: calc(var(--responsive-bottom-clearance) + env(safe-area-inset-bottom, 0px)) !important;
+            }
+
+            #view-notes .editor-container {
+                padding-bottom: calc(var(--responsive-bottom-clearance) + env(safe-area-inset-bottom, 0px)) !important;
+            }
+        }
+
+        @media (max-height: 700px) {
+            .view {
+                padding-bottom: calc(var(--responsive-short-bottom-clearance) + env(safe-area-inset-bottom, 0px)) !important;
+            }
+
+            #view-notes .editor-container {
+                padding-bottom: calc(var(--responsive-short-bottom-clearance) + env(safe-area-inset-bottom, 0px)) !important;
+            }
+        }
+
+        @media (max-width: 1366px) {
+            .top-nav {
+                gap: 10px !important;
+            }
+
+            .top-nav .nav-left,
+            .top-nav .nav-right {
+                min-width: 0 !important;
+            }
+
+            .top-nav .nav-right {
+                max-width: 100%;
+                flex-wrap: wrap;
+                gap: 8px !important;
+                justify-content: flex-end;
+            }
+
+            .top-nav .global-search {
+                flex: 1 1 220px;
+                width: min(100%, 360px);
+                min-width: min(220px, 100%);
+                max-width: 100%;
+            }
+
+            .tabs-shell {
+                min-width: 0;
+                flex: 1 1 520px;
+            }
+
+            .view-tabs {
+                max-width: 100% !important;
+            }
+
+            .integrations-dock {
+                max-width: 100%;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+        }
+
+        @media (max-width: 1180px) {
+            body.notes-split-active #view-notes .editor-container {
+                grid-template-columns: 1fr !important;
+            }
+
+            body.notes-split-active .notes-pane-secondary {
+                order: 2;
+            }
+
+            .split-pane-header {
+                flex-wrap: wrap;
+            }
+
+            .split-pane-actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
+        }
+
+        @media (max-width: 1024px), (hover: none), (pointer: coarse) {
+            #storageOptions,
+            .storage-options {
+                left: max(8px, calc(env(safe-area-inset-left, 0px) + 8px)) !important;
+                right: max(8px, calc(env(safe-area-inset-right, 0px) + 8px)) !important;
+                bottom: calc(env(safe-area-inset-bottom, 0px) + 8px) !important;
+                width: auto !important;
+                max-width: none !important;
+                display: grid !important;
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                gap: 8px !important;
+                padding: 8px 10px !important;
+                border-radius: 14px !important;
+                overflow: visible !important;
+                cursor: default !important;
+            }
+
+            #storageOptions .storage-collapsed-icon,
+            .storage-options .storage-collapsed-icon {
+                display: none !important;
+                width: 0 !important;
+                min-width: 0 !important;
+                max-width: 0 !important;
+                min-height: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                border-width: 0 !important;
+                opacity: 0 !important;
+                overflow: hidden !important;
+                pointer-events: none !important;
+            }
+
+            #storageOptions > :not(.storage-collapsed-icon),
+            #storageOptions:hover > :not(.storage-collapsed-icon),
+            #storageOptions:not(:hover) > :not(.storage-collapsed-icon),
+            .storage-options > :not(.storage-collapsed-icon),
+            .storage-options:hover > :not(.storage-collapsed-icon),
+            .storage-options:not(:hover) > :not(.storage-collapsed-icon) {
+                width: auto !important;
+                min-width: 0 !important;
+                max-width: none !important;
+                margin: 0 !important;
+                opacity: 1 !important;
+                transform: none !important;
+                pointer-events: auto !important;
+                border-width: 1px !important;
+                flex: 1 1 auto !important;
+                overflow: visible !important;
+            }
+
+            #storageOptions .taskbar-save-status,
+            .storage-options .taskbar-save-status {
+                grid-column: 1 / -1;
+                justify-content: center !important;
+            }
+
+            #storageOptions .storage-btn,
+            #storageOptions .taskbar-save-status,
+            .storage-options .storage-btn,
+            .storage-options .taskbar-save-status {
+                min-height: 40px !important;
+                width: 100% !important;
+                justify-content: center !important;
+            }
+
+            #storageOptions .taskbar-divider,
+            .storage-options .taskbar-divider {
+                display: none !important;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .view-tab,
+            .toolbar-btn,
+            .neumo-btn,
+            .icon-btn,
+            .storage-btn,
+            .timeline-mode-tab,
+            .today-header-actions .neumo-btn {
+                min-height: 42px;
+            }
+
+            .toolbar-btn {
+                min-width: 42px;
+            }
+        }
+
+        @media (max-height: 720px), (max-width: 768px) {
+            .modal {
+                align-items: flex-end !important;
+                padding: 8px !important;
+            }
+
+            .modal-content {
+                width: min(100%, 960px) !important;
+                max-width: none !important;
+                max-height: calc(100dvh - 14px) !important;
+                overflow-y: auto !important;
+            }
+
+            .modal-header {
+                position: sticky;
+                top: 0;
+                z-index: 1;
+            }
+
+            .modal-footer {
+                position: sticky;
+                bottom: 0;
+                z-index: 1;
+            }
+        }

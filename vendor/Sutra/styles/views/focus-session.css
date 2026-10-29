@@ -1,0 +1,1022 @@
+        /* ==========================================================================
+           FOCUS SESSION OVERLAY
+           ========================================================================== */
+
+        .focus-session-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            opacity: 0;
+            pointer-events: none;
+            /* Use visibility so the element is paint-ready before opacity animates */
+            visibility: hidden;
+            transition: opacity 0.38s cubic-bezier(0.22, 1, 0.36, 1), visibility 0s linear 0.38s;
+        }
+        .focus-session-overlay.fs-visible {
+            opacity: 1;
+            pointer-events: auto;
+            visibility: visible;
+            transition: opacity 0.38s cubic-bezier(0.22, 1, 0.36, 1), visibility 0s linear 0s;
+        }
+
+        /* --- Ambient Backgrounds --- */
+        .fs-ambient-bg {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            transition: background 1s ease;
+        }
+        .fs-ambient-bg[data-ambient="gradient"] {
+            background: linear-gradient(145deg, #080810 0%, #0e0e1a 45%, #0a0a12 100%);
+        }
+        .fs-ambient-bg[data-ambient="fireplace"] {
+            background: linear-gradient(170deg, #0c0503 0%, #1c0a06 35%, #2b0f08 65%, #130605 100%);
+        }
+        .fs-ambient-bg[data-ambient="fireplace"]::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 70% 45% at 50% 100%, rgba(210, 70, 10, 0.16) 0%, transparent 70%),
+                radial-gradient(ellipse 35% 25% at 38% 85%, rgba(180, 40, 5, 0.1) 0%, transparent 60%),
+                radial-gradient(ellipse 25% 18% at 62% 80%, rgba(230, 90, 15, 0.08) 0%, transparent 55%);
+            animation: fs-fire-glow 5s ease-in-out infinite;
+        }
+        .fs-ambient-bg[data-ambient="nightsky"] {
+            background: radial-gradient(ellipse at 25% 15%, #0e1628 0%, #060c18 55%, #020610 100%);
+        }
+        .fs-ambient-bg[data-ambient="nightsky"]::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle 1.5px at 15% 18%, rgba(255,255,255,0.55) 0%, transparent 100%),
+                radial-gradient(circle 1px at 78% 12%, rgba(255,255,255,0.4) 0%, transparent 100%),
+                radial-gradient(circle 2px at 55% 8%, rgba(255,255,255,0.35) 0%, transparent 100%),
+                radial-gradient(circle 1px at 8% 55%, rgba(255,255,255,0.45) 0%, transparent 100%),
+                radial-gradient(circle 1.5px at 92% 40%, rgba(255,255,255,0.4) 0%, transparent 100%),
+                radial-gradient(circle 1px at 42% 65%, rgba(255,255,255,0.25) 0%, transparent 100%),
+                radial-gradient(circle 1px at 68% 50%, rgba(255,255,255,0.3) 0%, transparent 100%),
+                radial-gradient(circle 1px at 30% 80%, rgba(255,255,255,0.2) 0%, transparent 100%),
+                radial-gradient(ellipse 50% 20% at 50% 5%, rgba(80, 110, 200, 0.07) 0%, transparent 100%);
+        }
+        .fs-ambient-bg[data-ambient="nightsky"]::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse 40% 30% at 50% 0%, rgba(60, 90, 180, 0.12) 0%, transparent 70%);
+            animation: fs-ambient-breathe 12s ease-in-out infinite;
+        }
+        .fs-ambient-bg[data-ambient="rain"] {
+            background: linear-gradient(175deg, #060810 0%, #090c18 40%, #070a14 100%);
+        }
+        .fs-ambient-bg[data-ambient="rain"]::before {
+            content: '';
+            position: absolute;
+            inset: -100px 0 0;
+            background-image: repeating-linear-gradient(
+                97deg,
+                transparent 0px, transparent 6px,
+                rgba(140, 175, 220, 0.028) 6px, rgba(140, 175, 220, 0.028) 7px
+            );
+            animation: fs-rain-fall 2.8s linear infinite;
+            will-change: background-position;
+        }
+        .fs-ambient-bg[data-ambient="rain"]::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 55% 30% at 50% 100%, rgba(60, 100, 190, 0.09) 0%, transparent 80%),
+                radial-gradient(ellipse 100% 15% at 50% 0%, rgba(40, 70, 140, 0.06) 0%, transparent 100%);
+        }
+        .fs-ambient-bg[data-ambient="library"] {
+            background: linear-gradient(155deg, #0c0b09 0%, #15120e 40%, #0e0c0a 100%);
+        }
+        .fs-ambient-bg[data-ambient="library"]::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 90% 55% at 50% 110%, rgba(170, 125, 40, 0.07) 0%, transparent 75%),
+                radial-gradient(ellipse 40% 22% at 50% 100%, rgba(200, 155, 55, 0.1) 0%, transparent 65%);
+            animation: fs-ambient-breathe 9s ease-in-out infinite;
+        }
+
+        /* Dark blur layer for text readability */
+        .fs-blur-layer {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            background: rgba(0, 0, 0, 0.38);
+        }
+
+        /* Main content layer */
+        .fs-content {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            max-width: 700px;
+            padding: 32px 28px 28px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0;
+            min-height: 100vh;
+            justify-content: center;
+        }
+
+        /* Top control bar */
+        .fs-topbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 3;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 24px;
+        }
+        .fs-topbar-left { display: flex; align-items: center; gap: 10px; }
+        .fs-topbar-right { display: flex; gap: 6px; }
+
+        .fs-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.13em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.28);
+            user-select: none;
+        }
+
+        .fs-icon-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.45);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.76rem;
+            transition: background 0.18s, border-color 0.18s, color 0.18s, transform 0.18s;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        .fs-icon-btn:hover {
+            background: rgba(255,255,255,0.11);
+            border-color: rgba(255,255,255,0.2);
+            color: rgba(255,255,255,0.88);
+            transform: scale(1.07);
+        }
+        .fs-icon-btn:active { transform: scale(0.94); }
+        .fs-icon-btn-close:hover {
+            background: rgba(240, 70, 70, 0.18);
+            border-color: rgba(240, 70, 70, 0.3);
+            color: rgba(255, 110, 110, 0.9);
+        }
+
+        /* Task info */
+        .fs-task-info {
+            text-align: center;
+            margin-bottom: 18px;
+            max-width: 580px;
+            width: 100%;
+        }
+        .fs-task-title {
+            font-family: 'Manrope', 'Sora', 'Inter', sans-serif;
+            font-size: clamp(1.5rem, 4vw, 2.2rem);
+            font-weight: 700;
+            color: rgba(255,255,255,0.92);
+            margin: 0 0 7px;
+            line-height: 1.18;
+            letter-spacing: -0.025em;
+        }
+        .fs-task-note {
+            font-size: 0.9rem;
+            color: rgba(255,255,255,0.38);
+            margin: 0;
+            line-height: 1.45;
+        }
+
+        /* Status pill */
+        .fs-status-pill-wrap { margin-bottom: 22px; }
+        .fs-status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 5px 15px;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.11);
+            color: rgba(255,255,255,0.45);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transition: background 0.3s, border-color 0.3s, color 0.3s;
+        }
+        .fs-status-pill::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+            flex-shrink: 0;
+            transition: background 0.3s;
+        }
+        .fs-status-pill.is-focusing {
+            background: rgba(var(--accent-rgb, 80, 190, 110), 0.12);
+            border-color: rgba(var(--accent-rgb, 80, 190, 110), 0.28);
+            color: rgba(var(--accent-rgb, 80, 190, 110), 0.92);
+        }
+        .fs-status-pill.is-focusing::before {
+            background: rgb(var(--accent-rgb, 80, 190, 110));
+            animation: fs-pulse-dot 1.9s ease-in-out infinite;
+        }
+        .fs-status-pill.is-done {
+            background: rgba(80, 190, 110, 0.12);
+            border-color: rgba(80, 190, 110, 0.3);
+            color: rgba(110, 220, 140, 0.92);
+        }
+
+        /* Countdown timer */
+        .fs-timer-wrap { margin-bottom: 14px; }
+        .fs-timer {
+            font-family: 'Manrope', 'Inter', system-ui, -apple-system, sans-serif;
+            font-size: clamp(5.5rem, 17vw, 10rem);
+            font-weight: 800;
+            color: rgba(255,255,255,0.94);
+            letter-spacing: -0.045em;
+            line-height: 0.9;
+            font-variant-numeric: tabular-nums;
+            text-shadow: 0 2px 40px rgba(255,255,255,0.06);
+            user-select: none;
+            cursor: default;
+            transition: color 0.3s;
+        }
+        .fs-timer.is-done { color: rgba(110, 220, 140, 0.9); }
+
+        /* Progress row */
+        .fs-progress-row {
+            width: 100%;
+            max-width: 520px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 30px;
+        }
+        .fs-elapsed, .fs-planned {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: rgba(255,255,255,0.28);
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+            min-width: 36px;
+            transition: color 0.3s;
+        }
+        .fs-planned { text-align: right; }
+        .fs-progress-track {
+            flex: 1;
+            height: 2px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 999px;
+            overflow: hidden;
+        }
+        .fs-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, rgba(255,255,255,0.35), rgba(255,255,255,0.55));
+            border-radius: 999px;
+            transition: width 0.95s linear;
+            will-change: width;
+        }
+
+        /* Play/pause button */
+        .fs-play-wrap { margin-bottom: 28px; }
+        .fs-play-btn {
+            width: 74px;
+            height: 74px;
+            border-radius: 50%;
+            border: 1.5px solid rgba(255,255,255,0.18);
+            background: rgba(255,255,255,0.09);
+            color: rgba(255,255,255,0.92);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.35rem;
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            box-shadow: 0 8px 36px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.1);
+            transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s, border-color 0.2s, box-shadow 0.2s;
+        }
+        .fs-play-btn:hover {
+            transform: scale(1.1);
+            background: rgba(255,255,255,0.14);
+            border-color: rgba(255,255,255,0.32);
+            box-shadow: 0 12px 48px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.14);
+        }
+        .fs-play-btn:active { transform: scale(0.93); }
+        .fs-play-btn.is-playing {
+            background: rgba(var(--accent-rgb, 80, 190, 110), 0.14);
+            border-color: rgba(var(--accent-rgb, 80, 190, 110), 0.38);
+        }
+
+        /* Bottom action row */
+        .fs-actions {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 22px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .fs-action-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 8px 16px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.06);
+            color: rgba(255,255,255,0.55);
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transition: background 0.18s, border-color 0.18s, color 0.18s, transform 0.18s;
+        }
+        .fs-action-btn:hover {
+            background: rgba(255,255,255,0.12);
+            border-color: rgba(255,255,255,0.2);
+            color: rgba(255,255,255,0.9);
+            transform: translateY(-1px);
+        }
+        .fs-action-btn:active { transform: translateY(0) scale(0.97); }
+        .fs-action-btn-accent {
+            background: rgba(var(--accent-rgb, 80, 190, 110), 0.13);
+            border-color: rgba(var(--accent-rgb, 80, 190, 110), 0.3);
+            color: rgba(var(--accent-rgb, 80, 190, 110), 0.9);
+        }
+        .fs-action-btn-accent:hover {
+            background: rgba(var(--accent-rgb, 80, 190, 110), 0.22);
+            border-color: rgba(var(--accent-rgb, 80, 190, 110), 0.48);
+            color: rgba(255,255,255,0.95);
+        }
+
+        /* Ambient chip bar */
+        .fs-ambient-bar {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .fs-ambient-chip {
+            padding: 4px 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.07);
+            background: rgba(255,255,255,0.03);
+            color: rgba(255,255,255,0.26);
+            cursor: pointer;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+            transition: background 0.18s, border-color 0.18s, color 0.18s;
+        }
+        .fs-ambient-chip:hover {
+            background: rgba(255,255,255,0.09);
+            border-color: rgba(255,255,255,0.14);
+            color: rgba(255,255,255,0.65);
+        }
+        .fs-ambient-chip.active {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.22);
+            color: rgba(255,255,255,0.82);
+        }
+
+        /* Respect hidden attribute over any display rule in this feature */
+        .fs-notes-panel[hidden] { display: none !important; }
+
+        /* Session notes panel */
+        .fs-notes-panel {
+            position: fixed;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: min(380px, 88vw);
+            z-index: 4;
+            background: rgba(10, 10, 16, 0.92);
+            border-left: 1px solid rgba(255,255,255,0.08);
+            backdrop-filter: blur(28px);
+            -webkit-backdrop-filter: blur(28px);
+            display: flex;
+            flex-direction: column;
+            padding: 24px 20px;
+            gap: 14px;
+            animation: fs-panel-slide-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        .fs-notes-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: rgba(255,255,255,0.45);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+        .fs-notes-textarea {
+            flex: 1;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.09);
+            border-radius: 12px;
+            color: rgba(255,255,255,0.82);
+            font-size: 0.9rem;
+            line-height: 1.65;
+            padding: 14px;
+            resize: none;
+            outline: none;
+            font-family: inherit;
+            transition: border-color 0.18s, background 0.18s;
+        }
+        .fs-notes-textarea:focus {
+            border-color: rgba(255,255,255,0.18);
+            background: rgba(255,255,255,0.06);
+        }
+        .fs-notes-textarea::placeholder { color: rgba(255,255,255,0.18); }
+
+        /* Sidebar timer "Launch" button */
+        .fs-launch-btn {
+            width: 100%;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            border: 1px solid var(--glass-border);
+            background: var(--accent-soft, rgba(var(--accent-rgb),0.12));
+            color: var(--accent);
+            cursor: pointer;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            transition: background 0.18s, border-color 0.18s, transform 0.15s;
+        }
+        .fs-launch-btn:hover {
+            transform: translateY(-1px);
+            background: var(--accent-soft);
+            border-color: var(--accent);
+        }
+        .fs-launch-btn:active { transform: translateY(0); }
+        .fs-launch-btn i { font-size: 0.74rem; }
+
+        /* Prevent body scroll when session is open */
+        body.fs-active { overflow: hidden; }
+
+        /* ==========================================================================
+           KEYFRAMES
+           ========================================================================== */
+        @keyframes fs-ambient-breathe {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.82; }
+        }
+        @keyframes fs-fire-glow {
+            0%, 100% { opacity: 0.9; }
+            28% { opacity: 0.65; }
+            55% { opacity: 1; }
+            78% { opacity: 0.75; }
+        }
+        @keyframes fs-rain-fall {
+            0% { background-position: 0 0; }
+            100% { background-position: -80px 360px; }
+        }
+        @keyframes fs-pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.45; transform: scale(1.35); }
+        }
+        @keyframes fs-panel-slide-in {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+
+        /* ==========================================================================
+           RESPONSIVE
+           ========================================================================== */
+        @media (max-width: 768px) {
+            .fs-content { padding: 80px 16px 24px; }
+            .fs-timer { font-size: clamp(4.2rem, 20vw, 6.5rem); }
+            .fs-action-btn span { display: none; }
+            .fs-action-btn { padding: 9px 13px; }
+            .fs-actions { gap: 7px; }
+            .fs-notes-panel { width: 100%; border-left: none; border-top: 1px solid rgba(255,255,255,0.08); height: 55vh; top: auto; }
+        }
+        @media (max-width: 480px) {
+            .fs-task-title { font-size: 1.4rem; }
+            .fs-timer { font-size: clamp(3.8rem, 24vw, 5.5rem); }
+            .fs-play-btn { width: 64px; height: 64px; font-size: 1.2rem; }
+            .fs-progress-row { gap: 10px; }
+        }
+
+        /* Respect reduced-motion preference */
+        @media (prefers-reduced-motion: reduce) {
+            .fs-ambient-bg, .fs-ambient-bg::after, .fs-ambient-bg::before,
+            .fs-progress-fill, .fs-play-btn, .fs-icon-btn, .fs-action-btn,
+            .fs-status-pill::before, .fs-notes-panel {
+                animation: none !important;
+                transition: none !important;
+            }
+        }
+
+        /* ======================================================================
+           FOCUS ATMOSPHERES — immersive glass workspace
+           The workspace remains present as softly blurred spatial context while
+           text and controls live on a quieter, theme-specific focus lens.
+           ====================================================================== */
+
+        .focus-session-overlay {
+            --fs-accent-rgb: 173, 184, 204;
+            --fs-accent: rgb(var(--fs-accent-rgb));
+            --fs-text: rgba(248, 250, 255, 0.96);
+            --fs-muted: rgba(232, 238, 248, 0.56);
+            --fs-faint: rgba(225, 232, 244, 0.34);
+            --fs-stage: rgba(10, 14, 22, 0.62);
+            --fs-stage-border: rgba(235, 241, 255, 0.14);
+            --fs-control: rgba(238, 243, 255, 0.075);
+            --fs-control-hover: rgba(238, 243, 255, 0.14);
+            --fs-scrim: rgba(3, 6, 12, 0.36);
+            padding: 76px clamp(16px, 3vw, 48px) 28px;
+            background: rgba(3, 6, 12, 0.16);
+            -webkit-backdrop-filter: blur(38px) saturate(135%) brightness(0.7);
+            backdrop-filter: blur(38px) saturate(135%) brightness(0.7);
+        }
+
+        .focus-session-overlay[data-ambient="fireplace"] {
+            --fs-accent-rgb: 246, 156, 83;
+            --fs-text: rgba(255, 246, 232, 0.98);
+            --fs-muted: rgba(255, 222, 190, 0.64);
+            --fs-faint: rgba(255, 210, 171, 0.38);
+            --fs-stage: rgba(39, 17, 10, 0.64);
+            --fs-stage-border: rgba(255, 190, 125, 0.2);
+            --fs-control: rgba(255, 182, 110, 0.09);
+            --fs-control-hover: rgba(255, 182, 110, 0.18);
+            --fs-scrim: rgba(17, 5, 2, 0.3);
+        }
+
+        .focus-session-overlay[data-ambient="nightsky"] {
+            --fs-accent-rgb: 135, 162, 255;
+            --fs-text: rgba(240, 245, 255, 0.98);
+            --fs-muted: rgba(197, 211, 255, 0.64);
+            --fs-faint: rgba(178, 197, 255, 0.4);
+            --fs-stage: rgba(7, 13, 35, 0.65);
+            --fs-stage-border: rgba(151, 179, 255, 0.2);
+            --fs-control: rgba(128, 158, 255, 0.09);
+            --fs-control-hover: rgba(128, 158, 255, 0.17);
+            --fs-scrim: rgba(1, 4, 16, 0.34);
+        }
+
+        .focus-session-overlay[data-ambient="rain"] {
+            --fs-accent-rgb: 126, 196, 231;
+            --fs-text: rgba(238, 250, 255, 0.98);
+            --fs-muted: rgba(190, 224, 241, 0.66);
+            --fs-faint: rgba(174, 213, 234, 0.42);
+            --fs-stage: rgba(10, 24, 34, 0.66);
+            --fs-stage-border: rgba(152, 211, 239, 0.2);
+            --fs-control: rgba(126, 196, 231, 0.09);
+            --fs-control-hover: rgba(126, 196, 231, 0.17);
+            --fs-scrim: rgba(2, 12, 20, 0.34);
+        }
+
+        .focus-session-overlay[data-ambient="library"] {
+            --fs-accent-rgb: 223, 183, 105;
+            --fs-text: rgba(255, 248, 232, 0.98);
+            --fs-muted: rgba(235, 216, 177, 0.65);
+            --fs-faint: rgba(224, 202, 157, 0.4);
+            --fs-stage: rgba(28, 23, 15, 0.66);
+            --fs-stage-border: rgba(229, 195, 126, 0.19);
+            --fs-control: rgba(220, 185, 116, 0.09);
+            --fs-control-hover: rgba(220, 185, 116, 0.17);
+            --fs-scrim: rgba(11, 8, 3, 0.31);
+        }
+
+        .fs-ambient-bg {
+            overflow: hidden;
+            transform: scale(1.04);
+            transition: background 0.8s ease, filter 0.8s ease, opacity 0.8s ease;
+        }
+
+        .fs-ambient-bg[data-ambient="gradient"] {
+            background:
+                radial-gradient(ellipse 70% 55% at 50% 42%, rgba(130, 146, 176, 0.16), transparent 70%),
+                linear-gradient(145deg, rgba(8, 12, 20, 0.58), rgba(24, 29, 41, 0.46) 50%, rgba(7, 11, 18, 0.62));
+        }
+
+        .fs-ambient-bg[data-ambient="gradient"]::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 50% 50%, transparent 0 28%, rgba(2, 5, 10, 0.26) 86%);
+        }
+
+        .fs-ambient-bg[data-ambient="gradient"]::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(115deg, transparent 20%, rgba(255,255,255,0.035) 45%, transparent 68%);
+            animation: fs-minimal-drift 18s ease-in-out infinite alternate;
+        }
+
+        .fs-ambient-bg[data-ambient="fireplace"] {
+            background:
+                radial-gradient(ellipse 48% 48% at 18% 88%, rgba(255, 91, 31, 0.42), transparent 70%),
+                radial-gradient(ellipse 60% 58% at 84% 105%, rgba(232, 119, 34, 0.36), transparent 72%),
+                linear-gradient(155deg, rgba(22, 4, 2, 0.68), rgba(84, 24, 8, 0.48) 55%, rgba(25, 7, 3, 0.7));
+        }
+
+        .fs-ambient-bg[data-ambient="fireplace"]::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle at 22% 74%, rgba(255, 199, 104, 0.22) 0 1px, transparent 2px),
+                radial-gradient(circle at 76% 82%, rgba(255, 162, 63, 0.2) 0 1.5px, transparent 2.5px),
+                radial-gradient(circle at 63% 68%, rgba(255, 210, 132, 0.16) 0 1px, transparent 2px);
+            background-size: 84px 110px, 120px 92px, 96px 130px;
+            animation: fs-ember-rise 9s linear infinite;
+        }
+
+        .fs-ambient-bg[data-ambient="fireplace"]::after {
+            background:
+                radial-gradient(ellipse 80% 52% at 50% 110%, rgba(255, 115, 37, 0.28), transparent 72%),
+                radial-gradient(ellipse 42% 28% at 50% 98%, rgba(255, 206, 105, 0.17), transparent 68%);
+            animation: fs-fire-glow 4.8s ease-in-out infinite;
+        }
+
+        .fs-ambient-bg[data-ambient="nightsky"] {
+            background:
+                radial-gradient(ellipse 75% 58% at 24% 12%, rgba(68, 92, 195, 0.31), transparent 72%),
+                radial-gradient(ellipse 60% 45% at 82% 20%, rgba(89, 50, 153, 0.2), transparent 70%),
+                linear-gradient(160deg, rgba(3, 8, 28, 0.72), rgba(8, 17, 53, 0.57) 48%, rgba(2, 5, 20, 0.76));
+        }
+
+        .fs-ambient-bg[data-ambient="nightsky"]::before {
+            background:
+                radial-gradient(circle 1.4px at 12% 18%, rgba(255,255,255,0.7) 0, transparent 100%),
+                radial-gradient(circle 1px at 76% 12%, rgba(255,255,255,0.58) 0, transparent 100%),
+                radial-gradient(circle 1.8px at 56% 7%, rgba(218,229,255,0.62) 0, transparent 100%),
+                radial-gradient(circle 1px at 8% 58%, rgba(255,255,255,0.5) 0, transparent 100%),
+                radial-gradient(circle 1.3px at 92% 42%, rgba(222,231,255,0.62) 0, transparent 100%),
+                radial-gradient(circle 1px at 43% 67%, rgba(255,255,255,0.43) 0, transparent 100%),
+                radial-gradient(circle 1.2px at 69% 52%, rgba(255,255,255,0.48) 0, transparent 100%),
+                radial-gradient(circle 1px at 28% 82%, rgba(255,255,255,0.4) 0, transparent 100%);
+            animation: fs-star-drift 28s linear infinite alternate;
+        }
+
+        .fs-ambient-bg[data-ambient="nightsky"]::after {
+            background: radial-gradient(ellipse 62% 28% at 50% -4%, rgba(109, 139, 255, 0.22), transparent 72%);
+            animation: fs-ambient-breathe 10s ease-in-out infinite;
+        }
+
+        .fs-ambient-bg[data-ambient="rain"] {
+            background:
+                radial-gradient(ellipse 70% 60% at 22% 15%, rgba(76, 132, 167, 0.25), transparent 72%),
+                linear-gradient(165deg, rgba(5, 17, 26, 0.7), rgba(19, 44, 58, 0.52) 52%, rgba(4, 15, 23, 0.73));
+            filter: saturate(0.88);
+        }
+
+        .fs-ambient-bg[data-ambient="rain"]::before {
+            inset: -22% -8%;
+            background-image: repeating-linear-gradient(104deg, transparent 0 12px, rgba(185, 224, 242, 0.09) 12px 13px, transparent 13px 24px);
+            animation: fs-rain-fall 1.75s linear infinite;
+        }
+
+        .fs-ambient-bg[data-ambient="rain"]::after {
+            background:
+                radial-gradient(circle at 18% 24%, rgba(219,242,255,0.14) 0 2px, transparent 3px),
+                radial-gradient(circle at 76% 38%, rgba(219,242,255,0.12) 0 1.5px, transparent 2.5px),
+                radial-gradient(ellipse 82% 30% at 50% 110%, rgba(61, 142, 181, 0.19), transparent 72%);
+            background-size: 110px 140px, 150px 120px, auto;
+            animation: fs-rain-window 8s ease-in-out infinite alternate;
+        }
+
+        .fs-ambient-bg[data-ambient="library"] {
+            background:
+                radial-gradient(circle at 22% 18%, rgba(255, 211, 123, 0.34), transparent 30%),
+                linear-gradient(90deg, rgba(38, 27, 13, 0.66), rgba(23, 22, 16, 0.53) 45%, rgba(10, 17, 12, 0.7)),
+                linear-gradient(160deg, rgba(61, 45, 21, 0.46), rgba(10, 13, 9, 0.7));
+        }
+
+        .fs-ambient-bg[data-ambient="library"]::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                linear-gradient(90deg, rgba(255, 230, 172, 0.055) 1px, transparent 1px),
+                linear-gradient(rgba(255, 230, 172, 0.045) 1px, transparent 1px);
+            background-size: 96px 100%, 100% 82px;
+            -webkit-mask-image: linear-gradient(to right, #000, transparent 62%);
+            mask-image: linear-gradient(to right, #000, transparent 62%);
+            opacity: 0.7;
+        }
+
+        .fs-ambient-bg[data-ambient="library"]::after {
+            background:
+                radial-gradient(ellipse 50% 42% at 22% 18%, rgba(255, 225, 163, 0.18), transparent 68%),
+                radial-gradient(ellipse 72% 45% at 54% 110%, rgba(135, 92, 35, 0.16), transparent 76%);
+            animation: fs-lamp-breathe 12s ease-in-out infinite;
+        }
+
+        .fs-blur-layer {
+            z-index: 1;
+            background: var(--fs-scrim);
+            -webkit-backdrop-filter: blur(3px);
+            backdrop-filter: blur(3px);
+            transition: background 0.8s ease;
+        }
+
+        .fs-content {
+            width: min(720px, calc(100vw - 40px));
+            max-width: 720px;
+            min-height: 0;
+            max-height: calc(100dvh - 112px);
+            justify-content: center;
+            overflow-x: hidden;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(var(--fs-accent-rgb), 0.28) transparent;
+            padding: clamp(34px, 5vh, 58px) clamp(24px, 5vw, 58px) clamp(28px, 4.5vh, 48px);
+            border: 1px solid var(--fs-stage-border);
+            border-radius: 36px;
+            background: var(--fs-stage);
+            -webkit-backdrop-filter: blur(28px) saturate(145%);
+            backdrop-filter: blur(28px) saturate(145%);
+            box-shadow:
+                0 34px 90px rgba(0, 0, 0, 0.46),
+                inset 0 1px 0 rgba(255, 255, 255, 0.11),
+                0 0 80px rgba(var(--fs-accent-rgb), 0.08);
+            transition: background 0.8s ease, border-color 0.8s ease, box-shadow 0.8s ease;
+        }
+
+        .fs-topbar {
+            padding: max(18px, env(safe-area-inset-top, 0px)) max(22px, env(safe-area-inset-right, 0px)) 16px max(22px, env(safe-area-inset-left, 0px));
+        }
+
+        .fs-label { color: var(--fs-faint); }
+
+        .fs-icon-btn {
+            width: 40px;
+            height: 40px;
+            border-color: var(--fs-stage-border);
+            background: var(--fs-control);
+            color: var(--fs-muted);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+        }
+
+        .fs-icon-btn:hover {
+            background: var(--fs-control-hover);
+            border-color: rgba(var(--fs-accent-rgb), 0.42);
+            color: var(--fs-text);
+        }
+
+        .focus-session-overlay :where(button, textarea):focus-visible {
+            outline: 2px solid rgba(var(--fs-accent-rgb), 0.9) !important;
+            outline-offset: 3px;
+        }
+
+        .fs-task-info { margin-bottom: 16px; }
+        .fs-task-title { color: var(--fs-text); }
+        .fs-task-note { color: var(--fs-muted); }
+        .fs-status-pill-wrap { margin-bottom: 20px; }
+
+        .fs-status-pill {
+            background: var(--fs-control);
+            border-color: var(--fs-stage-border);
+            color: var(--fs-muted);
+        }
+
+        .fs-status-pill::before { background: var(--fs-faint); }
+        .fs-status-pill.is-focusing {
+            background: rgba(var(--fs-accent-rgb), 0.12);
+            border-color: rgba(var(--fs-accent-rgb), 0.34);
+            color: var(--fs-accent);
+        }
+        .fs-status-pill.is-focusing::before { background: var(--fs-accent); }
+
+        .fs-timer {
+            color: var(--fs-text);
+            text-shadow:
+                0 2px 50px rgba(var(--fs-accent-rgb), 0.16),
+                0 10px 42px rgba(0,0,0,0.34);
+        }
+
+        .fs-progress-row { margin-bottom: 26px; }
+        .fs-elapsed, .fs-planned { color: var(--fs-faint); }
+        .fs-progress-track { height: 3px; background: rgba(255,255,255,0.1); }
+        .fs-progress-fill {
+            background: linear-gradient(90deg, rgba(var(--fs-accent-rgb), 0.58), var(--fs-accent));
+            box-shadow: 0 0 14px rgba(var(--fs-accent-rgb), 0.36);
+        }
+
+        .fs-play-wrap { margin-bottom: 24px; }
+        .fs-play-btn {
+            width: 80px;
+            height: 80px;
+            border-color: rgba(var(--fs-accent-rgb), 0.38);
+            background: rgba(var(--fs-accent-rgb), 0.14);
+            color: var(--fs-text);
+            box-shadow:
+                0 18px 50px rgba(0,0,0,0.4),
+                0 0 34px rgba(var(--fs-accent-rgb), 0.13),
+                inset 0 1px 0 rgba(255,255,255,0.16);
+        }
+
+        .fs-play-btn:hover {
+            background: rgba(var(--fs-accent-rgb), 0.24);
+            border-color: rgba(var(--fs-accent-rgb), 0.64);
+            box-shadow: 0 22px 58px rgba(0,0,0,0.46), 0 0 42px rgba(var(--fs-accent-rgb), 0.2), inset 0 1px 0 rgba(255,255,255,0.2);
+        }
+
+        .fs-play-btn.is-playing {
+            background: rgba(var(--fs-accent-rgb), 0.24);
+            border-color: rgba(var(--fs-accent-rgb), 0.62);
+        }
+
+        .fs-actions { margin-bottom: 20px; }
+        .fs-action-btn {
+            min-height: 42px;
+            padding: 9px 16px;
+            border-color: var(--fs-stage-border);
+            background: var(--fs-control);
+            color: var(--fs-muted);
+        }
+
+        .fs-action-btn:hover {
+            background: var(--fs-control-hover);
+            border-color: rgba(var(--fs-accent-rgb), 0.38);
+            color: var(--fs-text);
+        }
+
+        .fs-action-btn-accent {
+            background: rgba(var(--fs-accent-rgb), 0.14);
+            border-color: rgba(var(--fs-accent-rgb), 0.36);
+            color: var(--fs-accent);
+        }
+
+        .fs-action-btn-accent:hover {
+            background: rgba(var(--fs-accent-rgb), 0.24);
+            border-color: rgba(var(--fs-accent-rgb), 0.56);
+        }
+
+        .fs-ambient-bar {
+            gap: 8px;
+            padding-top: 4px;
+        }
+
+        .fs-ambient-chip {
+            min-height: 36px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            padding: 7px 12px;
+            border-color: rgba(255,255,255,0.09);
+            background: rgba(255,255,255,0.035);
+            color: var(--fs-faint);
+        }
+
+        .fs-ambient-chip i { font-size: 0.68rem; color: var(--fs-faint); transition: color 0.2s; }
+        .fs-ambient-chip[data-ambient="fireplace"] i { color: rgba(245, 142, 71, 0.72); }
+        .fs-ambient-chip[data-ambient="nightsky"] i { color: rgba(137, 164, 255, 0.74); }
+        .fs-ambient-chip[data-ambient="rain"] i { color: rgba(125, 194, 228, 0.74); }
+        .fs-ambient-chip[data-ambient="library"] i { color: rgba(219, 180, 104, 0.74); }
+
+        .fs-ambient-chip:hover {
+            background: var(--fs-control-hover);
+            border-color: rgba(var(--fs-accent-rgb), 0.26);
+            color: var(--fs-text);
+        }
+
+        .fs-ambient-chip.active {
+            background: rgba(var(--fs-accent-rgb), 0.16);
+            border-color: rgba(var(--fs-accent-rgb), 0.42);
+            color: var(--fs-text);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 0 20px rgba(var(--fs-accent-rgb), 0.09);
+        }
+
+        .fs-ambient-chip.active i { color: var(--fs-accent); }
+
+        .fs-notes-panel {
+            background: color-mix(in srgb, var(--fs-stage) 90%, rgba(4, 7, 12, 0.92));
+            border-color: var(--fs-stage-border);
+            box-shadow: -24px 0 70px rgba(0,0,0,0.34);
+        }
+        .fs-notes-header { color: var(--fs-muted); }
+        .fs-notes-textarea {
+            background: var(--fs-control);
+            border-color: var(--fs-stage-border);
+            color: var(--fs-text);
+        }
+        .fs-notes-textarea:focus {
+            border-color: rgba(var(--fs-accent-rgb), 0.5);
+            background: var(--fs-control-hover);
+        }
+
+        @keyframes fs-minimal-drift {
+            from { transform: translate3d(-2%, -1%, 0) scale(1.02); opacity: 0.72; }
+            to { transform: translate3d(2%, 1%, 0) scale(1.06); opacity: 1; }
+        }
+        @keyframes fs-ember-rise {
+            from { background-position: 0 110px, 30px 92px, 12px 130px; opacity: 0.45; }
+            to { background-position: 24px -110px, -18px -92px, 46px -130px; opacity: 0.9; }
+        }
+        @keyframes fs-star-drift {
+            from { transform: translate3d(-0.6%, -0.3%, 0) scale(1); opacity: 0.72; }
+            to { transform: translate3d(0.7%, 0.4%, 0) scale(1.035); opacity: 1; }
+        }
+        @keyframes fs-rain-window {
+            from { opacity: 0.58; transform: translateY(-4px); }
+            to { opacity: 0.92; transform: translateY(6px); }
+        }
+        @keyframes fs-lamp-breathe {
+            0%, 100% { opacity: 0.72; filter: saturate(0.9); }
+            50% { opacity: 1; filter: saturate(1.12); }
+        }
+
+        @media (max-width: 768px) {
+            .focus-session-overlay {
+                padding: max(72px, calc(env(safe-area-inset-top, 0px) + 64px)) 12px max(12px, env(safe-area-inset-bottom, 0px));
+                -webkit-backdrop-filter: blur(28px) saturate(128%) brightness(0.68);
+                backdrop-filter: blur(28px) saturate(128%) brightness(0.68);
+            }
+            .fs-content {
+                width: min(100%, 620px);
+                max-height: calc(100dvh - max(90px, calc(env(safe-area-inset-top, 0px) + 82px)));
+                padding: clamp(26px, 4vh, 40px) clamp(18px, 5vw, 32px) 24px;
+                border-radius: 28px;
+            }
+            .fs-topbar { padding-inline: 16px; }
+            .fs-icon-btn { width: 44px; height: 44px; }
+            .fs-timer { font-size: clamp(4.6rem, 21vw, 7rem); }
+            .fs-action-btn span { display: inline; }
+            .focus-session-overlay .fs-action-btn { min-height: 44px; padding: 8px 12px; }
+            .fs-ambient-bar { flex-wrap: nowrap; width: 100%; overflow-x: auto; justify-content: flex-start; padding: 4px 2px 3px; scrollbar-width: none; }
+            .fs-ambient-bar::-webkit-scrollbar { display: none; }
+            .fs-ambient-chip { flex: 0 0 auto; min-height: 44px; }
+        }
+
+        @media (max-width: 480px) {
+            .fs-content {
+                justify-content: flex-start;
+                padding: 24px 16px 20px;
+                border-radius: 24px;
+            }
+            .fs-task-info { margin-bottom: 12px; }
+            .fs-status-pill-wrap { margin-bottom: 16px; }
+            .fs-timer { font-size: clamp(4rem, 23vw, 5.7rem); }
+            .fs-progress-row { margin-bottom: 22px; }
+            .fs-play-btn { width: 68px; height: 68px; }
+            .fs-play-wrap { margin-bottom: 20px; }
+            .fs-actions { margin-bottom: 16px; }
+            .fs-action-btn span { display: none; }
+            .focus-session-overlay .fs-action-btn { min-width: 44px; min-height: 44px; justify-content: center; }
+        }
+
+        @media (max-height: 700px) and (min-width: 769px) {
+            .focus-session-overlay { padding-top: 66px; padding-bottom: 14px; }
+            .fs-content { max-height: calc(100dvh - 82px); padding-top: 28px; padding-bottom: 24px; }
+            .fs-task-info { margin-bottom: 10px; }
+            .fs-status-pill-wrap { margin-bottom: 12px; }
+            .fs-timer { font-size: clamp(5rem, 14vh, 7.4rem); }
+            .fs-progress-row { margin-bottom: 20px; }
+            .fs-play-wrap { margin-bottom: 18px; }
+            .fs-play-btn { width: 66px; height: 66px; }
+            .fs-actions { margin-bottom: 14px; }
+        }
+
+        @media (prefers-reduced-transparency: reduce) {
+            .focus-session-overlay { background: #080b12; -webkit-backdrop-filter: none; backdrop-filter: none; }
+            .fs-content { background: #111722; -webkit-backdrop-filter: none; backdrop-filter: none; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .fs-ambient-bg,
+            .fs-ambient-bg::before,
+            .fs-ambient-bg::after,
+            .fs-content,
+            .focus-session-overlay {
+                animation: none !important;
+                transition: none !important;
+            }
+        }

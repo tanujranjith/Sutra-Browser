@@ -7,6 +7,25 @@ public sealed record SystemResourceSnapshot(MemoryPressureLevel Pressure, bool B
 
 public static class AdaptiveMemoryPolicy
 {
+    /// <summary>
+    /// Bounds simultaneous window startup work. Every restored window creates at
+    /// least one live WebView, so per-window tab limits alone cannot contain a
+    /// multi-window launch when the OS is already under pressure.
+    /// </summary>
+    public static int MaximumWindowsToRestore(int configuredMaximum, SystemResourceSnapshot snapshot)
+    {
+        configuredMaximum = Math.Clamp(configuredMaximum, 0, 100);
+        return snapshot.Pressure switch
+        {
+            MemoryPressureLevel.Critical => Math.Min(1, configuredMaximum),
+            MemoryPressureLevel.Elevated => Math.Min(2, configuredMaximum),
+            _ => configuredMaximum,
+        };
+    }
+
+    public static bool CanRestoreAnotherWindow(int currentlyOpen, int configuredMaximum, SystemResourceSnapshot snapshot) =>
+        currentlyOpen < MaximumWindowsToRestore(configuredMaximum, snapshot);
+
     /// <summary>Effective live-tab budget after pressure/battery adaptation. Never increases the base limit.</summary>
     public static int EffectiveTabLimit(int baseLimit, SystemResourceSnapshot snapshot)
     {

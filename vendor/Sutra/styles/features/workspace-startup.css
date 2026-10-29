@@ -1,0 +1,64 @@
+/* The canonical IndexedDB workspace must be known before shell content paints. */
+body:not([data-sutra-workspace-boot="ready"]) .app-container {
+  visibility: hidden !important;
+}
+
+#sutraWorkspaceStartup {
+  position: fixed;
+  inset: 0;
+  z-index: 99998;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #090f1c;
+  color: #eff4ff;
+  font: 16px/1.5 system-ui, sans-serif;
+}
+
+#sutraWorkspaceStartup[hidden],
+#sutraWorkspaceStartupActions[hidden] {
+  display: none !important;
+}
+
+.sutra-workspace-startup-card {
+  width: min(100%, 440px);
+  text-align: center;
+}
+
+.sutra-workspace-startup-card img {
+  border-radius: 18%;
+}
+
+.sutra-workspace-startup-card h1 {
+  margin: 20px 0 8px;
+  font-size: clamp(1.4rem, 4vw, 1.8rem);
+}
+
+.sutra-workspace-startup-card p {
+  margin: 0;
+  color: #bdc9e2;
+}
+
+#sutraWorkspaceStartupActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+#sutraWorkspaceStartupActions button {
+  min-height: 44px;
+  padding: 9px 16px;
+  border: 1px solid #8099ca;
+  border-radius: 9px;
+  background: #182a4c;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+#sutraWorkspaceStartupActions button:focus-visible {
+  outline: 3px solid #adc6ff;
+  outline-offset: 3px;
+}

@@ -1,0 +1,122 @@
+/* Browser-owned presentation overlay. The pinned upstream source stays untouched. */
+html[data-sutra-desktop] {
+  --top-nav-height: 0px !important;
+  --top-nav-height-mobile: 0px !important;
+  --sutra-global-nav-height: 0px !important;
+  --sutra-mobile-nav-height: 0px !important;
+}
+html[data-sutra-desktop] :is(.top-nav, .sutra-bottom-nav) { display: none !important; }
+html[data-sutra-desktop][data-desktop-theme="dark"] body {
+  --bg-primary: #081322;
+  --bg-secondary: #0d1b2e;
+  --bg-elevated: #102039;
+  --surface: #0d1b2e;
+  --surface-raised: #102039;
+  --text-primary: #f4f6ff;
+  --text-secondary: #aabbdc;
+  --border-color: #243650;
+  --accent: #6252f5;
+  --accent-strong: #8e81ff;
+  --accent-rgb: 98, 82, 245;
+  --sidebar-bg: #0d1b2e;
+  --button-bg: #172942;
+  --button-bg-hover: #223957;
+  --button-border: #344568;
+  --button-text: #f4f6ff;
+  --theme-gradient-start: #081322;
+  --theme-gradient-mid: #0d1b2e;
+  --theme-gradient-end: #081322;
+  background: #081322 !important;
+  color: #f4f6ff;
+}
+html[data-sutra-desktop] .main-content { padding-top: 12px !important; }
+html[data-sutra-mode="note"] body[data-view="notes"] :is(#sidebar, #sidebarToggle, #sidebarOverlay) { display: none !important; }
+html[data-sutra-mode="note"] :is(.app-container, .main-content) {
+  margin: 0 !important;
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+html[data-sutra-mode="note"] #notesEditorContainer {
+  padding: 24px 28px !important;
+  margin: 0 !important;
+  width: 100% !important;
+  max-width: none !important;
+  border: 0 !important;
+  background: var(--bg-primary) !important;
+  box-shadow: none !important;
+}
+html[data-sutra-mode="note"] #pageTitle {
+  font-family: Georgia, 'Times New Roman', serif !important;
+  font-size: clamp(28px, 6vw, 38px) !important;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 16px 0 !important;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+html[data-sutra-mode="note"] #editor {
+  font-size: 16px;
+  line-height: 1.65;
+  max-width: 65ch;
+  padding-top: 22px;
+}
+html[data-sutra-mode="note"] #editor :is(h2, h3) {
+  font-family: Georgia, 'Times New Roman', serif;
+  border-left: 3px solid var(--accent);
+  padding-left: 12px;
+}
+html[data-sutra-mode="note"] body[data-view="notes"] #view-notes .toolbar-wrapper {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  margin: 0 !important;
+  width: 100% !important;
+  max-width: none !important;
+  height: auto !important;
+  min-height: 48px !important;
+  padding: 6px !important;
+  border-radius: 8px !important;
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color) !important;
+  backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+html[data-sutra-mode="note"] body[data-view="notes"] #view-notes #toolbar {
+  background: transparent !important;
+  padding: 0 !important;
+  flex-wrap: wrap !important;
+  overflow: visible !important;
+  gap: 2px !important;
+}
+html[data-sutra-mode="note"] #toolbar .toolbar-btn {
+  min-width: 32px !important;
+  width: 32px !important;
+  flex: 0 0 32px !important;
+  padding: 0 !important;
+}
+html[data-sutra-mode="note"] #toolbar .toolbar-separator { display: none; }
+html[data-sutra-mode="note"] #toolbar :is(.toolbar-size-btn, .word-count-display) { display: none !important; }
+html[data-sutra-mode="note"] #toolbarStylesSelect { width: 116px !important; min-width: 0 !important; }
+html[data-sutra-mode="note"] #toolbarFontFamily { width: 110px !important; min-width: 0 !important; }
+html[data-sutra-mode="note"] #toolbar .nf-select:has(#toolbarStylesSelect) { width: 116px !important; min-width: 0 !important; }
+html[data-sutra-mode="note"] #toolbar .nf-select:has(#toolbarFontFamily) { width: 110px !important; min-width: 0 !important; }
+html[data-sutra-mode="note"] #toolbar .toolbar-size-stepper { width: 38px; min-width: 0; gap: 0; }
+html[data-sutra-mode="note"] #toolbar .toolbar-size-input { width: 38px; min-width: 0; }
+html[data-sutra-mode="note"] .notes-toolbar-overflow-menu {
+  box-sizing: border-box;
+  max-width: calc(100vw - 24px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  font-family: 'Segoe UI', sans-serif;
+  background: var(--bg-secondary);
+}
+html[data-sutra-mode="note"] .toolbar-scroll-btn { display: none !important; }
+html[data-sutra-desktop][data-desktop-theme="dark"] :is(#editor, .ProseMirror) a { color: #b7aeff !important; }
+html[data-sutra-mode="note"] :is(.notes-pane-primary, .editor) { min-width: 0 !important; }
+@media (max-width: 560px) {
+  html[data-sutra-mode="note"] #notesEditorContainer { padding: 16px 20px !important; }
+}

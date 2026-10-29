@@ -13,11 +13,11 @@ public sealed partial class MainWindow
         var light = _root.ActualTheme == ElementTheme.Light;
         var hex = key switch
         {
-            "SutraChromeBrush" => light ? "#F0EFEC" : "#101215",
-            "SutraToolbarBrush" => light ? "#F8F7F4" : "#14171C",
-            "SutraSurfaceBrush" => light ? "#FFFFFF" : "#1B2026",
-            "SutraTextBrush" => light ? "#25272B" : "#F3F0EB",
-            "SutraTextSecondaryBrush" => light ? "#60666E" : "#A7ABB3",
+            "SutraChromeBrush" => light ? "#F1F4FC" : Browser.Core.Branding.AppBrand.ChromeColor,
+            "SutraToolbarBrush" => light ? "#F7F9FF" : "#0D1524",
+            "SutraSurfaceBrush" => light ? "#FFFFFF" : Browser.Core.Branding.AppBrand.SurfaceColor,
+            "SutraTextBrush" => light ? "#17243A" : "#F4F6FF",
+            "SutraTextSecondaryBrush" => light ? "#53627B" : "#AABBDC",
             "SutraAccentBrush" => _vm.Settings.AccentColor,
             _ => "#808080"
         };
@@ -66,7 +66,7 @@ public sealed partial class MainWindow
         header.ColumnDefinitions.Add(new() { Width = new(1, GridUnitType.Star) });
         header.ColumnDefinitions.Add(new() { Width = GridLength.Auto });
         var heading = new StackPanel { Spacing = 7 };
-        var label = new TextBlock { Text = title, FontSize = 32, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap };
+        var label = new TextBlock { Text = title, FontSize = 28, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap };
         AutomationProperties.SetHeadingLevel(label, Microsoft.UI.Xaml.Automation.Peers.AutomationHeadingLevel.Level1);
         heading.Children.Add(label);
         heading.Children.Add(new TextBlock { Text = subtitle, FontSize = 14, Opacity = .72, TextWrapping = TextWrapping.Wrap, MaxWidth = 800, HorizontalAlignment = HorizontalAlignment.Left });
@@ -97,7 +97,12 @@ public sealed partial class MainWindow
         body.RowDefinitions.Add(new() { Height = new(1, GridUnitType.Star) });
         var search = new TextBox { PlaceholderText = "Find a setting…", MaxLength = 160, HorizontalAlignment = HorizontalAlignment.Stretch };
         AutomationProperties.SetName(search, "Search settings");
-        body.Children.Add(search);
+        var searchRow = new Grid { ColumnSpacing = 8 };
+        searchRow.ColumnDefinitions.Add(new() { Width = new(1, GridUnitType.Star) }); searchRow.ColumnDefinitions.Add(new() { Width = GridLength.Auto });
+        searchRow.Children.Add(search);
+        var clear = IconButton(Symbol.Cancel, "Clear settings search"); clear.Visibility = Visibility.Collapsed;
+        clear.Click += (_, _) => { search.Text = string.Empty; search.Focus(FocusState.Keyboard); };
+        Grid.SetColumn(clear, 1); searchRow.Children.Add(clear); body.Children.Add(searchRow);
         var layout = new Grid { ColumnSpacing = 20, RowSpacing = 12 };
         layout.ColumnDefinitions.Add(new() { Width = new(190) });
         layout.ColumnDefinitions.Add(new() { Width = new(1, GridUnitType.Star) });
@@ -144,7 +149,8 @@ public sealed partial class MainWindow
             empty.Visibility = count == 0 ? Visibility.Visible : Visibility.Collapsed;
             scroll.ChangeView(null, 0, null, true);
         }
-        search.TextChanged += (_, _) => { if (search.Text.Length > 0) categories.SelectedIndex = 0; Filter(); };
+        search.TextChanged += (_, _) => { clear.Visibility = search.Text.Length == 0 ? Visibility.Collapsed : Visibility.Visible; if (search.Text.Length > 0) categories.SelectedIndex = 0; Filter(); };
+        search.KeyDown += (_, e) => { if (e.Key == Windows.System.VirtualKey.Escape) { search.Text = string.Empty; e.Handled = true; } };
         categories.SelectionChanged += (_, _) => Filter();
         layout.Children.Add(categories); Grid.SetColumn(results, 1); layout.Children.Add(results);
         // A category selector replaces the rail in narrow windows and split panes.
@@ -164,6 +170,7 @@ public sealed partial class MainWindow
             Grid.SetColumn(compactCategories, 1); Grid.SetRow(results, narrow ? 1 : 0);
         };
         Grid.SetRow(layout, 1); body.Children.Add(layout);
+        if (categories.Items.Count > 1) categories.SelectedIndex = 1;
         return body;
     }
 }

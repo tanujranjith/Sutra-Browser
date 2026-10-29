@@ -1,0 +1,1353 @@
+/* Custom Tabs — user-composed widget dashboards.
+   Uses the shared theme tokens (accent, surface, text) so custom tabs follow
+   every theme, density, and card-style setting automatically. */
+
+/* ---------- nav "+" button ---------- */
+
+.view-tab-add {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px dashed var(--surface-border, rgba(127, 127, 127, 0.35));
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-secondary, #888);
+    cursor: pointer;
+    flex: 0 0 auto;
+    transition: color var(--transition-fast, 0.15s ease), border-color var(--transition-fast, 0.15s ease), background var(--transition-fast, 0.15s ease);
+}
+
+.view-tab-add:hover,
+.view-tab-add:focus-visible {
+    color: var(--accent-strong, var(--accent, #6c5ce7));
+    border-color: var(--accent, #6c5ce7);
+    background: var(--bg-hover, rgba(127, 127, 127, 0.08));
+}
+
+/* ---------- tab section ---------- */
+
+.view-custom-tab {
+    padding: 20px clamp(14px, 3vw, 36px) 60px;
+}
+
+.ctab-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+}
+
+.ctab-title {
+    font-family: var(--font-heading, inherit);
+    font-size: 1.5rem;
+    color: var(--text-primary, inherit);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ctab-title .fas {
+    color: var(--accent, #6c5ce7);
+    font-size: 1.1rem;
+}
+
+.ctab-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.ctab-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    font-size: 0.82rem;
+    border: 1px solid var(--surface-border, rgba(127, 127, 127, 0.25));
+    border-radius: 999px;
+    background: var(--bg-elevated, rgba(127, 127, 127, 0.06));
+    color: var(--text-secondary, #888);
+    cursor: pointer;
+    transition: color var(--transition-fast, 0.15s ease), border-color var(--transition-fast, 0.15s ease);
+}
+
+.ctab-action:hover,
+.ctab-action:focus-visible {
+    color: var(--text-primary, inherit);
+    border-color: var(--accent, #6c5ce7);
+}
+
+.ctab-action.is-active {
+    color: var(--accent-strong, var(--accent, #6c5ce7));
+    border-color: var(--accent, #6c5ce7);
+}
+
+.ctab-action.is-danger:hover,
+.ctab-action.is-danger:focus-visible {
+    color: #e05563;
+    border-color: #e05563;
+}
+
+/* ---------- empty state ---------- */
+
+.ctab-zero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding: 64px 20px;
+    border: 1px dashed var(--surface-border, rgba(127, 127, 127, 0.3));
+    border-radius: var(--radius, 14px);
+    text-align: center;
+}
+
+.ctab-zero-msg {
+    color: var(--text-secondary, #888);
+    margin: 0;
+    max-width: 420px;
+}
+
+.ctab-zero-btn,
+.ctab-setup-btn,
+.ctab-add-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 999px;
+    background: var(--accent, #6c5ce7);
+    color: #fff;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: filter var(--transition-fast, 0.15s ease);
+}
+
+.ctab-zero-btn:hover,
+.ctab-setup-btn:hover,
+.ctab-add-btn:hover {
+    filter: brightness(1.1);
+}
+
+/* ---------- widget grid + cards ---------- */
+
+.ctab-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    align-items: start;
+}
+
+.ctab-widget {
+    background: var(--bg-elevated, rgba(127, 127, 127, 0.06));
+    border: 1px solid var(--surface-border, rgba(127, 127, 127, 0.2));
+    border-radius: var(--radius, 14px);
+    box-shadow: var(--shadow-soft, none);
+    padding: 14px 16px 16px;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.ctab-widget.is-wide {
+    grid-column: span 2;
+}
+
+@media (max-width: 700px) {
+    .ctab-widget.is-wide {
+        grid-column: span 1;
+    }
+}
+
+.ctab-widget-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.ctab-widget-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted, var(--text-secondary, #888));
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ctab-widget-label .fas {
+    color: var(--accent, #6c5ce7);
+}
+
+/* Edit-mode-only controls */
+.ctab-widget-controls {
+    display: none;
+    gap: 4px;
+}
+
+.view-custom-tab.is-editing .ctab-widget-controls {
+    display: inline-flex;
+}
+
+.ctab-ctrl {
+    width: 26px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--surface-border, rgba(127, 127, 127, 0.25));
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-secondary, #888);
+    cursor: pointer;
+    font-size: 0.72rem;
+}
+
+.ctab-ctrl:hover,
+.ctab-ctrl:focus-visible {
+    color: var(--text-primary, inherit);
+    border-color: var(--accent, #6c5ce7);
+}
+
+.ctab-ctrl.is-danger:hover,
+.ctab-ctrl.is-danger:focus-visible {
+    color: #e05563;
+    border-color: #e05563;
+}
+
+.view-custom-tab.is-editing .ctab-widget {
+    border-style: dashed;
+    border-color: var(--accent, #6c5ce7);
+}
+
+.ctab-widget-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+}
+
+.ctab-html-runtime {
+    width: 100%;
+    min-height: 240px;
+    overflow: hidden;
+    border: 1px solid var(--surface-border, rgba(127, 127, 127, 0.2));
+    border-radius: 10px;
+    background: var(--bg-primary, #fff);
+}
+
+.ctab-html-runtime iframe,
+.ctab-html-preview-surface iframe {
+    width: 100%;
+    border: 0;
+    display: block;
+    background: #fff;
+}
+
+.ctab-html-runtime .sutra-embed-capability-warning,
+.ctab-html-preview-surface .sutra-embed-capability-warning {
+    padding: 7px 10px;
+    border-bottom: 1px solid var(--surface-border, rgba(127, 127, 127, 0.2));
+    color: var(--text-secondary, #888);
+    font-size: 0.7rem;
+    line-height: 1.35;
+}
+
+.ctab-empty-msg {
+    color: var(--text-muted, var(--text-secondary, #888));
+    font-size: 0.86rem;
+    margin: 0;
+}
+
+/* ---------- shared list rows ---------- */
+
+.ctab-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.ctab-list-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 10px;
+    background: var(--bg-hover, rgba(127, 127, 127, 0.05));
+    font-size: 0.88rem;
+    color: var(--text-primary, inherit);
+}
+
+.ctab-list-title {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ctab-list-meta {
+    font-size: 0.75rem;
+    color: var(--text-muted, var(--text-secondary, #888));
+    flex: 0 0 auto;
+}
+
+.ctab-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex: 0 0 auto;
+    background: var(--text-muted, #999);
+}
+
+.ctab-dot.is-overdue { background: #e05563; }
+.ctab-dot.is-today { background: #e8a13c; }
+.ctab-dot.is-tomorrow { background: #d7c74a; }
+.ctab-dot.is-later { background: #58b368; }
+
+.ctab-due-chip {
+    flex: 0 0 auto;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--bg-hover, rgba(127, 127, 127, 0.1));
+    color: var(--text-secondary, #888);
+    align-self: flex-start;
+}
+
+.ctab-due-chip.is-overdue { color: #fff; background: #e05563; }
+.ctab-due-chip.is-today { color: #fff; background: #e8a13c; }
+.ctab-due-chip.is-tomorrow { color: #6b5d13; background: #ede28a; }
+
+.ctab-item-remove {
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-muted, #999);
+    cursor: pointer;
+    font-size: 0.7rem;
+    flex: 0 0 auto;
+}
+
+.ctab-item-remove:hover,
+.ctab-item-remove:focus-visible {
+    color: #e05563;
+    background: var(--bg-hover, rgba(224, 85, 99, 0.12));
+}
+
+/* ---------- next up ---------- */
+
+.ctab-nextup-title {
+    margin: 0;
+    font-size: 1.05rem;
+    color: var(--text-primary, inherit);
+    overflow-wrap: anywhere;
+}
+
+.ctab-nextup-reason {
+    margin: 0;
+    font-size: 0.82rem;
+    color: var(--text-secondary, #888);
+}
+
+/* ---------- habits ---------- */
+
+.ctab-habit-toggle {
+    width: 26px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--surface-border, rgba(127, 127, 127, 0.4));
+    border-radius: 50%;
+    background: transparent;
+    color: transparent;
+    cursor: pointer;
+    flex: 0 0 auto;
+    font-size: 0.68rem;
+    transition: all var(--transition-fast, 0.15s ease);
+}
+
+.ctab-habit-toggle:hover {
+    border-color: var(--accent, #6c5ce7);
+}
+
+.ctab-habit-toggle.is-done {
+    background: var(--accent, #6c5ce7);
+    border-color: var(--accent, #6c5ce7);
+    color: #fff;
+}
+
+.ctab-habit-row.is-done .ctab-list-title {
+    text-decoration: line-through;
+    color: var(--text-muted, var(--text-secondary, #888));
+}
+
+/* ---------- focus ---------- */
+
+.ctab-focus-hint {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--text-secondary, #888);
+}
+
+.ctab-focus-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.ctab-focus-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border: 1px solid var(--surface-border, rgba(127, 127, 127, 0.25));
+    border-radius: 12px;
+    background: var(--bg-hover, rgba(127, 127, 127, 0.06));
+    color: var(--text-primary, inherit);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: border-color var(--transition-fast, 0.15s ease);
+}
+
+.ctab-focus-btn:hover,
+.ctab-focus-btn:focus-visible {
+    border-color: var(--accent, #6c5ce7);
+}
+
+.ctab-focus-btn .fas {
+    color: var(--accent, #6c5ce7);
+    font-size: 0.72rem;
+}
+
+/* ---------- notes / links ---------- */
+
+.ctab-note-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: none;
+    background: transparent;
+    color: var(--text-primary, inherit);
+    font-size: 0.88rem;
+    cursor: pointer;
+    padding: 0;
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+}
+
+.ctab-note-link:hover,
+.ctab-note-link:focus-visible {
+    color: var(--accent-strong, var(--accent, #6c5ce7));
+}
+
+.ctab-note-link .fas {
+    color: var(--text-muted, #999);
+    font-size: 0.78rem;
+    flex: 0 0 auto;
+}
+
+.ctab-link {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-primary, inherit);
+    text-decoration: none;
+}
+
+.ctab-link:hover,
+.ctab-link:focus-visible {
+    color: var(--accent-strong, var(--accent, #6c5ce7));
+    text-decoration: underline;
+}
+
+.ctab-list-row > .fa-arrow-up-right-from-square {
+    color: var(--text-muted, #999);
+    font-size: 0.72rem;
+    flex: 0 0 auto;
+}
+
+/* ---------- grades ---------- */
+
+.ctab-grade-chip {
+    flex: 0 0 auto;
+    font-size: 0.76rem;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: var(--accent, #6c5ce7);
+    color: #fff;
+}
+
+/* ---------- countdown ---------- */
+
+.ctab-countdown-title {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-secondary, #888);
+}
+
+.ctab-countdown-big {
+    font-family: var(--font-heading, inherit);
+    font-size: 2.6rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--accent-strong, var(--accent, #6c5ce7));
+}
+
+.ctab-countdown-big.is-soon {
+    color: #e05563;
+}
+
+.ctab-countdown-sub {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--text-muted, var(--text-secondary, #888));
+}
+
+/* ---------- checklist / add rows ---------- */
+
+.ctab-check-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+    cursor: pointer;
+}
+
+.ctab-check-label input[type="checkbox"] {
+    accent-color: var(--accent, #6c5ce7);
+    flex: 0 0 auto;
+}
+
+.ctab-checklist .is-done .ctab-list-title {
+    text-decoration: line-through;
+    color: var(--text-muted, var(--text-secondary, #888));
+}
+
+.ctab-add-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 2px;
+}
+
+.ctab-add-input {
+    flex: 1;
+    min-width: 0;
+    padding: 7px 10px;
+    border: 1px solid var(--surface-border, rgba(127, 127, 127, 0.25));
+    border-radius: 10px;
+    background: var(--bg-hover, rgba(127, 127, 127, 0.04));
+    color: var(--text-primary, inherit);
+    font-size: 0.85rem;
+}
+
+.ctab-add-input:focus {
+    outline: none;
+    border-color: var(--accent, #6c5ce7);
+}
+
+/* ---------- scratchpad ---------- */
+
+.ctab-scratchpad {
+    width: 100%;
+    min-height: 130px;
+    resize: vertical;
+    padding: 10px 12px;
+    border: 1px solid var(--surface-border, rgba(127, 127, 127, 0.25));
+    border-radius: 10px;
+    background: var(--bg-hover, rgba(127, 127, 127, 0.04));
+    color: var(--text-primary, inherit);
+    font-size: 0.88rem;
+    line-height: 1.5;
+    font-family: inherit;
+}
+
+.ctab-scratchpad:focus {
+    outline: none;
+    border-color: var(--accent, #6c5ce7);
+}
+
+/* ---------- widget picker overlay ---------- */
+
+.ctab-picker-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 4000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(10, 10, 16, 0.55);
+    backdrop-filter: blur(3px);
+    padding: 20px;
+}
+
+.ctab-picker-panel {
+    width: min(680px, 100%);
+    max-height: min(80vh, 640px);
+    overflow-y: auto;
+    background: var(--bg-elevated, #fff);
+    border: 1px solid var(--surface-border, rgba(127, 127, 127, 0.25));
+    border-radius: var(--radius, 16px);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+    padding: 18px 20px 22px;
+}
+
+.ctab-picker-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.ctab-picker-title {
+    margin: 0;
+    font-family: var(--font-heading, inherit);
+    font-size: 1.15rem;
+    color: var(--text-primary, inherit);
+}
+
+.ctab-picker-close {
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--surface-border, rgba(127, 127, 127, 0.25));
+    border-radius: 10px;
+    background: transparent;
+    color: var(--text-secondary, #888);
+    cursor: pointer;
+}
+
+.ctab-picker-close:hover,
+.ctab-picker-close:focus-visible {
+    color: var(--text-primary, inherit);
+    border-color: var(--accent, #6c5ce7);
+}
+
+.ctab-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 10px;
+}
+
+.ctab-picker-option {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 14px;
+    border: 1px solid var(--surface-border, rgba(127, 127, 127, 0.2));
+    border-radius: 12px;
+    background: var(--bg-hover, rgba(127, 127, 127, 0.04));
+    color: var(--text-primary, inherit);
+    cursor: pointer;
+    text-align: left;
+    transition: border-color var(--transition-fast, 0.15s ease), transform var(--transition-fast, 0.15s ease);
+}
+
+.ctab-picker-option:hover,
+.ctab-picker-option:focus-visible {
+    border-color: var(--accent, #6c5ce7);
+    transform: translateY(-1px);
+}
+
+.ctab-picker-option .fas {
+    color: var(--accent, #6c5ce7);
+    font-size: 1.05rem;
+}
+
+.ctab-picker-option-label {
+    font-size: 0.9rem;
+}
+
+.ctab-picker-option-desc {
+    font-size: 0.76rem;
+    color: var(--text-secondary, #888);
+    line-height: 1.35;
+}
+
+/* ---------- picker category headers ---------- */
+
+.ctab-picker-cat {
+    margin: 14px 0 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted, var(--text-secondary, #888));
+}
+
+.ctab-picker-cat:first-of-type {
+    margin-top: 4px;
+}
+
+/* ---------- custom HTML editor ---------- */
+
+body.ctab-html-editor-open { overflow: hidden; }
+
+.ctab-html-editor-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 4100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(10, 10, 16, 0.58);
+    backdrop-filter: blur(3px);
+}
+
+.ctab-html-editor-panel {
+    width: min(980px, 100%);
+    max-height: min(88vh, 800px);
+    overflow-y: auto;
+    padding: 18px 20px 20px;
+    border: 1px solid var(--surface-border, rgba(127, 127, 127, 0.25));
+    border-radius: var(--radius, 16px);
+    background: var(--bg-elevated, #fff);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+}
+
+.ctab-html-editor-head,
+.ctab-html-editor-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.ctab-html-editor-head { margin-bottom: 4px; }
+.ctab-html-editor-subtitle,
+.ctab-html-editor-help,
+.ctab-html-network-note,
+.ctab-html-editor-status {
+    color: var(--text-secondary, #888);
+    font-size: 0.76rem;
+    line-height: 1.45;
+}
+.ctab-html-editor-subtitle { margin: 0 0 14px; }
+.ctab-html-editor-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 0.9fr);
+    gap: 16px;
+}
+.ctab-html-editor-source,
+.ctab-html-editor-preview { min-width: 0; }
+.ctab-html-editor-label {
+    display: block;
+    margin-bottom: 7px;
+    color: var(--text-primary, inherit);
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+.ctab-html-editor-input {
+    display: block;
+    width: 100%;
+    min-height: 260px;
+    resize: vertical;
+    padding: 11px 12px;
+    border: 1px solid var(--surface-border, rgba(127, 127, 127, 0.25));
+    border-radius: 10px;
+    background: var(--bg-primary, #fff);
+    color: var(--text-primary, inherit);
+    font: 12px/1.5 ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+}
+.ctab-html-editor-input:focus {
+    outline: 2px solid var(--accent, #6c5ce7);
+    outline-offset: -1px;
+}
+.ctab-html-editor-help,
+.ctab-html-network-note { margin: 7px 0 0; }
+.ctab-html-network-choice {
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    margin-top: 14px;
+    color: var(--text-primary, inherit);
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+.ctab-html-network-choice input { margin-top: 2px; accent-color: var(--accent, #6c5ce7); }
+.ctab-html-network-note { color: var(--text-secondary, #888); }
+.ctab-html-preview-surface {
+    min-height: 240px;
+    overflow: hidden;
+    border: 1px solid var(--surface-border, rgba(127, 127, 127, 0.2));
+    border-radius: 10px;
+    background: var(--bg-primary, #fff);
+}
+.ctab-html-editor-status { min-height: 1.4em; margin: 12px 0; }
+.ctab-html-editor-footer { justify-content: flex-end; }
+.ctab-html-editor-footer .ctab-action:disabled { opacity: 0.5; cursor: not-allowed; }
+
+@media (max-width: 700px) {
+    .ctab-html-editor-overlay { align-items: flex-start; padding: 10px; }
+    .ctab-html-editor-panel { max-height: 94vh; padding: 14px; }
+    .ctab-html-editor-layout { grid-template-columns: 1fr; }
+    .ctab-html-editor-input { min-height: 220px; }
+}
+
+.ctab-note-picker-list {
+    max-height: 320px;
+    overflow-y: auto;
+    margin-top: 8px;
+}
+
+/* ---------- stat rows (tasks / review / study) ---------- */
+
+.ctab-stat-row {
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+}
+
+.ctab-stat {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 10px 6px;
+    border-radius: 10px;
+    background: var(--bg-hover, rgba(127, 127, 127, 0.06));
+}
+
+.ctab-stat-value {
+    font-family: var(--font-heading, inherit);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--accent-strong, var(--accent, #6c5ce7));
+    line-height: 1;
+}
+
+.ctab-stat-label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted, var(--text-secondary, #888));
+    text-align: center;
+}
+
+/* ---------- this week day headers ---------- */
+
+.ctab-week-day {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted, var(--text-secondary, #888));
+    margin: 8px 0 4px;
+}
+
+.ctab-week-day:first-child {
+    margin-top: 0;
+}
+
+/* ---------- focus stats bar chart ---------- */
+
+.ctab-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    height: 72px;
+    margin-top: 6px;
+}
+
+.ctab-bar-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    height: 100%;
+    gap: 3px;
+}
+
+.ctab-bar {
+    width: 100%;
+    max-width: 22px;
+    min-height: 3px;
+    border-radius: 3px 3px 0 0;
+    background: var(--accent, #6c5ce7);
+}
+
+.ctab-bar-label {
+    font-size: 0.62rem;
+    color: var(--text-muted, var(--text-secondary, #888));
+}
+
+/* ---------- counter ---------- */
+
+.ctab-counter-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+}
+
+.ctab-counter-btn {
+    width: 38px;
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--surface-border, rgba(127, 127, 127, 0.25));
+    border-radius: 50%;
+    background: var(--bg-hover, rgba(127, 127, 127, 0.06));
+    color: var(--text-primary, inherit);
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: border-color var(--transition-fast, 0.15s ease);
+}
+
+.ctab-counter-btn:hover,
+.ctab-counter-btn:focus-visible {
+    border-color: var(--accent, #6c5ce7);
+    color: var(--accent-strong, var(--accent, #6c5ce7));
+}
+
+.ctab-counter-value {
+    font-family: var(--font-heading, inherit);
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary, inherit);
+    min-width: 60px;
+    text-align: center;
+}
+
+/* ---------- progress goal ---------- */
+
+.ctab-progress-track {
+    width: 100%;
+    height: 12px;
+    border-radius: 999px;
+    background: var(--bg-hover, rgba(127, 127, 127, 0.12));
+    overflow: hidden;
+}
+
+.ctab-progress-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: var(--accent, #6c5ce7);
+    transition: width var(--transition-fast, 0.2s ease);
+}
+
+.ctab-progress-label {
+    margin: 0;
+    font-size: 0.82rem;
+    color: var(--text-secondary, #888);
+    text-align: center;
+}
+
+/* ---------- sticky note ---------- */
+
+.ctab-sticky {
+    border-radius: 10px;
+    padding: 4px;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+.ctab-sticky-text {
+    width: 100%;
+    min-height: 96px;
+    resize: vertical;
+    border: none;
+    background: transparent;
+    color: #2a2a2a;
+    font-size: 0.9rem;
+    line-height: 1.45;
+    font-family: inherit;
+    padding: 6px;
+}
+
+.ctab-sticky-text::placeholder {
+    color: rgba(0, 0, 0, 0.4);
+}
+
+.ctab-sticky-text:focus {
+    outline: none;
+}
+
+.ctab-swatches {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.ctab-swatch {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    padding: 0;
+    transition: transform var(--transition-fast, 0.12s ease);
+}
+
+.ctab-swatch:hover {
+    transform: scale(1.12);
+}
+
+.ctab-swatch.is-active {
+    border-color: var(--text-primary, #222);
+}
+
+/* ---------- clock / stopwatch ---------- */
+
+.ctab-clock-time {
+    font-family: var(--font-heading, inherit);
+    font-size: 2.1rem;
+    font-weight: 700;
+    color: var(--text-primary, inherit);
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+}
+
+.ctab-clock-date {
+    text-align: center;
+    font-size: 0.82rem;
+    color: var(--text-secondary, #888);
+}
+
+/* ---------- calculator ---------- */
+
+.ctab-calc-display {
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: var(--bg-hover, rgba(127, 127, 127, 0.08));
+    color: var(--text-primary, inherit);
+    font-family: var(--font-heading, inherit);
+    font-size: 1.4rem;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ctab-calc-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+}
+
+.ctab-calc-key {
+    padding: 12px 0;
+    border: 1px solid var(--surface-border, rgba(127, 127, 127, 0.2));
+    border-radius: 10px;
+    background: var(--bg-hover, rgba(127, 127, 127, 0.04));
+    color: var(--text-primary, inherit);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: border-color var(--transition-fast, 0.12s ease), background var(--transition-fast, 0.12s ease);
+}
+
+.ctab-calc-key:hover,
+.ctab-calc-key:focus-visible {
+    border-color: var(--accent, #6c5ce7);
+}
+
+.ctab-calc-key.is-eq {
+    background: var(--accent, #6c5ce7);
+    color: #fff;
+    border-color: var(--accent, #6c5ce7);
+}
+
+.ctab-calc-key.is-clear {
+    color: #e05563;
+}
+
+/* ---------- quote ---------- */
+
+.ctab-quote-text {
+    margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: var(--text-primary, inherit);
+    font-style: italic;
+}
+
+.ctab-quote-by {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--text-secondary, #888);
+    text-align: right;
+}
+
+/* ---------- section heading ---------- */
+
+.ctab-section-heading {
+    margin: 0;
+    font-family: var(--font-heading, inherit);
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-primary, inherit);
+}
+
+/* ---------- imported page widgets ---------- */
+
+.ctab-import-hero {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: var(--bg-hover, rgba(127, 127, 127, 0.06));
+    border: 1px solid var(--surface-border, rgba(127, 127, 127, 0.16));
+    min-width: 0;
+}
+
+.ctab-import-hero-value {
+    color: var(--text-primary, inherit);
+    font-family: var(--font-heading, inherit);
+    font-size: clamp(1rem, 1.3vw, 1.35rem);
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+}
+
+.ctab-import-hero-label,
+.ctab-import-hero-meta {
+    color: var(--text-secondary, #888);
+    font-size: 0.78rem;
+    line-height: 1.35;
+}
+
+.ctab-import-stats .ctab-stat {
+    min-width: 68px;
+}
+
+.ctab-import-list {
+    max-height: 260px;
+    overflow: auto;
+    padding-right: 2px;
+}
+
+.ctab-import-list-row.is-danger {
+    box-shadow: inset 3px 0 0 #e05563;
+}
+
+.ctab-import-list-row.is-warn {
+    box-shadow: inset 3px 0 0 #e8a13c;
+}
+
+.ctab-import-row-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    background: transparent;
+    color: var(--text-primary, inherit);
+    cursor: pointer;
+    font: inherit;
+    padding: 0;
+    text-align: left;
+}
+
+.ctab-import-row-btn:hover,
+.ctab-import-row-btn:focus-visible {
+    color: var(--accent-strong, var(--accent, #6c5ce7));
+}
+
+.ctab-import-row-btn .fas {
+    color: var(--text-muted, #999);
+    font-size: 0.72rem;
+    flex: 0 0 auto;
+}
+
+.ctab-import-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.ctab-import-action {
+    width: fit-content;
+}
+
+.ctab-import-heatmap {
+    display: grid;
+    grid-template-columns: repeat(15, minmax(8px, 1fr));
+    gap: 5px;
+    align-items: center;
+}
+
+.ctab-import-heat-cell {
+    aspect-ratio: 1;
+    min-width: 8px;
+    border-radius: 4px;
+    background: rgba(16, 128, 96, 0.12);
+    border: 1px solid rgba(16, 128, 96, 0.08);
+}
+
+.ctab-import-heat-cell.level-1 { background: rgba(16, 128, 96, 0.25); }
+.ctab-import-heat-cell.level-2 { background: rgba(16, 128, 96, 0.42); }
+.ctab-import-heat-cell.level-3 { background: rgba(16, 128, 96, 0.62); }
+.ctab-import-heat-cell.level-4 { background: rgba(16, 128, 96, 0.82); }
+
+.ctab-import-bars {
+    min-height: 86px;
+}
+
+.ctab-import-timeline {
+    position: relative;
+    height: 36px;
+    border-radius: 10px;
+    background: var(--bg-hover, rgba(127, 127, 127, 0.08));
+    border: 1px solid var(--surface-border, rgba(127, 127, 127, 0.16));
+    overflow: hidden;
+}
+
+.ctab-import-time-seg {
+    position: absolute;
+    top: 7px;
+    bottom: 7px;
+    border-radius: 7px;
+    background: var(--accent, #6c5ce7);
+    min-width: 8px;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.16) inset;
+}
+
+.ctab-import-progress-fill.is-warn { background: #e8a13c; }
+.ctab-import-progress-fill.is-danger { background: #e05563; }
+
+/* ---------- interactive dashboard widgets ---------- */
+
+.ctab-break-banner {
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: var(--accent-soft, rgba(108, 92, 231, 0.14));
+    color: var(--accent-strong, var(--accent, #6c5ce7));
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-align: center;
+}
+
+.ctab-gratitude-text {
+    min-height: 64px;
+}
+
+.ctab-flashcard-prompt {
+    color: var(--text-primary, inherit);
+    font-family: var(--font-heading, inherit);
+    font-size: 1.05rem;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+}
+
+.ctab-flashcard-answer {
+    color: var(--text-primary, inherit);
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: var(--bg-hover, rgba(127, 127, 127, 0.08));
+    border: 1px solid var(--surface-border, rgba(127, 127, 127, 0.16));
+    overflow-wrap: anywhere;
+}
+
+.ctab-decision-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.ctab-decision-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 4px 3px 10px;
+    border-radius: 999px;
+    background: var(--bg-hover, rgba(127, 127, 127, 0.1));
+    border: 1px solid var(--surface-border, rgba(127, 127, 127, 0.16));
+    font-size: 0.8rem;
+}
+
+.ctab-unit-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.ctab-unit-select,
+.ctab-unit-input {
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid var(--surface-border, rgba(127, 127, 127, 0.22));
+    background: var(--bg-input, var(--bg-hover, rgba(127, 127, 127, 0.06)));
+    color: var(--text-primary, inherit);
+    font: inherit;
+}
+
+.ctab-unit-input {
+    flex: 1;
+    min-width: 0;
+}
+
+.ctab-unit-output {
+    flex: 1;
+    min-width: 0;
+    padding: 6px 8px;
+    border-radius: 8px;
+    background: var(--bg-hover, rgba(127, 127, 127, 0.08));
+    color: var(--text-primary, inherit);
+    font-family: var(--font-heading, inherit);
+    font-size: 1.05rem;
+    overflow-wrap: anywhere;
+}
+
+.ctab-streak-garden {
+    font-size: 2.6rem;
+    line-height: 1;
+    text-align: center;
+}
+
+.ctab-contrib-heatmap {
+    grid-template-columns: repeat(7, minmax(10px, 1fr));
+    max-width: 220px;
+}
+
+/* ---------- mobile ---------- */
+
+@media (max-width: 640px) {
+    .view-custom-tab {
+        padding: 14px 12px 90px;
+    }
+
+    .ctab-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .ctab-head {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

@@ -1,0 +1,1609 @@
+/* ===================================================================
+   NoteFlow Atelier – OS & Brand Themes
+   §1–§20: component styling for the Glass theme (formerly "Liquid
+   Glass"; the even-older macOS 26 preset was merged into it). Both the
+   new `[data-theme="glass"]` key and the legacy `[data-theme="liquidglass"]`
+   value are matched here. Tokens, canvas, and the tunable frost live in
+   styles/themes/glass.css, which loads AFTER this file and overrides the token
+   block below.
+   §21+: token/wallpaper blocks for windows11, chromeos, ubuntu,
+   github, spotify, netflix, and slack.
+   =================================================================== */
+
+/* ─── §1  DESIGN TOKENS ───────────────────────────────────────────── */
+body:is([data-theme="glass"], [data-theme="liquidglass"]) {
+    /* Typography */
+    --font-heading: "Sora", "SF Pro Display", system-ui, sans-serif;
+    --font-body:    "Manrope", "SF Pro Text",  system-ui, sans-serif;
+
+    /* Base backgrounds */
+    --bg-primary:   #e4eaf4;
+    --bg-secondary: #dae3f0;
+    --bg-hover:     rgba(0, 0, 0, 0.04);
+    --bg-elevated:  rgba(255, 255, 255, 0.92);
+
+    /* Text */
+    --text-primary:   #1d1d1f;
+    --text-secondary: #6e6e73;
+    --text-muted:     #adadb8;
+
+    /* Border baseline */
+    --border: rgba(0, 0, 0, 0.08);
+
+    /* Accent – Apple system blue */
+    --accent:        #0071e3;
+    --accent-rgb:    0, 113, 227;
+    --accent-strong: #005fca;
+    --accent-soft:   rgba(0, 113, 227, 0.10);
+
+    /* Editor */
+    --editor-bg: #ffffff;
+    --code-bg:   #f5f5f7;
+
+    /* Glass surfaces */
+    --glass-01:     rgba(248, 248, 250, 0.88);
+    --glass-02:     rgba(244, 244, 248, 0.92);
+    --glass-border: rgba(255, 255, 255, 0.52);
+    --glass-blur:   20px;
+
+    /* Shadows */
+    --shadow-soft:    0 2px 12px rgba(0, 0, 0, 0.08);
+    --shadow-soft-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+
+    /* Surface tokens */
+    --surface-bg:            rgba(0, 0, 0, 0.03);
+    --surface-bg-hover:      rgba(0, 0, 0, 0.05);
+    --surface-bg-active:     rgba(0, 0, 0, 0.08);
+    --surface-border:        rgba(0, 0, 0, 0.07);
+    --surface-border-strong: rgba(0, 0, 0, 0.13);
+    --surface-bg-elevated:   rgba(255, 255, 255, 0.82);
+    --surface-inset:         rgba(0, 0, 0, 0.035);
+    --code-inline-bg:        rgba(0, 0, 0, 0.05);
+    --code-block-bg:         rgba(0, 0, 0, 0.03);
+
+    /* Neumorphic */
+    --neumo-bg:           rgba(250, 250, 252, 0.90);
+    --neumo-shadow-light: rgba(255, 255, 255, 0.75);
+    --neumo-shadow-dark:  rgba(0, 0, 0, 0.08);
+    --neumo-inset-dark:   rgba(0, 0, 0, 0.05);
+    --neumo-inset-light:  rgba(255, 255, 255, 0.68);
+
+    /* Sidebar */
+    --sidebar-bg: rgba(216, 228, 248, 0.93);
+
+    /* Button tokens */
+    --button-bg:       rgba(255, 255, 255, 0.68);
+    --button-bg-hover: rgba(255, 255, 255, 0.88);
+    --button-border:   rgba(0, 0, 0, 0.09);
+    --button-text:     var(--text-primary);
+
+    /* Radius */
+    --radius:    14px;
+    --radius-lg: 20px;
+
+    /* Scrollbar overrides – thin, neutral macOS style */
+    --atelier-scrollbar-track:       transparent;
+    --atelier-scrollbar-thumb:       rgba(0, 0, 0, 0.15);
+    --atelier-scrollbar-thumb-hover: rgba(0, 0, 0, 0.25);
+
+    /* macOS-private tokens */
+    --mac-doc-surface:    rgba(255, 255, 255, 0.97);
+    --mac-toolbar-bg:     rgba(246, 246, 248, 0.92);
+    --mac-nav-bg:         rgba(228, 238, 254, 0.93);
+    --mac-sidebar-tint:   rgba(216, 228, 248, 0.93);
+    --mac-selected-bg:    rgba(0, 113, 227, 0.08);
+    --mac-selected-line:  rgba(0, 113, 227, 0.28);
+
+    /* Legacy sidebar gradient tokens – override to neutral */
+    --sidebar-flow-start: rgba(216, 228, 248, 0.90);
+    --sidebar-flow-mid:   rgba(216, 228, 248, 0.90);
+    --sidebar-flow-edge:  rgba(216, 228, 248, 0.90);
+    --sidebar-seam-glow:  transparent;
+    --content-flow-start: transparent;
+    --content-flow-mid:   transparent;
+    --content-flow-end:   transparent;
+}
+
+/* ─── §2  TYPOGRAPHY ──────────────────────────────────────────────── */
+body:is([data-theme="glass"], [data-theme="liquidglass"]),
+body:is([data-theme="glass"], [data-theme="liquidglass"]) button,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) input,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) select,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) textarea {
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body:is([data-theme="glass"], [data-theme="liquidglass"]) h1,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) h2,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) h3,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) h4,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) h5,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .brand-label,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .app-title {
+    font-family: var(--font-heading);
+    letter-spacing: -0.015em;
+}
+
+/* ─── §3  BODY SHELL ──────────────────────────────────────────────── */
+/* Canvas (aqueous gradient + drifting light sheens on ::before/::after)
+   is owned by styles/themes/glass.css. */
+body:is([data-theme="glass"], [data-theme="liquidglass"]) {
+    position: relative;
+    overflow-x: hidden;
+}
+
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .app-container {
+    position: relative;
+    isolation: isolate;
+    background: transparent;
+}
+
+/* ─── §4  SCROLLBARS  (macOS thin, neutral) ───────────────────────── */
+body:is([data-theme="glass"], [data-theme="liquidglass"]) *::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+}
+
+body:is([data-theme="glass"], [data-theme="liquidglass"]) *::-webkit-scrollbar-track {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+body:is([data-theme="glass"], [data-theme="liquidglass"]) *::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.14);
+    border-radius: 99px;
+    border: none;
+    box-shadow: none;
+}
+
+body:is([data-theme="glass"], [data-theme="liquidglass"]) *::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.24);
+}
+
+body:is([data-theme="glass"], [data-theme="liquidglass"]) *::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+/* ─── §5  SHARED GLASS LAYER ──────────────────────────────────────── */
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .sidebar,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .top-nav,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .toolbar-wrapper,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .storage-options,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .theme-panel,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .chatbot-panel,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .glass-card,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .neumo-card,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .editorial-card,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .view,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .modal-content,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .all-tasks-drawer {
+    background: var(--glass-01) !important;
+    border: 1px solid var(--glass-border) !important;
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(160%) !important;
+    backdrop-filter: blur(var(--glass-blur)) saturate(160%) !important;
+    box-shadow: var(--shadow-soft) !important;
+}
+
+/* ─── §6  SIDEBAR ─────────────────────────────────────────────────── */
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .sidebar {
+    background: var(--mac-sidebar-tint) !important;
+    border-right: 1px solid rgba(0, 0, 0, 0.07) !important;
+    border-left: none !important;
+    border-top: none !important;
+    border-bottom: none !important;
+    box-shadow: 1px 0 0 rgba(255, 255, 255, 0.45) !important;
+    -webkit-backdrop-filter: blur(var(--glass-blur, var(--liquid-glass-blur, 18px))) saturate(180%);
+    backdrop-filter: blur(var(--glass-blur, var(--liquid-glass-blur, 18px))) saturate(180%);
+}
+
+/* Remove the saturated tinted seam – use a clean neutral highlight */
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .sidebar::before {
+    background: linear-gradient(180deg,
+        rgba(255, 255, 255, 0.10) 0%,
+        rgba(255, 255, 255, 0.02) 100%
+    ) !important;
+}
+
+/* Main content area */
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .main-content {
+    background: transparent !important;
+}
+
+/* Sidebar sections */
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .sidebar-header,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .sidebar-search,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .pages-list,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .sidebar-new-page {
+    border-color: rgba(0, 0, 0, 0.06) !important;
+    background: transparent !important;
+}
+
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .sidebar-shortcuts,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .focus-timer {
+    border-color: rgba(0, 0, 0, 0.06) !important;
+    background: rgba(0, 0, 0, 0.025) !important;
+    box-shadow: none !important;
+    border-radius: 10px;
+}
+
+/* Sidebar search input */
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .search-input,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .search-input.neumo-input {
+    background: rgba(0, 0, 0, 0.05) !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    box-shadow: none !important;
+    border-radius: 8px !important;
+    color: var(--text-primary) !important;
+}
+
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .search-input::placeholder {
+    color: var(--text-muted);
+}
+
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .search-input:focus {
+    background: rgba(255, 255, 255, 0.72) !important;
+    border-color: rgba(0, 113, 227, 0.32) !important;
+    box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.09) !important;
+    outline: none;
+}
+
+/* ─── §7  PAGE LIST ROWS ──────────────────────────────────────────── */
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .page-item {
+    border: 1px solid transparent !important;
+    background: transparent !important;
+    color: var(--text-secondary);
+    border-radius: 7px !important;
+    margin: 1px 6px !important;
+    padding: 5px 10px !important;
+    font-size: 13px;
+    line-height: 1.4;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    transition: background 0.12s ease, color 0.12s ease !important;
+}
+
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .page-item:hover {
+    background: rgba(0, 0, 0, 0.05) !important;
+    border-color: rgba(0, 0, 0, 0.04) !important;
+    color: var(--text-primary);
+    margin: 1px 6px !important;
+}
+
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .page-item.active {
+    background: var(--mac-selected-bg) !important;
+    border-color: rgba(0, 113, 227, 0.13) !important;
+    color: #0060c2 !important;
+    font-weight: 500;
+    margin: 1px 6px !important;
+    box-shadow: inset 2px 0 0 var(--mac-selected-line) !important;
+}
+
+/* ─── §8  TOP NAV + TRAFFIC LIGHTS ───────────────────────────────── */
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .top-nav {
+    margin-top: 10px;
+    background: var(--mac-nav-bg) !important;
+    border: 1px solid rgba(0, 0, 0, 0.07) !important;
+    border-radius: 16px !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.65),
+        0 2px 12px rgba(0, 0, 0, 0.08) !important;
+    -webkit-backdrop-filter: blur(var(--glass-blur, var(--liquid-glass-blur, 18px))) saturate(180%);
+    backdrop-filter: blur(var(--glass-blur, var(--liquid-glass-blur, 18px))) saturate(180%);
+}
+
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .window-chrome {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-right: 10px;
+    padding-right: 10px;
+    border-right: 1px solid rgba(0, 0, 0, 0.08);
+    flex-shrink: 0;
+}
+
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .window-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    box-shadow:
+        inset 0 0.5px 0.5px rgba(255, 255, 255, 0.55),
+        0 1px 2px rgba(0, 0, 0, 0.18);
+    cursor: default;
+    transition: filter 0.12s ease;
+}
+
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .window-dot:hover {
+    filter: brightness(0.86);
+}
+
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .window-dot-close { background: #ff5f57; }
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .window-dot-min   { background: #ffbd2e; }
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .window-dot-max   { background: #28c840; }
+
+/* ─── §9  TAB STRIP ───────────────────────────────────────────────── */
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .view-tabs {
+    padding: 3px;
+    border-radius: 9px;
+    background: rgba(0, 0, 0, 0.045) !important;
+    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+    box-shadow: none !important;
+}
+
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .top-nav .nav-left {
+    flex: 1;
+    min-width: 0;
+}
+
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .top-nav .nav-right {
+    flex-shrink: 0;
+}
+
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .view-tab {
+    font-size: 12.5px;
+    font-weight: 500;
+    letter-spacing: 0;
+    text-transform: none;
+    padding: 5px 12px;
+    border-radius: 6px;
+    color: var(--text-secondary);
+    transition: background 0.12s ease, color 0.12s ease;
+}
+
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .view-tab:hover:not(.active) {
+    background: rgba(0, 0, 0, 0.04);
+    color: var(--text-primary);
+}
+
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .view-tab.active {
+    background: rgba(255, 255, 255, 0.90) !important;
+    color: #1d1d1f;
+    font-weight: 600;
+    box-shadow:
+        0 1px 3px rgba(0, 0, 0, 0.10),
+        0 0 0 0.5px rgba(0, 0, 0, 0.07) !important;
+}
+
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .view-tab-theme {
+    background: transparent;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    color: var(--text-secondary);
+    border-radius: 6px;
+    margin-left: 2px;
+}
+
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .view-tab-theme:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--text-primary);
+}
+
+/* ─── §10  TOOLBAR ────────────────────────────────────────────────── */
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .toolbar-wrapper {
+    background: var(--mac-toolbar-bg) !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    border-radius: 12px !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.62),
+        0 2px 8px rgba(0, 0, 0, 0.07) !important;
+    -webkit-backdrop-filter: blur(var(--glass-blur, var(--liquid-glass-blur, 18px))) saturate(160%);
+    backdrop-filter: blur(var(--glass-blur, var(--liquid-glass-blur, 18px))) saturate(160%);
+}
+
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .toolbar-btn {
+    border: 1px solid transparent !important;
+    background: transparent !important;
+    color: var(--text-secondary);
+    box-shadow: none !important;
+    border-radius: 6px;
+    font-size: 13px;
+    transition: background 0.12s ease, color 0.12s ease !important;
+}
+
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .toolbar-btn:hover {
+    background: rgba(0, 0, 0, 0.06) !important;
+    border-color: rgba(0, 0, 0, 0.07) !important;
+    color: var(--text-primary);
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .toolbar-btn.active {
+    background: var(--accent-soft) !important;
+    border-color: rgba(0, 113, 227, 0.14) !important;
+    color: var(--accent) !important;
+    box-shadow: none !important;
+}
+
+/* ─── §11  GENERAL BUTTONS ────────────────────────────────────────── */
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .neumo-btn,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .storage-btn,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .quick-app-btn {
+    border: 1px solid rgba(0, 0, 0, 0.09) !important;
+    background: rgba(255, 255, 255, 0.72) !important;
+    color: var(--text-primary);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.07) !important;
+    transition: background 0.14s ease, box-shadow 0.14s ease, transform 0.14s ease !important;
+}
+
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .neumo-btn:hover,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .storage-btn:hover,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .quick-app-btn:hover {
+    background: rgba(255, 255, 255, 0.90) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10) !important;
+    transform: translateY(-1px) !important;
+    border-color: rgba(0, 0, 0, 0.12) !important;
+}
+
+/* ─── §12  INPUTS & SELECTS ───────────────────────────────────────── */
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .global-search,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .modal-input,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .nf-select-trigger,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .nf-date-trigger {
+    border: 1px solid rgba(0, 0, 0, 0.10) !important;
+    background: rgba(255, 255, 255, 0.78) !important;
+    color: var(--text-primary);
+    box-shadow: none !important;
+}
+
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .global-search:focus,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .modal-input:focus {
+    border-color: rgba(0, 113, 227, 0.38) !important;
+    box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.09) !important;
+    background: rgba(255, 255, 255, 0.92) !important;
+    outline: none !important;
+}
+
+/* ─── §13  EDITOR SURFACE ─────────────────────────────────────────── */
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .editor-container {
+    background: var(--mac-doc-surface) !important;
+    border: 1px solid rgba(0, 0, 0, 0.07) !important;
+    border-radius: 16px !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.70),
+        0 4px 24px rgba(0, 0, 0, 0.08),
+        0 1px 4px rgba(0, 0, 0, 0.06) !important;
+}
+
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .page-title-input {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    font-size: clamp(1.5rem, 2.2vw, 2.1rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text-primary) !important;
+    font-family: var(--font-heading);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.2;
+}
+
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .page-title-input::placeholder {
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .editor {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: var(--text-primary) !important;
+    min-height: 56vh;
+    line-height: 1.65;
+    font-size: 15px;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ─── §14  FLOATING CONTROLS ──────────────────────────────────────── */
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .theme-switcher-btn,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .chatbot-btn,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .sidebar-toggle-btn {
+    border: 1px solid rgba(0, 0, 0, 0.09) !important;
+    background: rgba(248, 248, 250, 0.90) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.70),
+        0 2px 10px rgba(0, 0, 0, 0.10) !important;
+    color: var(--text-secondary) !important;
+    transition:
+        background 0.15s ease,
+        box-shadow 0.15s ease,
+        transform 0.15s ease !important;
+}
+
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .theme-switcher-btn:hover,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .chatbot-btn:hover,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .sidebar-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.96) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.80),
+        0 4px 16px rgba(0, 0, 0, 0.13) !important;
+    color: var(--text-primary) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Save / storage pill */
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .storage-options {
+    background: rgba(248, 248, 250, 0.92) !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 2px 14px rgba(0, 0, 0, 0.10) !important;
+    -webkit-backdrop-filter: blur(var(--glass-blur, var(--liquid-glass-blur, 18px))) saturate(150%);
+    backdrop-filter: blur(var(--glass-blur, var(--liquid-glass-blur, 18px))) saturate(150%);
+    border-radius: 28px !important;
+}
+
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .storage-options:hover {
+    background: rgba(255, 255, 255, 0.96) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* ─── §15  CONTENT CARDS ──────────────────────────────────────────── */
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .today-stat-item,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .workflow-metric,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .summary-card,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .collegeapp-nav-btn,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .life-widget,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .task-item,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .timeline-item {
+    border-color: rgba(0, 0, 0, 0.07) !important;
+    background: rgba(255, 255, 255, 0.62) !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05) !important;
+}
+
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .collegeapp-nav-btn.active,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .today-stat-item:hover {
+    background: rgba(255, 255, 255, 0.88) !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.09) !important;
+    border-color: rgba(0, 0, 0, 0.09) !important;
+}
+
+/* ─── §16  NUMERIC RENDERING ──────────────────────────────────────── */
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .toolbar-time-widget,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .taskbar-save-status,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .summary-value,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .today-stat-value,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .workflow-metric-value {
+    font-variant-numeric: tabular-nums;
+}
+
+/* ─── §17  ANIMATIONS ─────────────────────────────────────────────── */
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .top-nav,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .sidebar,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .editor-container,
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .storage-options {
+    animation: macosFloatIn 460ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .view.active > * {
+    animation: macosRiseIn 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .view.active > *:nth-child(2) { animation-delay:  50ms; }
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .view.active > *:nth-child(3) { animation-delay:  90ms; }
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .view.active > *:nth-child(4) { animation-delay: 130ms; }
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .view.active > *:nth-child(5) { animation-delay: 165ms; }
+
+@keyframes macosFloatIn {
+    from { opacity: 0; transform: translateY(10px) scale(0.990); }
+    to   { opacity: 1; transform: translateY(0)     scale(1);    }
+}
+
+@keyframes macosRiseIn {
+    from { opacity: 0; transform: translateY(7px); }
+    to   { opacity: 1; transform: translateY(0);   }
+}
+
+/* ─── §18  RESPONSIVE ─────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+    body:is([data-theme="glass"], [data-theme="liquidglass"]) .window-chrome {
+        display: none;
+    }
+
+    body:is([data-theme="glass"], [data-theme="liquidglass"]) .top-nav,
+    body:is([data-theme="glass"], [data-theme="liquidglass"]) .sidebar,
+    body:is([data-theme="glass"], [data-theme="liquidglass"]) .editor-container,
+    body:is([data-theme="glass"], [data-theme="liquidglass"]) .storage-options,
+    body:is([data-theme="glass"], [data-theme="liquidglass"]) .theme-panel,
+    body:is([data-theme="glass"], [data-theme="liquidglass"]) .chatbot-panel {
+        -webkit-backdrop-filter: blur(calc(var(--glass-blur, var(--liquid-glass-blur, 18px)) * 0.8)) saturate(150%);
+        backdrop-filter: blur(calc(var(--glass-blur, var(--liquid-glass-blur, 18px)) * 0.8)) saturate(150%);
+    }
+
+    body:is([data-theme="glass"], [data-theme="liquidglass"]) .view-tabs {
+        background: rgba(0, 0, 0, 0.05) !important;
+    }
+
+    body:is([data-theme="glass"], [data-theme="liquidglass"]) .view-tab {
+        padding: 5px 10px;
+    }
+}
+
+/* ─── §19  REDUCED MOTION ─────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    body:is([data-theme="glass"], [data-theme="liquidglass"])::before,
+    body:is([data-theme="glass"], [data-theme="liquidglass"])::after,
+    body:is([data-theme="glass"], [data-theme="liquidglass"]) .top-nav,
+    body:is([data-theme="glass"], [data-theme="liquidglass"]) .sidebar,
+    body:is([data-theme="glass"], [data-theme="liquidglass"]) .editor-container,
+    body:is([data-theme="glass"], [data-theme="liquidglass"]) .storage-options,
+    body:is([data-theme="glass"], [data-theme="liquidglass"]) .view.active,
+    body:is([data-theme="glass"], [data-theme="liquidglass"]) .view.active > * {
+        animation: none !important;
+    }
+}
+
+
+/* ─── §20  SIDEBAR TIMER / FOCUS BUTTON ──────────────────────────── */
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .fs-launch-btn {
+    background: rgba(0, 0, 0, 0.04) !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+    color: var(--text-secondary) !important;
+}
+
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .fs-launch-btn:hover {
+    background: rgba(0, 0, 0, 0.07) !important;
+    border-color: rgba(0, 0, 0, 0.12) !important;
+    color: var(--text-primary) !important;
+}
+
+
+/* Additional OS + Brand identity themes */
+body[data-theme="windows11"] {
+    --font-heading: "Inter", "Segoe UI", sans-serif;
+    --font-body: "Inter", "Segoe UI", sans-serif;
+    --bg-primary: #f4f8ff;
+    --bg-secondary: #dce9ff;
+    --bg-hover: rgba(255, 255, 255, 0.72);
+    --bg-elevated: rgba(249, 253, 255, 0.74);
+    --text-primary: #0f2a4d;
+    --text-secondary: #365881;
+    --text-muted: #6280a8;
+    --border: rgba(68, 124, 194, 0.2);
+    --accent: #0078d4;
+    --accent-rgb: 0, 120, 212;
+    --accent-strong: #005a9e;
+    --accent-soft: rgba(0, 120, 212, 0.16);
+    --editor-bg: rgba(252, 255, 255, 0.78);
+    --code-bg: rgba(231, 241, 255, 0.72);
+    --glass-01: rgba(245, 251, 255, 0.64);
+    --glass-02: rgba(233, 244, 255, 0.6);
+    --glass-border: rgba(255, 255, 255, 0.76);
+    --shadow-soft: 0 20px 40px rgba(33, 82, 146, 0.16);
+    --shadow-soft-lg: 0 34px 62px rgba(20, 59, 109, 0.2);
+    --surface-bg: rgba(255, 255, 255, 0.48);
+    --surface-bg-hover: rgba(255, 255, 255, 0.68);
+    --surface-bg-active: rgba(255, 255, 255, 0.78);
+    --surface-border: rgba(79, 130, 193, 0.24);
+    --surface-border-strong: rgba(79, 130, 193, 0.34);
+    --surface-bg-elevated: rgba(255, 255, 255, 0.54);
+    --surface-inset: rgba(255, 255, 255, 0.36);
+}
+
+body[data-theme="chromeos"] {
+    --font-heading: "Inter", "Google Sans", "Segoe UI", sans-serif;
+    --font-body: "Inter", "Segoe UI", sans-serif;
+    --bg-primary: #f6fafe;
+    --bg-secondary: #e8f1fb;
+    --bg-hover: rgba(255, 255, 255, 0.74);
+    --bg-elevated: rgba(255, 255, 255, 0.8);
+    --text-primary: #20324a;
+    --text-secondary: #4b607e;
+    --text-muted: #7289aa;
+    --border: rgba(52, 97, 156, 0.2);
+    --accent: #1a73e8;
+    --accent-rgb: 26, 115, 232;
+    --accent-strong: #1557b0;
+    --accent-soft: rgba(26, 115, 232, 0.16);
+    --editor-bg: rgba(253, 255, 255, 0.84);
+    --code-bg: rgba(230, 240, 252, 0.74);
+    --glass-01: rgba(246, 252, 255, 0.68);
+    --glass-02: rgba(237, 245, 255, 0.64);
+    --glass-border: rgba(255, 255, 255, 0.84);
+    --shadow-soft: 0 18px 38px rgba(29, 74, 131, 0.14);
+    --shadow-soft-lg: 0 32px 58px rgba(16, 54, 104, 0.2);
+    --surface-bg: rgba(255, 255, 255, 0.56);
+    --surface-bg-hover: rgba(255, 255, 255, 0.72);
+    --surface-bg-active: rgba(255, 255, 255, 0.82);
+    --surface-border: rgba(52, 97, 156, 0.2);
+    --surface-border-strong: rgba(52, 97, 156, 0.31);
+    --surface-bg-elevated: rgba(255, 255, 255, 0.62);
+    --surface-inset: rgba(255, 255, 255, 0.38);
+}
+
+body[data-theme="ubuntu"] {
+    --font-heading: "Fira Sans", "Ubuntu", "Segoe UI", sans-serif;
+    --font-body: "Fira Sans", "Segoe UI", sans-serif;
+    --bg-primary: #1f1028;
+    --bg-secondary: #3b193f;
+    --bg-hover: rgba(255, 255, 255, 0.12);
+    --bg-elevated: rgba(49, 22, 56, 0.72);
+    --text-primary: #f8edf7;
+    --text-secondary: #dfbfd9;
+    --text-muted: #c89cbe;
+    --border: rgba(255, 255, 255, 0.14);
+    --accent: #e95420;
+    --accent-rgb: 233, 84, 32;
+    --accent-strong: #c13d14;
+    --accent-soft: rgba(233, 84, 32, 0.2);
+    --editor-bg: rgba(53, 21, 61, 0.74);
+    --code-bg: rgba(35, 14, 42, 0.8);
+    --glass-01: rgba(57, 24, 67, 0.6);
+    --glass-02: rgba(42, 18, 52, 0.62);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --shadow-soft: 0 22px 44px rgba(7, 3, 9, 0.5);
+    --shadow-soft-lg: 0 36px 70px rgba(4, 2, 7, 0.6);
+    --surface-bg: rgba(255, 255, 255, 0.09);
+    --surface-bg-hover: rgba(255, 255, 255, 0.14);
+    --surface-bg-active: rgba(255, 255, 255, 0.2);
+    --surface-border: rgba(255, 255, 255, 0.18);
+    --surface-border-strong: rgba(255, 255, 255, 0.28);
+    --surface-bg-elevated: rgba(255, 255, 255, 0.07);
+    --surface-inset: rgba(255, 255, 255, 0.1);
+}
+
+body[data-theme="github"] {
+    --font-heading: "Inter", "Segoe UI", sans-serif;
+    --font-body: "Inter", "Segoe UI", sans-serif;
+    --bg-primary: #f6f8fa;
+    --bg-secondary: #eef2f7;
+    --bg-hover: rgba(255, 255, 255, 0.74);
+    --bg-elevated: rgba(255, 255, 255, 0.8);
+    --text-primary: #24292f;
+    --text-secondary: #57606a;
+    --text-muted: #6e7781;
+    --border: rgba(31, 35, 40, 0.14);
+    --accent: #0969da;
+    --accent-rgb: 9, 105, 218;
+    --accent-strong: #0853ad;
+    --accent-soft: rgba(9, 105, 218, 0.14);
+    --editor-bg: rgba(252, 254, 255, 0.86);
+    --code-bg: rgba(234, 238, 242, 0.72);
+    --glass-01: rgba(248, 250, 252, 0.72);
+    --glass-02: rgba(240, 244, 248, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.78);
+    --shadow-soft: 0 16px 32px rgba(31, 35, 40, 0.12);
+    --shadow-soft-lg: 0 30px 54px rgba(31, 35, 40, 0.16);
+    --surface-bg: rgba(255, 255, 255, 0.62);
+    --surface-bg-hover: rgba(255, 255, 255, 0.78);
+    --surface-bg-active: rgba(255, 255, 255, 0.86);
+    --surface-border: rgba(31, 35, 40, 0.14);
+    --surface-border-strong: rgba(31, 35, 40, 0.24);
+    --surface-bg-elevated: rgba(255, 255, 255, 0.66);
+    --surface-inset: rgba(255, 255, 255, 0.4);
+}
+
+body[data-theme="spotify"] {
+    --font-heading: "Montserrat", "Inter", "Segoe UI", sans-serif;
+    --font-body: "Inter", "Segoe UI", sans-serif;
+    --bg-primary: #121212;
+    --bg-secondary: #1d1d1d;
+    --bg-hover: rgba(255, 255, 255, 0.1);
+    --bg-elevated: rgba(28, 28, 28, 0.74);
+    --text-primary: #f6f6f6;
+    --text-secondary: #d0d0d0;
+    --text-muted: #9e9e9e;
+    --border: rgba(255, 255, 255, 0.14);
+    --accent: #1db954;
+    --accent-rgb: 29, 185, 84;
+    --accent-strong: #159245;
+    --accent-soft: rgba(29, 185, 84, 0.2);
+    --editor-bg: rgba(26, 26, 26, 0.78);
+    --code-bg: rgba(18, 18, 18, 0.84);
+    --glass-01: rgba(24, 24, 24, 0.66);
+    --glass-02: rgba(16, 16, 16, 0.68);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --shadow-soft: 0 20px 42px rgba(0, 0, 0, 0.46);
+    --shadow-soft-lg: 0 34px 68px rgba(0, 0, 0, 0.58);
+    --surface-bg: rgba(255, 255, 255, 0.08);
+    --surface-bg-hover: rgba(255, 255, 255, 0.13);
+    --surface-bg-active: rgba(255, 255, 255, 0.2);
+    --surface-border: rgba(255, 255, 255, 0.17);
+    --surface-border-strong: rgba(255, 255, 255, 0.27);
+    --surface-bg-elevated: rgba(255, 255, 255, 0.07);
+    --surface-inset: rgba(255, 255, 255, 0.1);
+}
+
+body[data-theme="netflix"] {
+    --font-heading: "Montserrat", "Inter", "Segoe UI", sans-serif;
+    --font-body: "Inter", "Segoe UI", sans-serif;
+    --bg-primary: #0e0e0f;
+    --bg-secondary: #1a1a1d;
+    --bg-hover: rgba(255, 255, 255, 0.11);
+    --bg-elevated: rgba(30, 30, 34, 0.76);
+    --text-primary: #f6f6f6;
+    --text-secondary: #d4d4d8;
+    --text-muted: #a6a6af;
+    --border: rgba(255, 255, 255, 0.14);
+    --accent: #e50914;
+    --accent-rgb: 229, 9, 20;
+    --accent-strong: #b10710;
+    --accent-soft: rgba(229, 9, 20, 0.2);
+    --editor-bg: rgba(26, 26, 31, 0.78);
+    --code-bg: rgba(17, 17, 20, 0.86);
+    --glass-01: rgba(27, 27, 31, 0.66);
+    --glass-02: rgba(18, 18, 21, 0.68);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --shadow-soft: 0 22px 44px rgba(0, 0, 0, 0.5);
+    --shadow-soft-lg: 0 36px 70px rgba(0, 0, 0, 0.62);
+    --surface-bg: rgba(255, 255, 255, 0.08);
+    --surface-bg-hover: rgba(255, 255, 255, 0.14);
+    --surface-bg-active: rgba(255, 255, 255, 0.22);
+    --surface-border: rgba(255, 255, 255, 0.18);
+    --surface-border-strong: rgba(255, 255, 255, 0.28);
+    --surface-bg-elevated: rgba(255, 255, 255, 0.07);
+    --surface-inset: rgba(255, 255, 255, 0.1);
+}
+
+body[data-theme="slack"] {
+    --font-heading: "Inter", "Segoe UI", sans-serif;
+    --font-body: "Inter", "Segoe UI", sans-serif;
+    --bg-primary: #1f1830;
+    --bg-secondary: #2a2140;
+    --bg-hover: rgba(255, 255, 255, 0.12);
+    --bg-elevated: rgba(42, 31, 62, 0.74);
+    --text-primary: #f7f1fb;
+    --text-secondary: #dccfe8;
+    --text-muted: #bcaed0;
+    --border: rgba(255, 255, 255, 0.15);
+    --accent: #36c5f0;
+    --accent-rgb: 54, 197, 240;
+    --accent-strong: #2798bd;
+    --accent-soft: rgba(54, 197, 240, 0.2);
+    --editor-bg: rgba(44, 31, 66, 0.78);
+    --code-bg: rgba(30, 21, 46, 0.82);
+    --glass-01: rgba(44, 33, 66, 0.62);
+    --glass-02: rgba(31, 23, 47, 0.66);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --shadow-soft: 0 22px 44px rgba(8, 5, 14, 0.5);
+    --shadow-soft-lg: 0 36px 70px rgba(5, 3, 9, 0.58);
+    --surface-bg: rgba(255, 255, 255, 0.09);
+    --surface-bg-hover: rgba(255, 255, 255, 0.14);
+    --surface-bg-active: rgba(255, 255, 255, 0.2);
+    --surface-border: rgba(255, 255, 255, 0.18);
+    --surface-border-strong: rgba(255, 255, 255, 0.28);
+    --surface-bg-elevated: rgba(255, 255, 255, 0.08);
+    --surface-inset: rgba(255, 255, 255, 0.1);
+}
+
+body:is(
+    [data-theme="windows11"],
+    [data-theme="chromeos"],
+    [data-theme="ubuntu"],
+    [data-theme="github"],
+    [data-theme="spotify"],
+    [data-theme="netflix"],
+    [data-theme="slack"]
+) {
+    position: relative;
+    overflow-x: hidden;
+}
+
+body:is(
+    [data-theme="windows11"],
+    [data-theme="chromeos"],
+    [data-theme="ubuntu"],
+    [data-theme="github"],
+    [data-theme="spotify"],
+    [data-theme="netflix"],
+    [data-theme="slack"]
+)::before,
+body:is(
+    [data-theme="windows11"],
+    [data-theme="chromeos"],
+    [data-theme="ubuntu"],
+    [data-theme="github"],
+    [data-theme="spotify"],
+    [data-theme="netflix"],
+    [data-theme="slack"]
+)::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: -2;
+    animation: none;
+    transform: none;
+}
+
+body[data-theme="windows11"]::before {
+    background:
+        radial-gradient(46% 42% at 86% 14%, rgba(95, 165, 255, 0.55), transparent 70%),
+        radial-gradient(52% 44% at 12% 72%, rgba(136, 197, 255, 0.5), transparent 72%),
+        linear-gradient(145deg, #f8fbff 0%, #e9f2ff 42%, #d8e9ff 100%);
+}
+
+body[data-theme="windows11"]::after {
+    background:
+        radial-gradient(72% 40% at 68% 84%, rgba(0, 120, 212, 0.22), transparent 68%),
+        radial-gradient(64% 34% at 20% 18%, rgba(140, 198, 255, 0.24), transparent 70%);
+}
+
+body[data-theme="chromeos"]::before {
+    background:
+        radial-gradient(40% 38% at 84% 18%, rgba(26, 115, 232, 0.34), transparent 72%),
+        radial-gradient(38% 34% at 16% 74%, rgba(52, 168, 83, 0.26), transparent 70%),
+        radial-gradient(32% 28% at 56% 36%, rgba(251, 188, 5, 0.2), transparent 66%),
+        linear-gradient(160deg, #f9fcff 0%, #eef5fd 52%, #e5effd 100%);
+}
+
+body[data-theme="chromeos"]::after {
+    background:
+        radial-gradient(68% 42% at 72% 82%, rgba(234, 67, 53, 0.14), transparent 72%),
+        radial-gradient(64% 34% at 8% 16%, rgba(26, 115, 232, 0.16), transparent 70%);
+}
+
+body[data-theme="ubuntu"]::before {
+    background:
+        radial-gradient(54% 46% at 84% 18%, rgba(233, 84, 32, 0.36), transparent 72%),
+        radial-gradient(52% 44% at 16% 78%, rgba(119, 54, 133, 0.44), transparent 74%),
+        linear-gradient(152deg, #1d0f28 0%, #34173c 54%, #4d1d36 100%);
+}
+
+body[data-theme="ubuntu"]::after {
+    background:
+        radial-gradient(74% 44% at 72% 84%, rgba(233, 84, 32, 0.2), transparent 70%),
+        radial-gradient(62% 36% at 22% 16%, rgba(255, 255, 255, 0.08), transparent 72%);
+}
+
+body[data-theme="github"]::before {
+    background:
+        radial-gradient(42% 40% at 82% 18%, rgba(9, 105, 218, 0.2), transparent 72%),
+        radial-gradient(48% 42% at 16% 76%, rgba(101, 109, 118, 0.18), transparent 74%),
+        linear-gradient(154deg, #fbfcfe 0%, #f4f7fb 52%, #ecf1f7 100%);
+}
+
+body[data-theme="github"]::after {
+    background:
+        radial-gradient(70% 42% at 74% 82%, rgba(9, 105, 218, 0.12), transparent 72%),
+        radial-gradient(64% 34% at 18% 14%, rgba(31, 35, 40, 0.08), transparent 70%);
+}
+
+body[data-theme="spotify"]::before {
+    background:
+        radial-gradient(54% 46% at 86% 18%, rgba(29, 185, 84, 0.3), transparent 72%),
+        radial-gradient(52% 42% at 14% 82%, rgba(98, 227, 141, 0.16), transparent 74%),
+        linear-gradient(160deg, #0f0f0f 0%, #191919 56%, #202020 100%);
+}
+
+body[data-theme="spotify"]::after {
+    background:
+        radial-gradient(72% 40% at 68% 84%, rgba(29, 185, 84, 0.16), transparent 72%),
+        radial-gradient(56% 32% at 20% 16%, rgba(255, 255, 255, 0.06), transparent 70%);
+}
+
+body[data-theme="netflix"]::before {
+    background:
+        radial-gradient(58% 48% at 84% 20%, rgba(229, 9, 20, 0.34), transparent 72%),
+        radial-gradient(44% 38% at 14% 78%, rgba(130, 16, 28, 0.32), transparent 74%),
+        linear-gradient(156deg, #0b0b0d 0%, #16161b 58%, #1f1014 100%);
+}
+
+body[data-theme="netflix"]::after {
+    background:
+        radial-gradient(68% 40% at 70% 84%, rgba(229, 9, 20, 0.16), transparent 72%),
+        radial-gradient(58% 32% at 20% 16%, rgba(255, 255, 255, 0.05), transparent 70%);
+}
+
+body[data-theme="slack"]::before {
+    background:
+        radial-gradient(54% 46% at 86% 18%, rgba(54, 197, 240, 0.3), transparent 72%),
+        radial-gradient(52% 44% at 14% 80%, rgba(97, 31, 105, 0.4), transparent 74%),
+        linear-gradient(156deg, #1c1630 0%, #2a2140 56%, #331e3f 100%);
+}
+
+body[data-theme="slack"]::after {
+    background:
+        radial-gradient(70% 42% at 72% 84%, rgba(46, 182, 125, 0.14), transparent 72%),
+        radial-gradient(58% 32% at 18% 14%, rgba(236, 178, 46, 0.12), transparent 70%);
+}
+
+body:is(
+    [data-theme="windows11"],
+    [data-theme="chromeos"],
+    [data-theme="ubuntu"],
+    [data-theme="github"],
+    [data-theme="spotify"],
+    [data-theme="netflix"],
+    [data-theme="slack"]
+) .app-container {
+    position: relative;
+    isolation: isolate;
+    background: transparent;
+}
+
+body:is(
+    [data-theme="windows11"],
+    [data-theme="chromeos"],
+    [data-theme="ubuntu"],
+    [data-theme="github"],
+    [data-theme="spotify"],
+    [data-theme="netflix"],
+    [data-theme="slack"]
+) .sidebar,
+body:is(
+    [data-theme="windows11"],
+    [data-theme="chromeos"],
+    [data-theme="ubuntu"],
+    [data-theme="github"],
+    [data-theme="spotify"],
+    [data-theme="netflix"],
+    [data-theme="slack"]
+) .top-nav,
+body:is(
+    [data-theme="windows11"],
+    [data-theme="chromeos"],
+    [data-theme="ubuntu"],
+    [data-theme="github"],
+    [data-theme="spotify"],
+    [data-theme="netflix"],
+    [data-theme="slack"]
+) .toolbar-wrapper,
+body:is(
+    [data-theme="windows11"],
+    [data-theme="chromeos"],
+    [data-theme="ubuntu"],
+    [data-theme="github"],
+    [data-theme="spotify"],
+    [data-theme="netflix"],
+    [data-theme="slack"]
+) .storage-options,
+body:is(
+    [data-theme="windows11"],
+    [data-theme="chromeos"],
+    [data-theme="ubuntu"],
+    [data-theme="github"],
+    [data-theme="spotify"],
+    [data-theme="netflix"],
+    [data-theme="slack"]
+) .theme-panel,
+body:is(
+    [data-theme="windows11"],
+    [data-theme="chromeos"],
+    [data-theme="ubuntu"],
+    [data-theme="github"],
+    [data-theme="spotify"],
+    [data-theme="netflix"],
+    [data-theme="slack"]
+) .chatbot-panel,
+body:is(
+    [data-theme="windows11"],
+    [data-theme="chromeos"],
+    [data-theme="ubuntu"],
+    [data-theme="github"],
+    [data-theme="spotify"],
+    [data-theme="netflix"],
+    [data-theme="slack"]
+) .view,
+body:is(
+    [data-theme="windows11"],
+    [data-theme="chromeos"],
+    [data-theme="ubuntu"],
+    [data-theme="github"],
+    [data-theme="spotify"],
+    [data-theme="netflix"],
+    [data-theme="slack"]
+) .glass-card,
+body:is(
+    [data-theme="windows11"],
+    [data-theme="chromeos"],
+    [data-theme="ubuntu"],
+    [data-theme="github"],
+    [data-theme="spotify"],
+    [data-theme="netflix"],
+    [data-theme="slack"]
+) .modal-content,
+body:is(
+    [data-theme="windows11"],
+    [data-theme="chromeos"],
+    [data-theme="ubuntu"],
+    [data-theme="github"],
+    [data-theme="spotify"],
+    [data-theme="netflix"],
+    [data-theme="slack"]
+) .all-tasks-drawer {
+    background: var(--glass-01) !important;
+    border: 1px solid var(--glass-border) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(138%);
+    backdrop-filter: blur(18px) saturate(138%);
+    box-shadow: var(--shadow-soft);
+}
+
+body:is(
+    [data-theme="windows11"],
+    [data-theme="chromeos"],
+    [data-theme="ubuntu"],
+    [data-theme="github"],
+    [data-theme="spotify"],
+    [data-theme="netflix"],
+    [data-theme="slack"]
+) .view-tabs {
+    background: var(--surface-bg);
+    border-color: var(--surface-border);
+}
+
+body:is(
+    [data-theme="windows11"],
+    [data-theme="chromeos"],
+    [data-theme="ubuntu"],
+    [data-theme="github"],
+    [data-theme="spotify"],
+    [data-theme="netflix"],
+    [data-theme="slack"]
+) .view-tab {
+    text-transform: none;
+    letter-spacing: 0.01em;
+}
+
+body:is(
+    [data-theme="windows11"],
+    [data-theme="chromeos"],
+    [data-theme="ubuntu"],
+    [data-theme="github"],
+    [data-theme="spotify"],
+    [data-theme="netflix"],
+    [data-theme="slack"]
+) .view-tab.active {
+    background: var(--surface-bg-active);
+    color: var(--text-primary);
+    box-shadow: 0 8px 18px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+body:is(
+    [data-theme="windows11"],
+    [data-theme="chromeos"],
+    [data-theme="ubuntu"],
+    [data-theme="github"],
+    [data-theme="spotify"],
+    [data-theme="netflix"],
+    [data-theme="slack"]
+) .neumo-btn,
+body:is(
+    [data-theme="windows11"],
+    [data-theme="chromeos"],
+    [data-theme="ubuntu"],
+    [data-theme="github"],
+    [data-theme="spotify"],
+    [data-theme="netflix"],
+    [data-theme="slack"]
+) .toolbar-btn,
+body:is(
+    [data-theme="windows11"],
+    [data-theme="chromeos"],
+    [data-theme="ubuntu"],
+    [data-theme="github"],
+    [data-theme="spotify"],
+    [data-theme="netflix"],
+    [data-theme="slack"]
+) .storage-btn {
+    background: var(--surface-bg);
+    border-color: var(--surface-border);
+    color: var(--text-primary);
+}
+
+body:is(
+    [data-theme="windows11"],
+    [data-theme="chromeos"],
+    [data-theme="ubuntu"],
+    [data-theme="github"],
+    [data-theme="spotify"],
+    [data-theme="netflix"],
+    [data-theme="slack"]
+) .neumo-btn:hover,
+body:is(
+    [data-theme="windows11"],
+    [data-theme="chromeos"],
+    [data-theme="ubuntu"],
+    [data-theme="github"],
+    [data-theme="spotify"],
+    [data-theme="netflix"],
+    [data-theme="slack"]
+) .toolbar-btn:hover,
+body:is(
+    [data-theme="windows11"],
+    [data-theme="chromeos"],
+    [data-theme="ubuntu"],
+    [data-theme="github"],
+    [data-theme="spotify"],
+    [data-theme="netflix"],
+    [data-theme="slack"]
+) .storage-btn:hover {
+    background: var(--surface-bg-hover);
+    border-color: var(--surface-border-strong);
+}
+
+body:is(
+    [data-theme="windows11"],
+    [data-theme="chromeos"],
+    [data-theme="ubuntu"],
+    [data-theme="github"],
+    [data-theme="spotify"],
+    [data-theme="netflix"],
+    [data-theme="slack"]
+) .search-input,
+body:is(
+    [data-theme="windows11"],
+    [data-theme="chromeos"],
+    [data-theme="ubuntu"],
+    [data-theme="github"],
+    [data-theme="spotify"],
+    [data-theme="netflix"],
+    [data-theme="slack"]
+) .global-search,
+body:is(
+    [data-theme="windows11"],
+    [data-theme="chromeos"],
+    [data-theme="ubuntu"],
+    [data-theme="github"],
+    [data-theme="spotify"],
+    [data-theme="netflix"],
+    [data-theme="slack"]
+) .page-title-input,
+body:is(
+    [data-theme="windows11"],
+    [data-theme="chromeos"],
+    [data-theme="ubuntu"],
+    [data-theme="github"],
+    [data-theme="spotify"],
+    [data-theme="netflix"],
+    [data-theme="slack"]
+) .editor,
+body:is(
+    [data-theme="windows11"],
+    [data-theme="chromeos"],
+    [data-theme="ubuntu"],
+    [data-theme="github"],
+    [data-theme="spotify"],
+    [data-theme="netflix"],
+    [data-theme="slack"]
+) .modal-input {
+    border-color: var(--surface-border);
+    background: var(--surface-bg-elevated);
+}
+
+@keyframes identityDrift {
+    0% { transform: translate3d(-1%, -1%, 0) scale(1); }
+    50% { transform: translate3d(1.2%, 1.2%, 0) scale(1.02); }
+    100% { transform: translate3d(-0.6%, 0.8%, 0) scale(1.01); }
+}
+
+@media (max-width: 1024px) {
+    body:is(
+        [data-theme="windows11"],
+        [data-theme="chromeos"],
+        [data-theme="ubuntu"],
+        [data-theme="github"],
+        [data-theme="spotify"],
+        [data-theme="netflix"],
+        [data-theme="slack"]
+    ) .sidebar,
+    body:is(
+        [data-theme="windows11"],
+        [data-theme="chromeos"],
+        [data-theme="ubuntu"],
+        [data-theme="github"],
+        [data-theme="spotify"],
+        [data-theme="netflix"],
+        [data-theme="slack"]
+    ) .top-nav,
+    body:is(
+        [data-theme="windows11"],
+        [data-theme="chromeos"],
+        [data-theme="ubuntu"],
+        [data-theme="github"],
+        [data-theme="spotify"],
+        [data-theme="netflix"],
+        [data-theme="slack"]
+    ) .theme-panel,
+    body:is(
+        [data-theme="windows11"],
+        [data-theme="chromeos"],
+        [data-theme="ubuntu"],
+        [data-theme="github"],
+        [data-theme="spotify"],
+        [data-theme="netflix"],
+        [data-theme="slack"]
+    ) .chatbot-panel {
+        -webkit-backdrop-filter: blur(12px) saturate(126%);
+        backdrop-filter: blur(12px) saturate(126%);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body:is(
+        [data-theme="windows11"],
+        [data-theme="chromeos"],
+        [data-theme="ubuntu"],
+        [data-theme="github"],
+        [data-theme="spotify"],
+        [data-theme="netflix"],
+        [data-theme="slack"]
+    )::before,
+    body:is(
+        [data-theme="windows11"],
+        [data-theme="chromeos"],
+        [data-theme="ubuntu"],
+        [data-theme="github"],
+        [data-theme="spotify"],
+        [data-theme="netflix"],
+        [data-theme="slack"]
+    )::after {
+        animation: none !important;
+    }
+}
+
+
+
+
+/* identity-notes-layout-fix */
+@media (min-width: 1025px) {
+    body:is(
+        [data-theme="glass"], [data-theme="liquidglass"],
+        [data-theme="windows11"],
+        [data-theme="chromeos"],
+        [data-theme="ubuntu"],
+        [data-theme="github"],
+        [data-theme="spotify"],
+        [data-theme="netflix"],
+        [data-theme="slack"]
+    ) #view-notes {
+        padding-top: 8px !important;
+    }
+
+    body:is(
+        [data-theme="glass"], [data-theme="liquidglass"],
+        [data-theme="windows11"],
+        [data-theme="chromeos"],
+        [data-theme="ubuntu"],
+        [data-theme="github"],
+        [data-theme="spotify"],
+        [data-theme="netflix"],
+        [data-theme="slack"]
+    ) #view-notes .toolbar-wrapper {
+        min-height: 52px;
+        padding: 4px 10px;
+        border-radius: 16px;
+    }
+
+    body:is(
+        [data-theme="glass"], [data-theme="liquidglass"],
+        [data-theme="windows11"],
+        [data-theme="chromeos"],
+        [data-theme="ubuntu"],
+        [data-theme="github"],
+        [data-theme="spotify"],
+        [data-theme="netflix"],
+        [data-theme="slack"]
+    ) #view-notes .toolbar {
+        padding: 0 8px !important;
+    }
+
+    body:is(
+        [data-theme="glass"], [data-theme="liquidglass"],
+        [data-theme="windows11"],
+        [data-theme="chromeos"],
+        [data-theme="ubuntu"],
+        [data-theme="github"],
+        [data-theme="spotify"],
+        [data-theme="netflix"],
+        [data-theme="slack"]
+    ) #view-notes .editor-container {
+        padding: 6px 24px 18px !important;
+        border-radius: 18px;
+        background: color-mix(in srgb, var(--bg-elevated) 72%, transparent) !important;
+        border: 1px solid var(--surface-border) !important;
+    }
+
+    body:is(
+        [data-theme="glass"], [data-theme="liquidglass"],
+        [data-theme="windows11"],
+        [data-theme="chromeos"],
+        [data-theme="ubuntu"],
+        [data-theme="github"],
+        [data-theme="spotify"],
+        [data-theme="netflix"],
+        [data-theme="slack"]
+    ) #view-notes .page-title-input,
+    body:is(
+        [data-theme="glass"], [data-theme="liquidglass"],
+        [data-theme="windows11"],
+        [data-theme="chromeos"],
+        [data-theme="ubuntu"],
+        [data-theme="github"],
+        [data-theme="spotify"],
+        [data-theme="netflix"],
+        [data-theme="slack"]
+    ) #view-notes .editor {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    body:is(
+        [data-theme="glass"], [data-theme="liquidglass"],
+        [data-theme="windows11"],
+        [data-theme="chromeos"],
+        [data-theme="ubuntu"],
+        [data-theme="github"],
+        [data-theme="spotify"],
+        [data-theme="netflix"],
+        [data-theme="slack"]
+    ) #view-notes .page-title-input {
+        margin-top: 4px !important;
+        margin-bottom: 10px !important;
+        padding: 0 !important;
+    }
+
+    body:is(
+        [data-theme="glass"], [data-theme="liquidglass"],
+        [data-theme="windows11"],
+        [data-theme="chromeos"],
+        [data-theme="ubuntu"],
+        [data-theme="github"],
+        [data-theme="spotify"],
+        [data-theme="netflix"],
+        [data-theme="slack"]
+    ) #view-notes .editor {
+        min-height: 58vh;
+        padding: 4px 0 12px !important;
+    }
+}
+
+
+/* macos26 continuity: desktop refinements (overrides the shared identity block above) */
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .new-page-btn {
+    background: rgba(0, 0, 0, 0.04) !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    color: var(--text-secondary) !important;
+    box-shadow: none !important;
+    border-radius: 8px !important;
+    font-weight: 500;
+    font-size: 13px;
+}
+
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .new-page-btn:hover {
+    background: rgba(0, 0, 0, 0.07) !important;
+    border-color: rgba(0, 0, 0, 0.12) !important;
+    color: var(--text-primary) !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07) !important;
+    transform: none !important;
+}
+
+@media (min-width: 1025px) {
+    body:is([data-theme="glass"], [data-theme="liquidglass"]) .top-nav {
+        background: rgba(228, 238, 254, 0.93) !important;
+        border: 1px solid rgba(100, 140, 220, 0.12) !important;
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.70),
+            0 2px 12px rgba(0, 0, 0, 0.08) !important;
+    }
+
+    body:is([data-theme="glass"], [data-theme="liquidglass"]) #view-notes .toolbar-wrapper {
+        background: rgba(236, 242, 254, 0.93) !important;
+        border: 1px solid rgba(100, 140, 220, 0.14) !important;
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.68),
+            0 2px 8px rgba(0, 0, 0, 0.07) !important;
+        /* align left/right edges with the editor canvas (view padding = 28px) */
+        left: calc(var(--sidebar-width) + 28px) !important;
+        right: 28px !important;
+        max-width: calc(100% - (var(--sidebar-width) + 56px)) !important;
+    }
+
+    body:is([data-theme="glass"], [data-theme="liquidglass"]) #view-notes .editor-container {
+        background: rgba(255, 255, 255, 0.96) !important;
+        border: 1px solid rgba(0, 0, 0, 0.07) !important;
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.70),
+            0 4px 24px rgba(0, 0, 0, 0.08),
+            0 1px 4px rgba(0, 0, 0, 0.06) !important;
+    }
+
+    body:is([data-theme="glass"], [data-theme="liquidglass"]) .view-tabs {
+        background: rgba(0, 0, 0, 0.04) !important;
+        border-color: rgba(0, 0, 0, 0.06) !important;
+        box-shadow: none !important;
+    }
+
+    /* collapsed sidebar: keep toolbar aligned with editor canvas */
+    body:is([data-theme="glass"], [data-theme="liquidglass"]):has(.sidebar.collapsed) #view-notes .toolbar-wrapper,
+    body:is([data-theme="glass"], [data-theme="liquidglass"]) .sidebar.collapsed ~ .main-content #view-notes .toolbar-wrapper {
+        left: calc(var(--sidebar-collapsed-width) + 28px) !important;
+        max-width: calc(100% - (var(--sidebar-collapsed-width) + 56px)) !important;
+    }
+}
+
+/* Liquid Glass keeps its drifting light sheens (transform-only, cheap);
+   the static no-parallax enforcement below applies to the other OS
+   themes whose ::before/::after are full-bleed wallpaper layers. */
+body.no-parallax:is(
+    [data-theme="windows11"],
+    [data-theme="chromeos"],
+    [data-theme="ubuntu"],
+    [data-theme="github"],
+    [data-theme="spotify"],
+    [data-theme="netflix"],
+    [data-theme="slack"]
+)::before,
+body.no-parallax:is(
+    [data-theme="windows11"],
+    [data-theme="chromeos"],
+    [data-theme="ubuntu"],
+    [data-theme="github"],
+    [data-theme="spotify"],
+    [data-theme="netflix"],
+    [data-theme="slack"]
+)::after {
+    position: absolute !important;
+    inset: 0 !important;
+    animation: none !important;
+    transform: none !important;
+}
+
+/* (The former macos26 blanket animation/transition kill under
+   .no-parallax was removed in the Liquid Glass merge — motion is
+   governed by body.motion-off and prefers-reduced-motion instead.) */
+
+/* Focus mode seam cleanup: keep compact sidebar but remove edge glow/gradient strip */
+body.focus-mode:is([data-theme="glass"], [data-theme="liquidglass"], [data-theme-key="macos26"]) .main-content {
+    background: transparent !important;
+}
+
+body.focus-mode:is([data-theme="glass"], [data-theme="liquidglass"], [data-theme-key="macos26"]) .sidebar {
+    background: var(--glass-01) !important;
+    box-shadow: none !important;
+}
+
+body.focus-mode:is([data-theme="glass"], [data-theme="liquidglass"], [data-theme-key="macos26"]) .sidebar::before {
+    display: none !important;
+    background: transparent !important;
+}
+
+
+/* ------------------------------------------------------------------
+   Anchor the floating .toolbar-wrapper for identity themes.
+   The grouped rule above applies `backdrop-filter` to `.view`, which
+   creates a containing block and breaks `position: fixed` on the
+   toolbar (it ends up scrolling with the page). Strip the
+   backdrop-filter from `.view` only — sidebar/top-nav/cards/modals
+   keep their frosted glass treatment.
+------------------------------------------------------------------- */
+body:is(
+    [data-theme="glass"], [data-theme="liquidglass"],
+    [data-theme-key="macos26"],
+    [data-theme="windows11"],
+    [data-theme-key="windows11"],
+    [data-theme="chromeos"],
+    [data-theme-key="chromeos"],
+    [data-theme="ubuntu"],
+    [data-theme-key="ubuntu"],
+    [data-theme="github"],
+    [data-theme-key="github"],
+    [data-theme="spotify"],
+    [data-theme-key="spotify"],
+    [data-theme="netflix"],
+    [data-theme-key="netflix"],
+    [data-theme="slack"],
+    [data-theme-key="slack"]
+) .view {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+}
+
+
+/* ------------------------------------------------------------------
+   Pin the floating save pill to the bottom-right on desktop.
+   Without this, the legacy `.storage-options { left: var(--sidebar-width); right: 0 }`
+   rule in styles.css can leak through under `max-width: 52px`, parking the
+   collapsed pill just past the sidebar on the LEFT. Use a `body` selector
+   (no theme gate) so this applies regardless of which theme is active.
+------------------------------------------------------------------- */
+@media (min-width: 1025px) {
+    body #storageOptions,
+    body .storage-options {
+        position: fixed !important;
+        top: auto !important;
+        left: auto !important;
+        right: 20px !important;
+        bottom: 20px !important;
+    }
+}

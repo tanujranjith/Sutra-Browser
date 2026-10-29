@@ -23,7 +23,13 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public BrowserTab? Close(BrowserTab tab)
     {
         var index=Tabs.IndexOf(tab); if(index<0)return SelectedTab;
-        RecentlyClosed.Push(tab.ToSnapshot()); Tabs.RemoveAt(index);
+        RecentlyClosed.Push(tab.ToSnapshot());
+        if (RecentlyClosed.Count > 50)
+        {
+            var newest = RecentlyClosed.Take(50).Reverse().ToArray();
+            RecentlyClosed.Clear(); foreach (var item in newest) RecentlyClosed.Push(item);
+        }
+        Tabs.RemoveAt(index);
         if (ReferenceEquals(SelectedTab,tab)) SelectedTab=Tabs.Count==0?null:Tabs[Math.Min(index,Tabs.Count-1)];
         return SelectedTab;
     }

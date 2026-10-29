@@ -1,6 +1,8 @@
 using Browser.Core.Settings;
 using Browser.Core.Tabs;
 using Browser.Core.Branding;
+using Browser.Core.BrowserEngine;
+using Browser.App.Diagnostics;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Web.WebView2.Core;
@@ -56,6 +58,7 @@ public sealed partial class MainWindow
 
     private async Task OpenWebPanelAsync(WebPanelDefinition panel)
     {
+        if (_workspaceSidePanelOpen) CloseSutraSidePanel();
         if (_isWindowClosed) return;
         if (_activeWebPanelUrl?.Equals(panel.Url, StringComparison.OrdinalIgnoreCase) == true && _utilitySidebar.Visibility == Visibility.Visible) return;
         CloseWebPanel();
@@ -65,16 +68,49 @@ public sealed partial class MainWindow
         if (_isPrivate)
         {
             var options = environment.CreateCoreWebView2ControllerOptions(); options.ProfileName = AppBrand.PrivateProfileName; options.IsInPrivateModeEnabled = true;
-            await view.EnsureCoreWebView2Async(environment, options);
+            await InitializeAttachedWebViewAsync(view, environment, options);
         }
         else if (!_profileName.Equals("Default", StringComparison.OrdinalIgnoreCase))
         {
             var options = environment.CreateCoreWebView2ControllerOptions(); options.ProfileName = Browser.Core.Profiles.ProfileIdentity.WebViewName(_profileName);
-            await view.EnsureCoreWebView2Async(environment, options);
+            await InitializeAttachedWebViewAsync(view, environment, options);
         }
-        else await view.EnsureCoreWebView2Async(environment);
+        else await InitializeAttachedWebViewAsync(view, environment);
         if (_isWindowClosed) { view.Close(); return; }
         var core = view.CoreWebView2;
+        core.ProcessFailed += (_, e) =>
+        {
+            var kind = e.ProcessFailedKind.ToString();
+            PrivacySafeDiagnosticLog.Record("web-panel-process-failed", code: kind);
+            switch (WebViewProcessRecoveryPolicy.Decide(kind))
+            {
+                case WebViewProcessRecoveryAction.RecreateControl:
+                    DispatcherQueue.TryEnqueue(() => ObserveUiCallback("Web panel recovery", async () =>
+                    {
+                        if (!IsCurrentWebPanel(view) || _isWindowClosed) return;
+                        CloseWebPanel();
+                        await OpenWebPanelAsync(panel);
+                    }));
+                    break;
+                case WebViewProcessRecoveryAction.ReloadTab:
+                    DispatcherQueue.TryEnqueue(() =>
+                    {
+                        if (!IsCurrentWebPanel(view) || _isWindowClosed) return;
+                        try { core.Reload(); }
+                        catch (Exception ex) { PrivacySafeDiagnosticLog.Record("web-panel-renderer-recovery-failed", ex); }
+                    });
+                    break;
+                case WebViewProcessRecoveryAction.WaitForRenderer:
+                    DispatcherQueue.TryEnqueue(() =>
+                    {
+                        if (IsCurrentWebPanel(view) && !_isWindowClosed)
+                            ShowStatus("The website panel is not responding yet. Give it a moment to recover.", InfoBarSeverity.Warning, 7000);
+                    });
+                    break;
+                case WebViewProcessRecoveryAction.Ignore:
+                    break;
+            }
+        };
         core.Settings.IsPasswordAutosaveEnabled = false; core.Settings.IsGeneralAutofillEnabled = false; core.Settings.AreBrowserAcceleratorKeysEnabled = false;
         core.AddWebResourceRequestedFilter("*", CoreWebView2WebResourceContext.All);
         var panelTab = new BrowserTab { Url = panel.Url, Title = panel.Name };
@@ -98,6 +134,7 @@ public sealed partial class MainWindow
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(dismiss, "Close panel");
         ToolTipService.SetToolTip(dismiss, "Close panel");
         dismiss.Click += (_, _) => CloseWebPanel(); Grid.SetColumn(dismiss, 1); header.Children.Add(dismiss);
+        DetachWebView(view);
         var host = new Grid(); host.RowDefinitions.Add(new() { Height = GridLength.Auto }); host.RowDefinitions.Add(new() { Height = new(1, GridUnitType.Star) }); host.Children.Add(header); Grid.SetRow(view, 1); host.Children.Add(view);
         _utilitySidebar.Child = host; _utilitySidebar.Visibility = Visibility.Visible; _contentGrid.ColumnDefinitions[2].Width = new GridLength(390);
         _webPanelView = view; _activeWebPanelUrl = panel.Url;

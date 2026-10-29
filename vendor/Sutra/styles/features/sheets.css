@@ -1,0 +1,45 @@
+/* Sheets is an isolated, virtualized Notes surface. */
+.sheets-editor[hidden] { display: none !important; }
+body.sheets-page-active #notesPrimaryPane > :not(#sheetsEditor) { display: none !important; }
+body.sheets-page-active #view-notes .toolbar-wrapper { display: none !important; }
+body.sheets-page-active #view-notes .editor-container, body.sheets-page-active #notesPrimaryPane, body.sheets-page-active #sheetsEditor { width: 100% !important; max-width: none !important; height: 100%; min-height: 0; padding: 0 !important; }
+body.sheets-page-active #view-notes .editor-container { display: flex; overflow: hidden; }
+.sheets-editor { --sheet-border: color-mix(in srgb, var(--border-color, #d7d3c7) 86%, transparent); --sheet-surface: var(--bg-secondary, #fbfaf5); --sheet-ink: var(--text-primary, #173d2b); --sheet-accent: var(--accent-color, #635bdf); display: flex; flex: 1 1 auto; min-height: 0; flex-direction: column; color: var(--sheet-ink); background: var(--sheet-surface); border: 1px solid var(--sheet-border); }
+.sheets-tabs, .sheets-toolbar, .sheets-formula, .sheets-tabs-bar { display: flex; flex: 0 0 auto; align-items: center; gap: 7px; padding: 8px 12px; border-bottom: 1px solid var(--sheet-border); }
+.sheets-tabs { font-size: 13px; color: var(--text-secondary, #687079); } .sheets-tabs strong { color: var(--sheet-ink); }
+.sheets-toolbar { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; } .sheets-toolbar button, .sheets-toolbar select, .sheets-tabs-bar button { min-height: 32px; flex: 0 0 auto; padding: 5px 9px; border: 1px solid var(--sheet-border); border-radius: 6px; color: inherit; background: var(--sheet-surface); cursor: pointer; }
+.sheets-color-tool { min-height: 32px; display: inline-flex; flex: 0 0 auto; align-items: center; gap: 4px; padding: 4px 7px; border: 1px solid var(--sheet-border); border-radius: 6px; font-size: 12px; }
+.sheets-color-tool input { width: 22px; height: 22px; padding: 0; border: 0; background: transparent; }
+.sheets-formula output { min-width: 76px; font-variant-numeric: tabular-nums; } .sheets-formula input { flex: 1; min-width: 0; border: 1px solid var(--sheet-border); border-radius: 5px; padding: 7px; background: transparent; color: inherit; }
+.sheets-grid-wrap { position: relative; flex: 1 1 auto; min-height: 0; overflow: auto; outline: none; background: var(--sheet-surface); } .sheets-grid-canvas { position: relative; margin-left: 48px; margin-top: 28px; }
+.sheets-corner { position: absolute; z-index: 5; top: 0; left: 0; width: 48px; height: 28px; border-right: 1px solid var(--sheet-border); border-bottom: 1px solid var(--sheet-border); background: var(--sheet-surface); }
+.sheets-column-headings { position: sticky; z-index: 4; top: 0; left: 48px; height: 28px; } .sheets-row-headings { position: sticky; z-index: 4; left: 0; top: 28px; width: 48px; }
+.sheets-col-head, .sheets-row-head { position: absolute; box-sizing: border-box; height: 28px; display: flex; align-items: center; justify-content: center; border-right: 1px solid var(--sheet-border); border-bottom: 1px solid var(--sheet-border); background: var(--sheet-surface); color: var(--text-secondary, #687079); font-size: 12px; font-variant-numeric: tabular-nums; }
+.sheets-row-head { width: 48px; }
+.sheets-cell { position: absolute; box-sizing: border-box; width: 120px; height: 28px; padding: 5px 7px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; border-right: 1px solid var(--sheet-border); border-bottom: 1px solid var(--sheet-border); cursor: cell; background: var(--sheet-surface); font-size: 13px; }
+.sheets-cell.in-range { background: color-mix(in srgb, var(--sheet-accent) 8%, var(--sheet-surface)); } .sheets-cell.selected { z-index: 2; outline: 2px solid var(--sheet-accent); outline-offset: -2px; }
+.sheets-cell.is-hidden, .sheets-row-head.is-hidden { opacity: .22; }
+.sheets-cell select { width: 100%; height: 100%; margin: -5px -7px; padding: 0 5px; border: 0; color: inherit; background: transparent; font: inherit; }
+.sheets-chart-panel { display: flex; gap: 12px; max-height: 190px; padding: 10px 12px; overflow-x: auto; border-top: 1px solid var(--sheet-border); background: var(--sheet-surface); }
+.sheets-chart-panel[hidden] { display: none; }
+.sheets-chart-panel figure { min-width: 260px; margin: 0; padding: 9px; border: 1px solid var(--sheet-border); border-radius: 8px; }
+.sheets-chart-panel figcaption { margin-bottom: 6px; font-size: 12px; font-weight: 700; }
+.sheets-chart-bars { height: 92px; display: flex; align-items: end; gap: 5px; border-bottom: 1px solid var(--sheet-border); }
+.sheets-chart-bars span { min-width: 12px; flex: 1; border-radius: 3px 3px 0 0; background: var(--sheet-accent); }
+.sheets-chart-panel button { margin-top: 6px; border: 0; color: var(--text-secondary, #687079); background: transparent; cursor: pointer; }
+.sheets-tabs-bar { border-top: 1px solid var(--sheet-border); border-bottom: 0; overflow-x: auto; } .sheets-tabs-bar > div { display: flex; gap: 4px; } .sheets-tabs-bar button.active { color: white; background: var(--sheet-accent); border-color: var(--sheet-accent); }
+@media (max-width: 700px) {
+    /* Keep the workbook recognizably spreadsheet-like, but make the controls
+       usable by touch instead of compressing every command into tiny chrome. */
+    .sheets-tabs { min-height: 44px; padding: 8px 10px; }
+    .sheets-toolbar { gap: 5px; padding: 7px 8px; scroll-padding-inline: 8px; }
+    .sheets-toolbar button, .sheets-toolbar select, .sheets-color-tool { min-height: 44px; }
+    .sheets-toolbar button { padding-inline: 11px; }
+    .sheets-formula { gap: 6px; padding: 8px; }
+    .sheets-formula output { min-width: 52px; font-size: 12px; }
+    .sheets-formula input { min-height: 40px; padding: 8px; }
+    .sheets-grid-wrap { min-height: 320px; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+    .sheets-tabs-bar { min-height: 48px; padding: 7px 8px calc(7px + env(safe-area-inset-bottom, 0px)); }
+    .sheets-tabs-bar button { min-height: 36px; }
+}
+@media (prefers-reduced-motion: reduce) { .sheets-editor *, .sheets-editor { scroll-behavior: auto !important; transition: none !important; animation: none !important; } }

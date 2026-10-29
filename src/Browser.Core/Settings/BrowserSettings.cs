@@ -13,16 +13,18 @@ public sealed record WebPanelDefinition(string Name, string Url);
 
 public sealed record BrowserSettings
 {
-    public TabLayout TabLayout { get; init; } = TabLayout.Horizontal;
+    public int DesktopAppearanceVersion { get; init; }
+    public TabLayout TabLayout { get; init; } = TabLayout.Vertical;
     public bool SidebarCollapsed { get; init; }
     public bool SidebarAutoHide { get; init; }
-    public int SidebarWidth { get; init; } = 248;
+    public int SidebarWidth { get; init; } = 280;
+    public double WorkspaceZoomFactor { get; init; } = .9;
     public Dictionary<string, double> SiteZoomFactors { get; init; } = new(StringComparer.OrdinalIgnoreCase);
     public BrowserTheme Theme { get; init; } = BrowserTheme.Dark;
     public bool UseScheduledTheme { get; init; }
     public int DarkThemeStartHour { get; init; } = 20;
     public int LightThemeStartHour { get; init; } = 7;
-    public StartupBehavior StartupBehavior { get; init; } = StartupBehavior.NewTab;
+    public StartupBehavior StartupBehavior { get; init; } = StartupBehavior.RestorePreviousSession;
     public SearchEngine SearchEngine { get; init; } = SearchEngine.DuckDuckGo;
     /// <summary>Local address-bar shortcuts such as "yt" → a URL template containing {query}.</summary>
     public Dictionary<string, string> SearchAliases { get; init; } = new(StringComparer.OrdinalIgnoreCase);
@@ -37,15 +39,15 @@ public sealed record BrowserSettings
     public bool SuggestTabGroupsByDomain { get; init; }
     public bool ConfirmClosingProtectedTabs { get; init; } = true;
     public ToolbarDensity ToolbarDensity { get; init; } = ToolbarDensity.Comfortable;
-    public bool ShowHomeButton { get; init; } = true;
+    public bool ShowHomeButton { get; init; }
     public bool ShowBookmarkButton { get; init; } = true;
-    public bool ShowAiButton { get; init; } = true;
-    public bool ShowSplitButton { get; init; } = true;
-    public bool ShowMediaButton { get; init; } = true;
-    public string[] ToolbarOrder { get; init; } = ["Back", "Forward", "Reload", "Home", "Address", "Bookmark", "Ai", "Menu"];
+    public bool ShowAiButton { get; init; }
+    public bool ShowSplitButton { get; init; }
+    public bool ShowMediaButton { get; init; }
+    public string[] ToolbarOrder { get; init; } = ["Back", "Forward", "Reload", "Security", "Address", "Shield", "Bookmark", "Home", "Ai", "Split", "Media", "Menu"];
     public string[] WebProfiles { get; init; } = ["Default"];
     public Dictionary<string, string> CustomShortcuts { get; init; } = new(StringComparer.OrdinalIgnoreCase);
-    public string AccentColor { get; init; } = "#F47A22";
+    public string AccentColor { get; init; } = Browser.Core.Branding.AppBrand.AccentColor;
     public bool UseCustomThemeColors { get; init; }
     public string ThemeSurfaceColor { get; init; } = "#101316";
     public string ThemeTextColor { get; init; } = "#F4F4F2";
@@ -59,6 +61,9 @@ public sealed record BrowserSettings
     public string[] AdBlockAllowlist { get; init; } = [];
     public string[] FilterListUrls { get; init; } = ["https://easylist.to/easylist/easylist.txt", "https://easylist.to/easylist/easyprivacy.txt"];
     public bool RemoveTrackingParametersFromCopiedLinks { get; init; } = true;
+    public int ReaderFontSize { get; init; } = 20;
+    public string ReaderAppearance { get; init; } = "system";
+    public int ReaderWidth { get; init; } = 760;
     public bool AutomaticHibernationEnabled { get; init; } = true;
     public int HibernationMinutes { get; init; } = 30;
     public MemorySaverMode MemorySaverMode { get; init; } = MemorySaverMode.Balanced;
@@ -90,7 +95,8 @@ public static class SettingsValidator
         {
             Theme = Enum.IsDefined(value.Theme) ? value.Theme : BrowserTheme.System,
             NewTabAppearance = Enum.IsDefined(value.NewTabAppearance) ? value.NewTabAppearance : NewTabAppearance.AccentTint,
-            TabLayout = Enum.IsDefined(value.TabLayout) ? value.TabLayout : TabLayout.Horizontal,
+            TabLayout = Enum.IsDefined(value.TabLayout) ? value.TabLayout : TabLayout.Vertical,
+            StartupBehavior = Enum.IsDefined(value.StartupBehavior) ? value.StartupBehavior : StartupBehavior.RestorePreviousSession,
             ToolbarDensity = Enum.IsDefined(value.ToolbarDensity) ? value.ToolbarDensity : ToolbarDensity.Comfortable,
             MemorySaverMode = Enum.IsDefined(value.MemorySaverMode) ? value.MemorySaverMode : MemorySaverMode.Balanced,
             HomePage = home,
@@ -100,7 +106,11 @@ public static class SettingsValidator
             HistoryRetentionDays = Math.Clamp(value.HistoryRetentionDays, 0, 3650),
             MemorySaverTabLimit = Math.Clamp(value.MemorySaverTabLimit, 4, 100),
             SidebarWidth = Math.Clamp(value.SidebarWidth, 180, 520),
+            WorkspaceZoomFactor = double.IsFinite(value.WorkspaceZoomFactor) ? Math.Clamp(value.WorkspaceZoomFactor, .75, 1) : .9,
             SiteZoomFactors = NormalizeSiteZoomFactors(value.SiteZoomFactors),
+            ReaderFontSize = Math.Clamp(value.ReaderFontSize, 16, 28),
+            ReaderWidth = Math.Clamp(value.ReaderWidth, 560, 960),
+            ReaderAppearance = value.ReaderAppearance is "light" or "dark" or "sepia" ? value.ReaderAppearance : "system",
             SearchAliases = NormalizeSearchAliases(value.SearchAliases),
             AiMaximumActions = Math.Clamp(value.AiMaximumActions, 1, 50),
             AiActionTimeoutSeconds = Math.Clamp(value.AiActionTimeoutSeconds, 2, 120),
@@ -126,7 +136,7 @@ public static class SettingsValidator
     private static bool IsSafeHttpUri(string? value) => Uri.TryCreate(value, UriKind.Absolute, out var uri) &&
         uri.Scheme is "http" or "https" && string.IsNullOrEmpty(uri.UserInfo);
     private static string[] CleanDomains(IEnumerable<string> values) => values.Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x.Trim().TrimStart('.').ToLowerInvariant()).Where(x => !x.Contains('/') && !x.Contains(' ')).Distinct().ToArray();
-    private static string ValidColor(string value) => value is { Length: 7 } && value[0] == '#' && value.Skip(1).All(Uri.IsHexDigit) ? value.ToUpperInvariant() : "#F47A22";
+    private static string ValidColor(string value) => value is { Length: 7 } && value[0] == '#' && value.Skip(1).All(Uri.IsHexDigit) ? value.ToUpperInvariant() : Browser.Core.Branding.AppBrand.AccentColor;
     private static string[] NormalizeToolbarOrder(IEnumerable<string>? values)
     {
         string[] allowed = ["Back", "Forward", "Reload", "Home", "Address", "Security", "Shield", "Bookmark", "Ai", "Split", "Media", "Menu"];
@@ -153,7 +163,7 @@ public static class SettingsValidator
     {
         var result = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
         foreach (var (origin, factor) in values ?? new Dictionary<string, double>())
-            if (Uri.TryCreate(origin, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https" && !string.IsNullOrWhiteSpace(uri.Host))
+            if (Uri.TryCreate(origin, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https" && string.IsNullOrEmpty(uri.UserInfo) && !string.IsNullOrWhiteSpace(uri.Host) && double.IsFinite(factor))
                 result[$"{uri.Scheme}://{uri.Host}{(uri.IsDefaultPort ? string.Empty : ":" + uri.Port)}"] = Math.Clamp(factor, .25, 5);
         return result;
     }
@@ -170,10 +180,7 @@ public static class SettingsValidator
         {
             var alias = rawAlias.Trim().TrimStart('@', '!').ToLowerInvariant();
             var template = rawTemplate.Trim();
-            if (alias.Length is < 1 or > 24 || !alias.All(char.IsLetterOrDigit)) continue;
-            if (!template.Contains("{query}", StringComparison.OrdinalIgnoreCase)) continue;
-            var probe = template.Replace("{query}", "test", StringComparison.OrdinalIgnoreCase);
-            if (!Uri.TryCreate(probe, UriKind.Absolute, out var uri) || uri.Scheme is not ("http" or "https")) continue;
+            if (!SearchAliasPolicy.TryValidate(alias, template, out alias, out template, out _)) continue;
             result[alias] = template;
             if (result.Count == 20) break;
         }

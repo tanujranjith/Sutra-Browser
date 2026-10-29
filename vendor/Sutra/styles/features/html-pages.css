@@ -1,0 +1,86 @@
+/* Dedicated HTML Pages are a canonical Create surface with an isolated preview. */
+.html-page-editor[hidden] { display: none !important; }
+body.html-page-active #notesPrimaryPane > :not(#htmlPageEditor) { display: none !important; }
+body.html-page-active #view-notes .toolbar-wrapper { display: none !important; }
+body.html-page-active #view-notes .editor-container,
+body.html-page-active #notesPrimaryPane,
+body.html-page-active #htmlPageEditor { width: 100% !important; max-width: none !important; height: 100%; min-height: 0; padding: 0 !important; }
+body.html-page-active #notesPrimaryPane { display: flex; flex-direction: column; align-items: stretch; overflow: hidden; }
+body.html-page-active #view-notes .editor-container { display: flex; overflow: hidden; }
+
+.html-page-editor {
+  --html-border: color-mix(in srgb, var(--border-color, #d7d3c7) 86%, transparent);
+  --html-surface: var(--bg-secondary, #fbfaf5);
+  --html-panel: var(--bg-primary, #fff);
+  --html-ink: var(--text-primary, #173d2b);
+  --html-muted: var(--text-secondary, #687079);
+  --html-accent: var(--accent-color, #635bdf);
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  flex-direction: column;
+  color: var(--html-ink);
+  background: var(--html-surface);
+  border: 0;
+  overflow: hidden;
+}
+
+.html-page-toolbar,
+.html-page-status { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-bottom: 1px solid var(--html-border); }
+.html-page-status { justify-content: space-between; border-top: 1px solid var(--html-border); border-bottom: 0; color: var(--html-muted); font-size: 12px; }
+.html-page-mode { display: flex; gap: 8px; align-items: baseline; color: var(--html-muted); font-size: 13px; }
+.html-page-mode strong { color: var(--html-ink); }
+.html-page-actions { display: flex; gap: 8px; margin-left: auto; }
+.html-page-actions button,
+.html-page-import,
+.html-page-mobile-tabs button { min-height: 34px; padding: 6px 10px; border: 1px solid var(--html-border); border-radius: 7px; color: inherit; background: transparent; cursor: pointer; font: inherit; }
+.html-page-actions button:hover,
+.html-page-actions button:focus-visible,
+.html-page-import:hover,
+.html-page-import:focus-within { border-color: color-mix(in srgb, var(--html-accent) 55%, var(--html-border)); background: color-mix(in srgb, var(--html-accent) 7%, transparent); }
+.html-page-import { display: inline-flex; align-items: center; }
+.html-page-import input { position: absolute; inline-size: 1px; block-size: 1px; opacity: 0; pointer-events: none; }
+.html-page-local-status { display: inline-flex; align-items: center; gap: 7px; min-height: 34px; padding: 6px 10px; color: var(--html-muted); font-size: 12px; white-space: nowrap; }
+.html-page-local-dot { width: 8px; height: 8px; border-radius: 50%; background: #b07b3f; box-shadow: 0 0 0 3px color-mix(in srgb, #b07b3f 14%, transparent); }
+.html-page-mobile-tabs { display: none; flex: 0 0 auto; }
+.html-page-warning { padding: 8px 12px; color: #7a4d00; background: color-mix(in srgb, #f5b942 18%, var(--html-surface)); border-bottom: 1px solid var(--html-border); font-size: 13px; }
+.html-page-workspace { position: relative; display: flex; flex: 1 1 auto; min-height: 0; overflow: hidden; background: var(--html-panel); }
+.html-page-code,
+.html-page-preview { display: flex; min-width: 0; min-height: 0; flex-direction: column; background: var(--html-panel); }
+.html-page-preview { flex: 1 1 auto; overflow: hidden; }
+.html-page-code { display: none; position: absolute; inset: 0; z-index: 2; border: 1px solid var(--html-border); }
+.html-page-editor[data-source-open="true"] .html-page-code { display: flex; }
+.html-page-source-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-bottom: 1px solid var(--html-border); }
+.html-page-source-toolbar > label:first-child { color: var(--html-muted); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.html-page-code textarea { flex: 1 1 auto; min-height: 240px; resize: none; border: 0; padding: 16px; outline: none; color: var(--html-ink); background: var(--html-panel); font: 13px/1.55 ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; tab-size: 2; }
+.html-page-code textarea:focus { box-shadow: inset 0 0 0 2px var(--html-accent); }
+.html-page-code p { margin: 0; padding: 8px 12px; border-top: 1px solid var(--html-border); color: var(--html-muted); font-size: 11px; }
+.html-page-preview > div { display: flex; flex: 1 1 auto; min-height: 0; flex-direction: column; }
+.html-page-preview iframe { flex: 1 1 auto; width: 100%; min-height: 0; border: 0; background: #fff; }
+.html-page-preview .sutra-embed-capability-warning { padding: 7px 10px; color: var(--html-muted); border-bottom: 1px solid var(--html-border); font-size: 11px; }
+.html-page-status output[data-state="error"] { color: var(--danger-color, #b42318); font-weight: 700; }
+.html-page-status output[data-state="saving"] { color: var(--html-accent); }
+
+@media (max-width: 700px) {
+  .html-page-toolbar { flex-wrap: nowrap; padding: 8px; }
+  .html-page-mode { display: none; }
+  .html-page-mobile-tabs { display: flex; flex: 0 0 auto; }
+  .html-page-mobile-tabs button.active { color: #fff; background: var(--html-accent); border-color: var(--html-accent); }
+  .html-page-actions { min-width: 0; flex: 1 1 auto; justify-content: flex-end; margin-left: auto; }
+  .html-page-actions button[data-html-edit-source] { display: none; }
+  .html-page-actions button { min-height: 44px; }
+  .html-page-local-status { display: none; }
+  .html-page-editor[data-source-open="false"] .html-page-code { display: none; }
+  .html-page-editor[data-source-open="true"] .html-page-preview { display: none; }
+  .html-page-code,
+  .html-page-preview { height: 100%; }
+  .html-page-import { min-height: 44px; }
+}
+
+@media (forced-colors: active) {
+  .html-page-editor, .html-page-code, .html-page-toolbar, .html-page-status { border-color: CanvasText; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .html-page-editor, .html-page-editor * { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
+}

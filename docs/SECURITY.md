@@ -23,11 +23,11 @@ Treat any page content as potentially hostile prompt injection. New tools must p
 
 ## Site permissions and profile data
 
-Permission decisions are keyed by exact origin and WebView2 permission kind. Non-HTTPS permission requests are denied. “Allow once” is not persisted. Browser cookies/cache remain in the shared WebView2 profile until cleared through profile APIs or by removing the application profile while the browser is closed.
+Permission decisions are keyed by exact origin and WebView2 permission kind. Non-HTTPS permission requests are denied. Allow/block apply to one request unless the user explicitly enables remembering and chooses Allow or Block. Escape/dismissal never persists a decision. WebView2 profile saving is disabled on each request so an allow-once result cannot become an engine-level grant. Prompts invalidated by navigation deny without persisting their result. Browser cookies/cache remain in the shared WebView2 profile until cleared through profile APIs or by removing the application profile while the browser is closed.
 
 Named profiles use separate Sutra databases and encrypted vault directories alongside distinct website profiles on the shared environment. Default retains existing shared data. Cross-window tab transfer requires matching profile and private status. Offline articles are bounded inert text, never executable page archives. Browser-owned new-tab actions require the selected logical new tab and an exact match between the trusted document, current WebView source, and message source.
 
-Ad/tracker checks happen locally against built-in or explicitly downloaded filter lists. Per-site exceptions are domain-scoped and visible in the shield panel. This is a useful blocker, not an anonymity or anti-fingerprinting guarantee, and the supported filter syntax is intentionally narrower than a full browser-extension engine.
+Ad/tracker checks happen locally against built-in rules and configured public filter lists. While protection is enabled, configured lists refresh at most daily, with bounded validation and a last-known-good fallback. Per-site exceptions are domain-scoped and visible in the shield panel. This is a useful blocker, not an anonymity or anti-fingerprinting guarantee, and the supported filter syntax is intentionally narrower than a full browser-extension engine.
 
 Custom new-tab images are copied into the browser's `Customization` data directory. Only supported image extensions inside that directory, under 20 MB, are read and embedded into the local new-tab document. Cross-tab search is explicit, reads only already-awake tabs, stays on-device, and never wakes or uploads a hibernated tab.
 
@@ -61,4 +61,10 @@ processes to use a build with this protocol; native end-to-end verification rema
 
 Never log passwords, API keys, bearer tokens, cookies, raw authorization headers, private form contents, or full AI payloads. Catch blocks should report exception types or safe summaries. Do not add secrets to `appsettings.json`, environment examples, test fixtures, source control, or SQLite.
 
-The global UI exception handler contains only `OperationCanceledException` (normal teardown). Every other unhandled exception is recorded by type and left unhandled so the process terminates and crash recovery stays truthful.
+UI task boundaries observe callback failures and recheck window/control lifetime. The global WinUI exception handler currently marks unhandled UI exceptions as handled and writes bounded diagnostic metadata. Startup failures use a separate error surface. The rotating fault log contains timestamps, fixed categories/codes, exception types, and HRESULT values, excluding exception messages, stacks, URLs, and paths; it is not a browsing or AI action log. Domain termination and unobserved task faults are also recorded.
+
+## Embedded workspace and releases
+
+The pinned Sutra frontend uses a separate named profile on the shared environment. The native desktop bridge accepts only allowlisted, versioned, bounded messages from the exact HTTPS `sutra.local` origin. Captures use the frontend's existing data APIs; Assistant context is a draft requiring the user to send it. Temporary PDF imports are limited to 32 MB. Private windows cannot access the embedded workspace or install extensions. Website-profile clearing and local extensions do not target the workspace profile.
+
+Signed installations verify the update manifest's RSA signature, release URL restrictions, installer size/hash, and Authenticode publisher before staging an update. The detached updater repeats artifact validation and retains an install-tree rollback copy. Unsigned development builds cannot use automatic updates. Signing keys and environment files are excluded from Git; native signed-update and rollback acceptance remains outstanding. See [SUTRA-DESKTOP-INTEGRATION.md](SUTRA-DESKTOP-INTEGRATION.md) for configuration and release gates.

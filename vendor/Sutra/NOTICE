@@ -1,0 +1,26 @@
+Sutra
+Copyright 2026 Tanuj Ranjith
+
+Licensed under the Apache License, Version 2.0.
+
+This project was created by Tanuj Ranjith. Redistributions, forks, and derivative
+works that include Sutra code must preserve this NOTICE file and all required
+copyright, license, and attribution notices under the Apache License 2.0.
+
+Recommended attribution:
+"Based on Sutra by Tanuj Ranjith."
+
+Sutra was previously released as NoteFlow Atelier. The legacy product name,
+legacy `.atelier` backup extension, and legacy internal storage identifiers are
+retained only for compatibility with older workspaces and forks.
+
+Vendored third-party library:
+- JSZip 3.10.1, dual licensed MIT or GPLv3. Sutra uses JSZip under the MIT
+  license for local `.sutra` backup packaging. See
+  `assets/vendor/jszip/LICENSE.markdown`.
+
+The names "Sutra" and "NoteFlow Atelier", along with any official logos,
+branding, or visual identity, are not licensed for use in a way that suggests
+endorsement, official status, or affiliation with the original project unless
+permission is granted. Derivative projects may accurately state that they are
+based on Sutra.

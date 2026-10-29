@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><TargetFramework>net8.0</TargetFramework></PropertyGroup>
+  <PropertyGroup><TargetFramework>net8.0</TargetFramework><Version>0.3.0</Version></PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Privacy\public_suffix_list.dat" />
+    <Content Include="Privacy\public_suffix_list.dat" Link="Licenses\public_suffix_list.dat" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>
-

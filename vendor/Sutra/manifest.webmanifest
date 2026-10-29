@@ -1,0 +1,53 @@
+{
+  "name": "Sutra",
+  "short_name": "Sutra",
+  "description": "A local-first academic workspace for students — notes, assignments, planning, review, and an optional context-aware AI assistant. Your workspace stays in your browser by default.",
+  "id": "/Sutra/Sutra.html",
+  "start_url": "./Sutra.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#07111f",
+  "theme_color": "#07111f",
+  "categories": ["education", "productivity"],
+  "share_target": {
+    "action": "./share-target",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "files",
+          "accept": [
+            "text/plain",
+            "text/html",
+            "text/markdown",
+            "text/csv",
+            "text/calendar",
+            "application/pdf",
+            "image/png",
+            "image/jpeg",
+            "image/webp",
+            "image/gif",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            "application/vnd.oasis.opendocument.text",
+            "application/rtf"
+          ]
+        }
+      ]
+    }
+  },
+  "icons": [
+    { "src": "assets/brand/sutra/generated/sutra-icon-96.png", "sizes": "96x96", "type": "image/png", "purpose": "any" },
+    { "src": "assets/brand/sutra/generated/sutra-icon-128.png", "sizes": "128x128", "type": "image/png", "purpose": "any" },
+    { "src": "assets/brand/sutra/generated/sutra-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/brand/sutra/generated/sutra-icon-256.png", "sizes": "256x256", "type": "image/png", "purpose": "any" },
+    { "src": "assets/brand/sutra/generated/sutra-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/brand/sutra/generated/sutra-icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

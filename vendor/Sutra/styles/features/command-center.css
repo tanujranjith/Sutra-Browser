@@ -1,0 +1,636 @@
+/*
+ * Sutra Command Center styles — shared glass/neumorphic primitives for the
+ * College, Life and Business "mini-OS" tabs. Theme-aware (uses the core
+ * --bg/--text/--accent/--glass/--surface tokens so light, dark and custom
+ * themes all work), reduced-motion friendly, and mobile-first.
+ *
+ * All classes are namespaced `cc-` to avoid collisions with existing styles.
+ */
+
+/* Semantic tone tokens — adapt to light/dark via the host theme. */
+:root {
+    --cc-positive: #2f9e6f;
+    --cc-positive-soft: rgba(47, 158, 111, 0.14);
+    --cc-warn: #c2872c;
+    --cc-warn-soft: rgba(194, 135, 44, 0.16);
+    --cc-danger: #d2604f;
+    --cc-danger-soft: rgba(210, 96, 79, 0.15);
+    --cc-info: #4f86c2;
+    --cc-info-soft: rgba(79, 134, 194, 0.15);
+}
+body[data-theme="dark"],
+body.theme-dark {
+    --cc-positive: #58c79a;
+    --cc-positive-soft: rgba(88, 199, 154, 0.18);
+    --cc-warn: #e0a44e;
+    --cc-warn-soft: rgba(224, 164, 78, 0.20);
+    --cc-danger: #ec8071;
+    --cc-danger-soft: rgba(236, 128, 113, 0.20);
+    --cc-info: #79aae0;
+    --cc-info-soft: rgba(121, 170, 224, 0.20);
+}
+
+/* ------------------------------------------------------------------ */
+/* Signal grid (intelligence dashboard)                                */
+/* ------------------------------------------------------------------ */
+.cc-signal-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(184px, 1fr));
+    gap: 12px;
+    width: 100%;
+}
+.cc-signal-grid-dense {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+}
+
+.cc-signal-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    text-align: left;
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: var(--radius, 18px);
+    border: 1px solid var(--glass-border, var(--border));
+    background: var(--glass-01, var(--bg-elevated));
+    box-shadow: var(--shadow-soft);
+    color: var(--text-primary);
+    font: inherit;
+    position: relative;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+button.cc-signal-card { cursor: pointer; }
+button.cc-signal-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-soft-lg);
+    border-color: rgba(var(--accent-rgb), 0.55);
+}
+button.cc-signal-card:focus-visible {
+    outline: 2px solid var(--accent-strong);
+    outline-offset: 2px;
+}
+
+.cc-signal-icon {
+    flex: 0 0 auto;
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+    font-size: 15px;
+}
+.cc-signal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+.cc-signal-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+.cc-signal-value {
+    font-size: 19px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--text-primary);
+    overflow-wrap: anywhere;
+}
+.cc-signal-value-empty { color: var(--text-muted); font-weight: 600; }
+.cc-signal-meta {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+.cc-signal-go {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    color: var(--text-muted);
+    font-size: 11px;
+    opacity: 0;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+button.cc-signal-card:hover .cc-signal-go,
+button.cc-signal-card:focus-visible .cc-signal-go {
+    opacity: 0.9;
+    transform: translateX(2px);
+}
+.cc-signal-progress {
+    margin-top: 8px;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--surface-bg-active);
+    overflow: hidden;
+    display: block;
+}
+.cc-signal-progress-fill {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--accent-strong), var(--accent));
+    transition: width 0.4s ease;
+}
+
+/* Tones */
+.cc-tone-positive .cc-signal-icon { background: var(--cc-positive-soft); color: var(--cc-positive); }
+.cc-tone-positive .cc-signal-value { color: var(--cc-positive); }
+.cc-tone-warn .cc-signal-icon { background: var(--cc-warn-soft); color: var(--cc-warn); }
+.cc-tone-warn .cc-signal-value { color: var(--cc-warn); }
+.cc-tone-danger .cc-signal-icon { background: var(--cc-danger-soft); color: var(--cc-danger); }
+.cc-tone-danger .cc-signal-value { color: var(--cc-danger); }
+.cc-tone-info .cc-signal-icon { background: var(--cc-info-soft); color: var(--cc-info); }
+.cc-tone-accent .cc-signal-icon { background: var(--accent-soft); color: var(--accent-strong); }
+
+/* ------------------------------------------------------------------ */
+/* Pills                                                                */
+/* ------------------------------------------------------------------ */
+.cc-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    background: var(--surface-bg);
+    color: var(--text-secondary);
+    border: 1px solid var(--surface-border);
+    white-space: nowrap;
+}
+.cc-pill.cc-tone-positive { background: var(--cc-positive-soft); color: var(--cc-positive); border-color: transparent; }
+.cc-pill.cc-tone-warn { background: var(--cc-warn-soft); color: var(--cc-warn); border-color: transparent; }
+.cc-pill.cc-tone-danger { background: var(--cc-danger-soft); color: var(--cc-danger); border-color: transparent; }
+.cc-pill.cc-tone-info { background: var(--cc-info-soft); color: var(--cc-info); border-color: transparent; }
+.cc-pill.cc-tone-accent { background: var(--accent-soft); color: var(--accent-strong); border-color: transparent; }
+
+/* ------------------------------------------------------------------ */
+/* Empty states                                                         */
+/* ------------------------------------------------------------------ */
+.cc-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 10px;
+    padding: 34px 22px;
+    border-radius: var(--radius-lg, 28px);
+    border: 1px dashed var(--surface-border-strong);
+    background: var(--surface-bg-elevated);
+    color: var(--text-secondary);
+}
+.cc-empty-icon {
+    width: 52px; height: 52px;
+    display: grid; place-items: center;
+    border-radius: 16px;
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+    font-size: 20px;
+}
+.cc-empty-title { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+.cc-empty-message { font-size: 13px; max-width: 42ch; line-height: 1.5; }
+.cc-empty-action { margin-top: 6px; }
+
+/* ------------------------------------------------------------------ */
+/* Drawer                                                               */
+/* ------------------------------------------------------------------ */
+.cc-drawer-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 4200;
+    display: flex;
+    justify-content: flex-end;
+    background: rgba(12, 16, 24, 0.42);
+    opacity: 0;
+    transition: opacity 0.22s ease;
+    backdrop-filter: blur(2px);
+}
+.cc-drawer-overlay.cc-drawer-open { opacity: 1; }
+.cc-drawer-overlay[hidden] { display: none; }
+
+.cc-drawer {
+    width: min(460px, 94vw);
+    max-width: 94vw;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: var(--glass-02, var(--bg-elevated));
+    border-left: 1px solid var(--glass-border, var(--border));
+    box-shadow: -24px 0 60px rgba(12, 16, 24, 0.28);
+    transform: translateX(100%);
+    transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+    outline: none;
+}
+.cc-drawer.cc-drawer-lg { width: min(620px, 96vw); }
+.cc-drawer-overlay.cc-drawer-open .cc-drawer { transform: translateX(0); }
+
+.cc-drawer-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 20px 22px 14px;
+    border-bottom: 1px solid var(--surface-border);
+}
+.cc-drawer-eyebrow {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent-strong);
+    margin-bottom: 4px;
+}
+.cc-drawer-eyebrow[hidden] { display: none; }
+.cc-drawer-title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+.cc-drawer-close {
+    flex: 0 0 auto;
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    border: 1px solid var(--surface-border);
+    background: var(--surface-bg);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background 0.16s ease, color 0.16s ease;
+}
+.cc-drawer-close:hover { background: var(--surface-bg-hover); color: var(--text-primary); }
+.cc-drawer-close:focus-visible { outline: 2px solid var(--accent-strong); outline-offset: 2px; }
+
+.cc-drawer-body {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 18px 22px 26px;
+    -webkit-overflow-scrolling: touch;
+}
+.cc-drawer-foot {
+    flex: 0 0 auto;
+    padding: 14px 22px;
+    border-top: 1px solid var(--surface-border);
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+.cc-drawer-foot[hidden] { display: none; }
+
+/* Drawer internal layout helpers (used by tab profile bodies) */
+.cc-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+.cc-field-label {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.03em;
+    text-transform: uppercase; color: var(--text-muted);
+}
+.cc-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.cc-field input, .cc-field select, .cc-field textarea {
+    width: 100%;
+    padding: 9px 12px;
+    border-radius: 12px;
+    border: 1px solid var(--surface-border);
+    background: var(--surface-bg);
+    color: var(--text-primary);
+    font: inherit;
+}
+.cc-field textarea { min-height: 64px; resize: vertical; }
+.cc-field input:focus, .cc-field select:focus, .cc-field textarea:focus {
+    outline: none;
+    border-color: rgba(var(--accent-rgb), 0.6);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.cc-drawer-section { margin: 18px 0; }
+.cc-drawer-section-title {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.05em;
+    text-transform: uppercase; color: var(--text-muted);
+    margin: 0 0 10px;
+    display: flex; align-items: center; gap: 8px;
+}
+.cc-drawer-list { display: flex; flex-direction: column; gap: 8px; }
+.cc-drawer-list-item {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: var(--surface-bg);
+    border: 1px solid var(--surface-border);
+    font-size: 13px;
+}
+.cc-drawer-list-item .cc-dli-main { min-width: 0; }
+.cc-drawer-list-item .cc-dli-title { font-weight: 600; color: var(--text-primary); }
+.cc-drawer-list-item .cc-dli-sub { font-size: 12px; color: var(--text-secondary); }
+.cc-meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+.cc-meta-cell {
+    padding: 10px 12px; border-radius: 12px;
+    background: var(--surface-bg); border: 1px solid var(--surface-border);
+}
+.cc-meta-cell .k { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); }
+.cc-meta-cell .v { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-top: 2px; }
+
+/* Health/score bar reused by Business + College */
+.cc-score-bar { height: 8px; border-radius: 999px; background: var(--surface-bg-active); overflow: hidden; }
+.cc-score-bar > span { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent-strong), var(--accent)); }
+.cc-score-bar.cc-tone-positive > span { background: var(--cc-positive); }
+.cc-score-bar.cc-tone-warn > span { background: var(--cc-warn); }
+.cc-score-bar.cc-tone-danger > span { background: var(--cc-danger); }
+
+/* Generic drawer field helpers reused by the tab profile bodies */
+.cc-input {
+    width: 100%;
+    padding: 9px 12px;
+    border-radius: 12px;
+    border: 1px solid var(--surface-border);
+    background: var(--surface-bg);
+    color: var(--text-primary);
+    font: inherit;
+}
+.cc-input:focus {
+    outline: none;
+    border-color: rgba(var(--accent-rgb), 0.6);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+}
+textarea.cc-input { min-height: 60px; resize: vertical; }
+.cc-range { width: 100%; accent-color: var(--accent-strong); }
+.cc-muted { color: var(--text-muted); font-size: 12px; }
+.cc-mt { margin-top: 10px; }
+.cc-inline-meta { display: flex; align-items: center; min-height: 38px; }
+
+/* Lightweight button accents (compose with the existing .neumo-btn base) */
+.neumo-btn--primary { background: var(--accent-soft); color: var(--accent-strong); border-color: rgba(var(--accent-rgb), 0.4); }
+.neumo-btn--ghost { background: transparent; }
+
+/* ------------------------------------------------------------------ */
+/* College command-center surfaces                                      */
+/* ------------------------------------------------------------------ */
+.collegeapp-intelligence { margin: 18px 0 6px; }
+.collegeapp-intel-title {
+    font-size: 13px; font-weight: 700; letter-spacing: 0.04em;
+    text-transform: uppercase; color: var(--text-muted); margin: 0 0 12px;
+}
+.collegeapp-firstrun { margin: 16px 0; }
+.collegeapp-firstrun-card {
+    display: flex; gap: 16px; align-items: flex-start;
+    padding: 20px 22px; border-radius: var(--radius-lg, 28px);
+}
+.collegeapp-firstrun-icon {
+    flex: 0 0 auto; width: 48px; height: 48px; display: grid; place-items: center;
+    border-radius: 14px; background: var(--accent-soft); color: var(--accent-strong); font-size: 20px;
+}
+.collegeapp-firstrun-body h3 { margin: 0 0 4px; font-size: 17px; }
+.collegeapp-firstrun-body p { margin: 0 0 12px; color: var(--text-secondary); font-size: 13px; line-height: 1.5; }
+.collegeapp-firstrun-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.collegeapp-toolbar { margin: 6px 0 14px; }
+.collegeapp-toolbar-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.collegeapp-toolbar-search {
+    position: relative; display: flex; align-items: center; flex: 1 1 200px; min-width: 160px;
+}
+.collegeapp-toolbar-search i { position: absolute; left: 12px; color: var(--text-muted); font-size: 12px; pointer-events: none; }
+.collegeapp-toolbar-search input {
+    width: 100%; padding: 8px 12px 8px 32px; border-radius: 999px;
+    border: 1px solid var(--surface-border); background: var(--surface-bg); color: var(--text-primary); font: inherit;
+}
+.collegeapp-toolbar-search input:focus { outline: none; border-color: rgba(var(--accent-rgb), 0.6); box-shadow: 0 0 0 3px var(--accent-soft); }
+.collegeapp-toolbar-row .college-select { min-width: 110px; flex: 0 0 auto; }
+.collegeapp-toolbar-meta {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
+    margin-top: 8px; font-size: 12px; color: var(--text-muted);
+}
+.collegeapp-savedviews { display: flex; flex-wrap: wrap; gap: 6px; }
+.collegeapp-savedview-chip {
+    display: inline-flex; align-items: center; border-radius: 999px;
+    background: var(--surface-bg); border: 1px solid var(--surface-border); overflow: hidden;
+}
+.collegeapp-savedview-chip > button {
+    border: none; background: transparent; color: var(--text-secondary);
+    font: inherit; font-size: 12px; padding: 4px 10px; cursor: pointer;
+}
+.collegeapp-savedview-chip > button:hover { color: var(--text-primary); }
+.collegeapp-savedview-del { padding: 4px 8px !important; color: var(--text-muted) !important; border-left: 1px solid var(--surface-border) !important; }
+
+.collegeapp-school-cell { display: flex; flex-direction: column; gap: 6px; min-width: 150px; }
+.collegeapp-school-badges { display: flex; flex-wrap: wrap; gap: 4px; }
+.collegeapp-open-profile {
+    align-self: flex-start; display: inline-flex; align-items: center; gap: 6px;
+    border: none; background: transparent; color: var(--accent-strong);
+    font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; padding: 2px 0;
+}
+.collegeapp-open-profile:hover { text-decoration: underline; }
+.collegeapp-open-profile:focus-visible { outline: 2px solid var(--accent-strong); outline-offset: 2px; border-radius: 6px; }
+
+/* Inline essay / scholarship meta controls (kept within existing columns) */
+.college-essay-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; align-items: center; }
+.college-essay-meta-select { font-size: 12px; padding: 4px 8px; min-width: 92px; }
+.college-essay-meta-num { font-size: 12px; padding: 4px 8px; width: 84px; }
+.college-essay-next { margin-top: 6px; font-size: 12px; }
+.college-check {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 12px; color: var(--text-secondary); white-space: nowrap;
+}
+.college-check input { accent-color: var(--accent-strong); }
+
+/* ------------------------------------------------------------------ */
+/* Life cockpit surfaces                                                */
+/* ------------------------------------------------------------------ */
+.life-checkin-card { margin: 16px 0; }
+.life-checkin { padding: 18px 20px; }
+.life-checkin-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.life-checkin-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-strong); }
+.life-checkin-head h3 { margin: 2px 0 0; font-size: 17px; }
+.life-checkin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; }
+.life-checkin-field { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--text-secondary); }
+.life-checkin-field b { color: var(--text-primary); }
+.life-checkin-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+
+.life-cockpit { margin: 16px 0; }
+.life-cockpit-title { font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); margin: 0 0 12px; }
+
+.life-goal-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; align-items: center; }
+
+.life-habit-dots { display: inline-flex; gap: 4px; margin-bottom: 4px; }
+.life-habit-dot { width: 12px; height: 12px; border-radius: 4px; background: var(--surface-bg-active); border: 1px solid var(--surface-border); }
+.life-habit-dot.is-done { background: var(--cc-positive); border-color: transparent; }
+.life-habit-streak { display: block; font-size: 12px; color: var(--text-secondary); }
+
+/* Drawer: milestone + linked-habit checkboxes */
+.cc-check-inline { display: flex; align-items: center; gap: 8px; flex: 1 1 auto; min-width: 0; }
+.cc-check-inline input[type="checkbox"] { accent-color: var(--accent-strong); flex: 0 0 auto; }
+.cc-milestone-title { flex: 1 1 auto; }
+.cc-milestone-title.is-done { text-decoration: line-through; color: var(--text-muted); }
+.cc-habit-links { display: flex; flex-wrap: wrap; gap: 8px; }
+.cc-habit-link { padding: 6px 10px; border-radius: 10px; background: var(--surface-bg); border: 1px solid var(--surface-border); font-size: 13px; }
+
+/* Budgets & recurring editor */
+.life-budgets { margin: 14px 0; }
+.life-budget-list { display: flex; flex-direction: column; gap: 8px; margin: 10px 0; }
+.life-budget-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.life-budget-cat { font-weight: 600; min-width: 110px; color: var(--text-primary); }
+.life-budget-bar { flex: 1 1 120px; min-width: 90px; }
+.life-budget-figures { font-size: 13px; color: var(--text-secondary); white-space: nowrap; }
+.life-budget-cap { width: 96px; }
+.life-budget-add { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 4px; }
+.life-budget-add .college-input { flex: 1 1 120px; min-width: 100px; }
+.life-budget-subhead { font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); margin-top: 16px; }
+
+/* Journal prompts + signals */
+.life-journal-promptbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.life-prompt-btn { font-size: 12px; }
+.life-journal-signals { display: flex; gap: 6px; margin-top: 6px; }
+
+/* ------------------------------------------------------------------ */
+/* Business operator surfaces                                           */
+/* ------------------------------------------------------------------ */
+.business-health { margin: 10px 0 4px; }
+.business-health-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 5px; }
+.business-health-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); }
+.business-health-bar { height: 7px; border-radius: 999px; background: var(--surface-bg-active); overflow: hidden; }
+.business-health-bar > span { display: block; height: 100%; border-radius: 999px; background: var(--accent-strong); }
+.business-health-bar > span.tone-success { background: var(--cc-positive); }
+.business-health-bar > span.tone-warning { background: var(--cc-warn); }
+.business-health-bar > span.tone-danger { background: var(--cc-danger); }
+.business-health-factors { margin-top: 5px; font-size: 11px; color: var(--text-secondary); }
+.business-pipeline-summary { display: flex; flex-wrap: wrap; gap: 18px; margin: 10px 0 14px; padding: 12px 16px; border-radius: 14px; background: var(--surface-bg); border: 1px solid var(--surface-border); }
+.business-pipeline-summary > div { display: flex; flex-direction: column; gap: 2px; }
+.business-pipeline-summary span { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); }
+.business-pipeline-summary strong { font-size: 18px; color: var(--text-primary); }
+.business-meeting-line { font-size: 12px; color: var(--text-secondary); margin-top: 3px; }
+.business-meeting-line strong { color: var(--text-primary); }
+
+/* Non-medical disclaimer (wellness/journal) */
+.life-wellness-disclaimer {
+    display: flex; gap: 8px; align-items: flex-start;
+    margin: 12px 0; padding: 10px 14px; border-radius: 12px;
+    background: var(--surface-bg); border: 1px solid var(--surface-border);
+    font-size: 12px; color: var(--text-secondary); line-height: 1.45;
+}
+.life-wellness-disclaimer i { color: var(--accent-strong); margin-top: 2px; }
+
+/* ------------------------------------------------------------------ */
+/* Mobile                                                               */
+/* ------------------------------------------------------------------ */
+@media (max-width: 720px) {
+    .cc-signal-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+    .collegeapp-firstrun-card { flex-direction: column; }
+    .collegeapp-toolbar-row .college-select { flex: 1 1 calc(50% - 8px); min-width: 0; }
+    .life-checkin-grid { grid-template-columns: 1fr; }
+    .cc-signal-value { font-size: 17px; }
+    .cc-drawer { width: 100vw; max-width: 100vw; border-left: none; border-top-left-radius: 0; }
+    .cc-drawer-overlay { justify-content: stretch; }
+    .cc-field-row { grid-template-columns: 1fr; }
+}
+
+/* ------------------------------------------------------------------ */
+/* Reduced motion                                                       */
+/* ------------------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+    .cc-signal-card,
+    .cc-signal-go,
+    .cc-signal-progress-fill,
+    .cc-drawer-overlay,
+    .cc-drawer { transition: none !important; }
+}
+.cc-drawer-overlay.cc-no-motion,
+.cc-drawer-overlay.cc-no-motion .cc-drawer { transition: none !important; }
+
+/* ===== Life: habit excused (rest/sick) days ===== */
+.life-habit-today { display: inline-flex; align-items: center; gap: 8px; justify-content: center; }
+.life-excuse-btn { color: var(--text-muted, #8a8f98); opacity: 0.7; transition: color 0.15s ease, opacity 0.15s ease; }
+.life-excuse-btn:hover { opacity: 1; color: var(--cc-warn); }
+.life-excuse-btn.is-excused { color: var(--cc-warn); opacity: 1; }
+tr.is-excused-today { background: var(--cc-warn-soft); }
+.life-habit-dot.is-excused { background: var(--cc-warn); opacity: 0.55; border-radius: 2px; }
+
+/* ===== Life: month-end budget forecast ===== */
+.life-forecast {
+    margin: 10px 0 4px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: var(--surface-bg-active);
+    border: 1px solid var(--surface-border, rgba(127,127,127,0.18));
+}
+.life-forecast.is-over { background: var(--cc-danger-soft); border-color: transparent; }
+.life-forecast-head { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted, #8a8f98); display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.life-forecast-head i { color: var(--accent); }
+.life-forecast.is-over .life-forecast-head i { color: var(--cc-danger); }
+.life-forecast-main { font-size: 0.9rem; color: var(--text-primary, inherit); line-height: 1.45; }
+.life-forecast-main strong { color: var(--accent-strong, var(--accent)); }
+.life-forecast.is-over .life-forecast-main strong { color: var(--cc-danger); }
+.life-forecast-cats { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+
+/* ===== College: essay stage board ===== */
+.college-essay-board-host:empty { display: none; }
+.college-essay-board {
+    margin: 4px 0 14px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: var(--surface-bg-active);
+    border: 1px solid var(--surface-border, rgba(127,127,127,0.18));
+}
+.college-essay-board-bar { display: flex; gap: 3px; height: 12px; border-radius: 999px; overflow: hidden; background: var(--surface-border, rgba(127,127,127,0.15)); }
+.ceb-seg { display: block; height: 100%; min-width: 6px; }
+.ceb-seg.cc-tone-neutral { background: var(--text-muted, #8a8f98); }
+.ceb-seg.cc-tone-info { background: var(--cc-info); }
+.ceb-seg.cc-tone-warn { background: var(--cc-warn); }
+.ceb-seg.cc-tone-positive { background: var(--cc-positive); }
+.college-essay-board-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 10px; font-size: 0.82rem; color: var(--text-secondary, #8a8f98); }
+.ceb-stage { display: inline-flex; align-items: center; gap: 5px; }
+.ceb-stage strong { color: var(--text-primary, inherit); }
+.ceb-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.ceb-dot.cc-tone-neutral { background: var(--text-muted, #8a8f98); }
+.ceb-dot.cc-tone-info { background: var(--cc-info); }
+.ceb-dot.cc-tone-warn { background: var(--cc-warn); }
+.ceb-dot.cc-tone-positive { background: var(--cc-positive); }
+.ceb-final { font-weight: 600; color: var(--accent-strong, var(--accent)); margin-left: auto; }
+
+/* ===== College: essay prompt-bank picker overlay ===== */
+.collegeapp-head-actions { display: inline-flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.college-prompt-overlay {
+    position: fixed; inset: 0; z-index: 4000;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(10, 12, 20, 0.55); backdrop-filter: blur(3px); padding: 20px;
+}
+.college-prompt-panel {
+    width: min(640px, 100%); max-height: min(82vh, 660px); overflow-y: auto;
+    background: var(--bg-elevated, #fff); border: 1px solid var(--surface-border, rgba(127,127,127,0.22));
+    border-radius: var(--radius, 16px); box-shadow: 0 24px 60px rgba(0,0,0,0.35); padding: 18px 20px 22px;
+}
+.college-prompt-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.college-prompt-title { margin: 0; font-family: var(--font-heading, inherit); font-size: 1.15rem; color: var(--text-primary, inherit); }
+.college-prompt-intro { margin: 2px 0 12px; font-size: 0.85rem; color: var(--text-secondary, #8a8f98); }
+.college-prompt-cat { margin: 12px 0 6px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted, var(--text-secondary, #8a8f98)); }
+.college-prompt-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 8px; }
+.college-prompt-option {
+    display: flex; flex-direction: column; gap: 4px; padding: 12px; text-align: left; cursor: pointer;
+    border: 1px solid var(--surface-border, rgba(127,127,127,0.2)); border-radius: 12px;
+    background: var(--bg-hover, rgba(127,127,127,0.04)); color: var(--text-primary, inherit);
+    transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.college-prompt-option:hover, .college-prompt-option:focus-visible { border-color: var(--accent, #6c5ce7); transform: translateY(-1px); }
+.college-prompt-option strong { font-size: 0.9rem; }
+.college-prompt-option span { font-size: 0.76rem; color: var(--text-secondary, #8a8f98); line-height: 1.4; }
+
+/* ===== Business: overdue-invoice nudge ===== */
+.business-overdue-banner {
+    display: flex; align-items: center; gap: 14px; padding: 14px 16px;
+    border-left: 3px solid var(--cc-danger); background: var(--cc-danger-soft);
+}
+.business-overdue-icon { color: var(--cc-danger); font-size: 1.3rem; flex: 0 0 auto; }
+.business-overdue-copy { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.business-overdue-copy strong { color: var(--text-primary, inherit); font-size: 0.98rem; }
+.business-overdue-copy span { color: var(--text-secondary, #8a8f98); font-size: 0.84rem; }
+.business-overdue-btn { flex: 0 0 auto; }
+
+/* ===== Life: goal progress sparkline ===== */
+.life-sparkline { display: block; width: 100%; max-width: 116px; height: 26px; margin-top: 4px; }
+.life-progress-trend { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+.life-progress-trend .life-sparkline { margin-top: 0; flex: 0 0 auto; }

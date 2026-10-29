@@ -1,3 +1,4 @@
+using Browser.Core.Branding;
 using System.Text.Json;
 using Browser.Core.Bookmarks;
 using Browser.Core.Navigation;
@@ -5,8 +6,10 @@ using Browser.Core.Passwords;
 using Browser.Core.Settings;
 using Browser.Core.Tabs;
 using Browser.Data.Models;
+using Microsoft.UI;
 using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.Web.WebView2.Core;
@@ -169,31 +172,49 @@ public sealed partial class MainWindow
         e.Handled = true;
         try
         {
+            // Sutra owns remembered decisions. The engine must never turn an
+            // allow-once result into a persistent profile grant.
+            e.SavesInProfile = false;
             if (_isWindowClosed || !_vm.Tabs.Contains(tab)) { e.State = CoreWebView2PermissionState.Deny; return; }
             if (!Uri.TryCreate(e.Uri, UriKind.Absolute, out var uri) || uri.Scheme != "https") { e.State = CoreWebView2PermissionState.Deny; return; }
             var origin = uri.GetLeftPart(UriPartial.Authority);
+            var document = tab.Url;
+            var navigation = _activeNavigationIds.GetValueOrDefault(tab.Id);
+            bool CurrentRequest() => !_isWindowClosed && _vm.Tabs.Contains(tab) && tab.Url == document &&
+                _activeNavigationIds.GetValueOrDefault(tab.Id) == navigation;
             var kind = e.PermissionKind.ToString();
             if (!_isPrivate)
             {
                 var stored = await _permissions.GetAsync(origin, kind);
+                if (!CurrentRequest()) { e.State = CoreWebView2PermissionState.Deny; return; }
                 if (stored == "Allow") { e.State = CoreWebView2PermissionState.Allow; return; }
                 if (stored == "Deny") { e.State = CoreWebView2PermissionState.Deny; return; }
             }
             tab.HasPermissionPrompt = true;
+            var remember = new CheckBox { Content = "Remember this decision for this site", IsEnabled = !_isPrivate };
+            var content = new StackPanel { Spacing = 12, MaxWidth = 420, Children = {
+                new TextBlock { Text = $"{origin} wants permission to use {kind.ToLowerInvariant()}.", TextWrapping = TextWrapping.Wrap },
+                new TextBlock { Text = _isPrivate ? "Private-window decisions apply to this request only." : "Leave remembering off to allow or block only this request.", TextWrapping = TextWrapping.Wrap, Opacity = .7 }, remember } };
             var dialog = new ContentDialog
             {
                 Title = $"Allow {kind}?",
-                Content = _isPrivate ? $"{origin} wants to use {kind.ToLowerInvariant()} in this private window. The decision applies once." : $"{origin} wants permission to use {kind.ToLowerInvariant()}.",
+                Content = content,
                 PrimaryButtonText = "Allow once",
-                SecondaryButtonText = _isPrivate ? null : "Always allow",
+                SecondaryButtonText = "Block once",
                 CloseButtonText = "Block",
                 DefaultButton = ContentDialogButton.Close,
                 XamlRoot = _root.XamlRoot
             };
+            remember.Checked += (_, _) => { dialog.PrimaryButtonText = "Remember allow"; dialog.SecondaryButtonText = "Remember block"; };
+            remember.Unchecked += (_, _) => { dialog.PrimaryButtonText = "Allow once"; dialog.SecondaryButtonText = "Block once"; };
             var result = await dialog.ShowAsync();
-            e.State = result is ContentDialogResult.Primary or ContentDialogResult.Secondary ? CoreWebView2PermissionState.Allow : CoreWebView2PermissionState.Deny;
-            if (!_isPrivate && result == ContentDialogResult.Secondary) await _permissions.SetAsync(new(origin, kind, "Allow", DateTimeOffset.UtcNow));
-            else if (!_isPrivate && result == ContentDialogResult.None) await _permissions.SetAsync(new(origin, kind, "Deny", DateTimeOffset.UtcNow));
+            var decision = Browser.Core.Privacy.PermissionDecisionPolicy.Resolve(_isPrivate, CurrentRequest(), remember.IsChecked == true,
+                result == ContentDialogResult.Primary ? Browser.Core.Privacy.PermissionChoice.Allow :
+                result == ContentDialogResult.Secondary ? Browser.Core.Privacy.PermissionChoice.Block : Browser.Core.Privacy.PermissionChoice.Dismissed);
+            e.State = decision.Allowed ? CoreWebView2PermissionState.Allow : CoreWebView2PermissionState.Deny;
+            // Dismissal and Escape never silently become a remembered denial.
+            if (decision.RememberedDecision is { } saved)
+                await _permissions.SetAsync(new(origin, kind, saved, DateTimeOffset.UtcNow));
         }
         catch (OperationCanceledException)
         {
@@ -211,7 +232,7 @@ public sealed partial class MainWindow
     {
         var tab = _vm.SelectedTab;
         if (tab is null || tab.Url == "browser://newtab") return;
-        var existing = (await _bookmarks.SearchAsync()).FirstOrDefault(x => x.Url == tab.Url);
+        var existing = await _bookmarks.FindByUrlAsync(tab.Url, _windowLifetimeCts.Token);
         if (existing is not null)
         {
             await _bookmarks.DeleteAsync(existing.Id);
@@ -399,8 +420,9 @@ public sealed partial class MainWindow
             await LoadFolders(); await Load(); await RefreshBookmarkBarAsync(); ShowStatus("Open tabs bookmarked", InfoBarSeverity.Success);
         });
         var import = ActionButton("Import HTML", Symbol.Download, async () => await ImportBookmarksAsync(LoadFolders, Load));
+        var review = ActionButton("Review duplicates", Symbol.Copy, async () => { await ReviewBookmarkDuplicatesAsync(); await Load(); });
         var export = ActionButton("Export HTML", Symbol.Upload, ExportBookmarksAsync);
-        var toolbar = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 }; toolbar.Children.Add(search); toolbar.Children.Add(folderFilter); toolbar.Children.Add(open); toolbar.Children.Add(newTab); toolbar.Children.Add(newWindow); toolbar.Children.Add(edit); toolbar.Children.Add(remove); toolbar.Children.Add(addFolder); toolbar.Children.Add(manageFolders); toolbar.Children.Add(bookmarkAll); toolbar.Children.Add(import); toolbar.Children.Add(export); toolbar.Children.Add(clearAll);
+        var toolbar = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 }; toolbar.Children.Add(search); toolbar.Children.Add(folderFilter); toolbar.Children.Add(open); toolbar.Children.Add(newTab); toolbar.Children.Add(newWindow); toolbar.Children.Add(edit); toolbar.Children.Add(remove); toolbar.Children.Add(addFolder); toolbar.Children.Add(manageFolders); toolbar.Children.Add(bookmarkAll); toolbar.Children.Add(import); toolbar.Children.Add(export); toolbar.Children.Add(review); toolbar.Children.Add(clearAll);
         var body = PageBody(toolbar, list);
         await LoadFolders(); await Load();
         ShowPage("Bookmarks", "Saved locally and available in normal and private windows.", body);
@@ -423,7 +445,7 @@ public sealed partial class MainWindow
         ShowStatus($"Imported {added} bookmark{(added == 1 ? "" : "s")}", InfoBarSeverity.Success);
     }
 
-    private async void ExportBookmarksAsync()
+    private async Task ExportBookmarksAsync()
     {
         var picker = new FileSavePicker { SuggestedStartLocation = PickerLocationId.DocumentsLibrary, SuggestedFileName = "Sutra bookmarks" };
         picker.FileTypeChoices.Add("Bookmark HTML", [".html"]);
@@ -431,7 +453,7 @@ public sealed partial class MainWindow
         var file = await picker.PickSaveFileAsync();
         if (file is null) return;
         var entries = (await _bookmarks.SearchAsync()).Select(x => new BookmarkHtmlEntry(x.Title, x.Url));
-        await FileIO.WriteTextAsync(file, BookmarkHtml.Export(entries, "Sutra Browser bookmarks"));
+        await FileIO.WriteTextAsync(file, BookmarkHtml.Export(entries, $"{AppBrand.Name} bookmarks"));
         ShowStatus("Bookmarks exported", InfoBarSeverity.Success);
     }
 
@@ -443,13 +465,16 @@ public sealed partial class MainWindow
         string?[] states = [null, "InProgress", "Paused", "Completed", "Interrupted"];
         var filter = new ComboBox { ItemsSource = new[] { "All downloads", "Downloading", "Paused", "Completed", "Interrupted" }, SelectedIndex = 0, MinWidth = 140 };
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(filter, "Download status");
-        var generation = 0; var page = 0; var closed = false;
+        var generation = 0; var page = 0; var closed = false; var loading = false; Guid? managerTabId = null;
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
         var previous = new Button { Content = "Previous", IsEnabled = false };
         var next = new Button { Content = "Next", IsEnabled = false };
         var pageLabel = new TextBlock { VerticalAlignment = VerticalAlignment.Center, Opacity = .7 };
         async Task Load()
         {
             var current = ++generation;
+            try
+            {
             var selectedId = ((list.SelectedItem as ListViewItem)?.Tag as DownloadRecord)?.Id;
             await Task.Delay(100, _windowLifetimeCts.Token);
             if (closed || current != generation) return;
@@ -477,18 +502,24 @@ public sealed partial class MainWindow
                 var status = Browser.Core.Downloads.DownloadStatus.Describe(download.State, download.Error);
                 if (download.State is "InProgress" or "Paused" && FindDownloadOwner(download.Id) is null)
                     status = new("Transfer unavailable here", "Check the original browser process, or open the source to restart the download.");
-                var item = new ListViewItem { Tag = download, Content = ManagerRow(download.FileName, $"{status.Label} · {total}\n{(status.Guidance.Length > 0 ? status.Guidance : download.Destination)}") };
+                var missing = download.State == "Completed" && !File.Exists(download.Destination);
+                var details = ManagerRow(download.FileName, $"{(missing ? "File moved or removed" : status.Label)} · {total}\n{(missing ? "Open the source to download a new copy. Removing this record does not delete files." : status.Guidance.Length > 0 ? status.Guidance : download.Destination)}");
+                if (download.State is "InProgress" or "Paused") details.Children.Add(new ProgressBar { Minimum = 0, Maximum = 100, Value = download.TotalBytes is > 0 ? Math.Clamp(download.BytesReceived * 100d / download.TotalBytes.Value, 0, 100) : 0, IsIndeterminate = download.State == "InProgress" && download.TotalBytes is not > 0, Height = 3, Margin = new(0, 5, 0, 0) });
+                var item = new ListViewItem { Tag = download, Content = details };
                 ToolTipService.SetToolTip(item, download.Destination); list.Items.Add(item);
                 if (download.Id == selectedId) list.SelectedItem = item;
             }
             if (records.Count == 0) list.Items.Add(EmptyState(Symbol.Download, "No downloads match this view. Files you download will appear here."));
+            }
+            catch (OperationCanceledException) { }
+            catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Download list: {ex.GetType().Name}"); if (!closed && current == generation) pageLabel.Text = "Could not refresh. Try again."; }
         }
         search.TextChanged += async (_, _) => { page = 0; await Load(); };
         filter.SelectionChanged += async (_, _) => { page = 0; await Load(); };
         previous.Click += async (_, _) => { page = Math.Max(0, page - 1); await Load(); };
         next.Click += async (_, _) => { page++; await Load(); };
-        var open = ActionButton("Open file", Symbol.OpenFile, async () => { if (list.SelectedItem is ListViewItem item && item.Tag is DownloadRecord download && File.Exists(download.Destination)) await Launcher.LaunchFileAsync(await StorageFile.GetFileFromPathAsync(download.Destination)); });
-        var folder = ActionButton("Open folder", Symbol.Folder, async () => { if (list.SelectedItem is ListViewItem item && item.Tag is DownloadRecord download && Directory.Exists(Path.GetDirectoryName(download.Destination))) await Launcher.LaunchFolderAsync(await StorageFolder.GetFolderFromPathAsync(Path.GetDirectoryName(download.Destination)!)); });
+        var open = ActionButton("Open file", Symbol.OpenFile, async () => { if (list.SelectedItem is ListViewItem { Tag: DownloadRecord download }) await OpenDownloadedFileAsync(download); });
+        var folder = ActionButton("Open folder", Symbol.Folder, async () => { if (list.SelectedItem is ListViewItem { Tag: DownloadRecord download }) await OpenDownloadFolderAsync(download); });
         var cancel = ActionButton("Cancel", Symbol.Cancel, async () => { if (list.SelectedItem is ListViewItem { Tag: DownloadRecord download }) { ControlDownload(download.Id, "cancel"); await Load(); } });
         var retry = ActionButton("Retry source", Symbol.Refresh, () => { if (list.SelectedItem is ListViewItem item && item.Tag is DownloadRecord download) NewTab(download.SourceUrl, activate: !_vm.Settings.OpenLinksInBackground); });
         var pause = ActionButton("Pause", Symbol.Pause, async () => { if (list.SelectedItem is ListViewItem { Tag: DownloadRecord download }) { ControlDownload(download.Id, "pause"); await Load(); } });
@@ -509,12 +540,12 @@ public sealed partial class MainWindow
         list.SelectionChanged += (_, _) =>
         {
             var download = (list.SelectedItem as ListViewItem)?.Tag as DownloadRecord;
-            open.IsEnabled = checksum.IsEnabled = download?.State == "Completed";
+            open.IsEnabled = checksum.IsEnabled = download?.State == "Completed" && File.Exists(download.Destination);
             folder.IsEnabled = retry.IsEnabled = download is not null;
             var owner = download is null ? null : FindDownloadOwner(download.Id);
             remove.IsEnabled = download is not null && owner is null;
             cancel.IsEnabled = owner is not null;
-            pause.IsEnabled = download is not null && owner?._activeDownloads.ContainsKey(download.Id) == true;
+            pause.IsEnabled = download?.State == "InProgress" && owner?._activeDownloads.ContainsKey(download.Id) == true;
             resume.IsEnabled = download is not null && owner?._resumableDownloads.TryGetValue(download.Id, out var op) == true && op.CanResume;
         };
         var toolbar = new StackPanel { Spacing = 10 };
@@ -522,8 +553,15 @@ public sealed partial class MainWindow
         toolbar.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Children = { open, folder, pause, resume, cancel, retry, checksum, remove } });
         toolbar.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, Children = { previous, pageLabel, next } });
         var body = PageBody(toolbar, list);
+        timer.Tick += async (_, _) =>
+        {
+            if (closed || loading || _isWindowClosed || _vm.SelectedTab?.Id != managerTabId) return;
+            loading = true; try { await Load(); } finally { loading = false; }
+        };
         await Load();
-        ShowPage("Downloads", _isPrivate ? "Private download files remain on disk, but Sutra does not add them to normal download history." : "Browse files and manage transfers across this profile's windows. Resume works within the current browser session.", body, () => { closed = true; generation++; });
+        ShowPage("Downloads", _isPrivate ? "Private download files remain on disk, but Sutra does not add them to normal download history." : "Browse files and manage transfers across this profile's windows. Resume works within the current browser session.", body, () => { closed = true; generation++; timer.Stop(); }, () => ObserveUiCallback("Download view refresh", Load));
+        managerTabId = _vm.Tabs.FirstOrDefault(tab => IsNativePageTab(tab) && tab.Url == "sutra://page/downloads")?.Id;
+        timer.Start();
     }
 
     private async Task ShowPasswordsAsync()
@@ -796,7 +834,9 @@ public sealed partial class MainWindow
         return Task.CompletedTask;
     }
 
-    private Task ShowSettingsAsync()
+    private Task ShowSettingsAsync() => ShowSettingsAsync(false);
+
+    private Task ShowSettingsAsync(bool sutraSelected)
     {
         var theme = new ComboBox { Header = "Application theme", ItemsSource = Enum.GetNames<BrowserTheme>(), SelectedItem = _vm.Settings.Theme.ToString() };
         var scheduledTheme = new ToggleSwitch { Header = "Switch light and dark themes on a schedule", IsOn = _vm.Settings.UseScheduledTheme };
@@ -808,12 +848,68 @@ public sealed partial class MainWindow
         var sidebarWidth = new NumberBox { Header = "Sidebar width (px)", Minimum = 180, Maximum = 520, SmallChange = 10, SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Compact, Value = _vm.Settings.SidebarWidth };
         var density = new ComboBox { Header = "Toolbar density", ItemsSource = Enum.GetNames<ToolbarDensity>(), SelectedItem = _vm.Settings.ToolbarDensity.ToString() };
         var accent = new TextBox { Header = "Accent color", Text = _vm.Settings.AccentColor, PlaceholderText = "#4C8DFF" };
+        var newTab = new ComboBox { Header = "New-tab appearance", ItemsSource = Enum.GetNames<NewTabAppearance>(), SelectedItem = _vm.Settings.NewTabAppearance.ToString() };
+        var workspaceScale = new ComboBox { Header = "Sutra workspace scale", ItemsSource = new[] { "75%", "80%", "85%", "90%", "95%", "100%" }, SelectedItem = $"{Math.Clamp((int)Math.Round(_vm.Settings.WorkspaceZoomFactor * 20) * 5, 75, 100)}%" };
+        var customColors = new ToggleSwitch { Header = "Use custom browser colors", IsOn = _vm.Settings.UseCustomThemeColors };
+        var surfaceColor = new TextBox { Header = "Browser surface color", Text = _vm.Settings.ThemeSurfaceColor, PlaceholderText = "#202126" };
+        var textColor = new TextBox { Header = "New-tab text color", Text = _vm.Settings.ThemeTextColor, PlaceholderText = "#F5F5F5" };
+        var backgroundPath = _vm.Settings.NewTabBackgroundPath;
+        var backgroundLabel = new TextBlock { Text = string.IsNullOrWhiteSpace(backgroundPath) ? "No custom image" : Path.GetFileName(backgroundPath), Opacity = .65, VerticalAlignment = VerticalAlignment.Center };
+        var chooseBackground = ActionButton("Choose local image", Symbol.Pictures, async () =>
+        {
+            var picker = new FileOpenPicker { SuggestedStartLocation = PickerLocationId.PicturesLibrary };
+            picker.FileTypeFilter.Add(".jpg"); picker.FileTypeFilter.Add(".jpeg"); picker.FileTypeFilter.Add(".png"); picker.FileTypeFilter.Add(".webp");
+            WinRT.Interop.InitializeWithWindow.Initialize(picker, WinRT.Interop.WindowNative.GetWindowHandle(this));
+            var file = await picker.PickSingleFileAsync(); if (file is null) return;
+            var properties = await file.GetBasicPropertiesAsync();
+            if (properties.Size > 20_000_000) { ShowStatus("Choose an image smaller than 20 MB.", InfoBarSeverity.Warning); return; }
+            var directory = Path.Combine(_paths.Root, "Customization"); Directory.CreateDirectory(directory);
+            var target = Path.Combine(directory, "new-tab" + Path.GetExtension(file.Name).ToLowerInvariant());
+            File.Copy(file.Path, target, true); backgroundPath = target; backgroundLabel.Text = file.Name;
+        });
+        var clearBackground = ActionButton("Remove image", Symbol.Delete, () => { backgroundPath = ""; backgroundLabel.Text = "No custom image"; });
+        var backgroundRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 }; backgroundRow.Children.Add(chooseBackground); backgroundRow.Children.Add(clearBackground); backgroundRow.Children.Add(backgroundLabel);
+        var swatches = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        foreach (var value in new[] { "#4C8DFF", "#7C5CFC", "#008A78", "#C43E5C", "#D06B18", "#68717A" })
+        {
+            var color = Windows.UI.Color.FromArgb(255, Convert.ToByte(value[1..3], 16), Convert.ToByte(value[3..5], 16), Convert.ToByte(value[5..7], 16));
+            var swatch = new Button { Width = 34, Height = 34, Padding = new(0), CornerRadius = new(17), Background = new SolidColorBrush(color), BorderThickness = new(1), Tag = value };
+            ToolTipService.SetToolTip(swatch, value);
+            AutomationProperties.SetName(swatch, $"Accent color {value}");
+            swatch.Click += (_, _) => accent.Text = (string)swatch.Tag;
+            swatches.Children.Add(swatch);
+        }
+        var pinned = new ToggleSwitch { Header = "Pinned bookmarks on new tab", IsOn = _vm.Settings.ShowPinnedBookmarksOnNewTab };
+        var frequent = new ToggleSwitch { Header = "Frequently visited sites on new tab", IsOn = _vm.Settings.ShowFrequentSitesOnNewTab };
+        var recentlyClosed = new ToggleSwitch { Header = "Recently closed tabs on new tab", IsOn = _vm.Settings.ShowRecentlyClosedOnNewTab };
         var bookmarkBar = new ToggleSwitch { Header = "Show bookmark bar", IsOn = _vm.Settings.BookmarkBarVisible };
         var showHome = new ToggleSwitch { Header = "Home button", IsOn = _vm.Settings.ShowHomeButton };
         var showBookmark = new ToggleSwitch { Header = "Bookmark button", IsOn = _vm.Settings.ShowBookmarkButton };
         var showAi = new ToggleSwitch { Header = "AI button", IsOn = _vm.Settings.ShowAiButton };
         var showSplit = new ToggleSwitch { Header = "Split-screen button", IsOn = _vm.Settings.ShowSplitButton };
         var showMedia = new ToggleSwitch { Header = "Media button", IsOn = _vm.Settings.ShowMediaButton };
+        var toolbarOrder = new ListView { Height = 220, SelectionMode = ListViewSelectionMode.Single };
+        foreach (var item in _vm.Settings.ToolbarOrder) toolbarOrder.Items.Add(item);
+        var moveToolbarUp = ActionButton("Move up", Symbol.Up, () =>
+        {
+            var index = toolbarOrder.SelectedIndex; if (index <= 0) return; var item = toolbarOrder.Items[index]; toolbarOrder.Items.RemoveAt(index); toolbarOrder.Items.Insert(index - 1, item); toolbarOrder.SelectedIndex = index - 1;
+        });
+        var moveToolbarDown = ActionButton("Move down", Symbol.Forward, () =>
+        {
+            var index = toolbarOrder.SelectedIndex; if (index < 0 || index >= toolbarOrder.Items.Count - 1) return; var item = toolbarOrder.Items[index]; toolbarOrder.Items.RemoveAt(index); toolbarOrder.Items.Insert(index + 1, item); toolbarOrder.SelectedIndex = index + 1;
+        });
+        var toolbarOrderActions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 }; toolbarOrderActions.Children.Add(moveToolbarUp); toolbarOrderActions.Children.Add(moveToolbarDown);
+        var resetAppearance = ActionButton("Restore appearance defaults", Symbol.Refresh, () =>
+        {
+            var defaults = new BrowserSettings();
+            theme.SelectedItem = defaults.Theme.ToString(); scheduledTheme.IsOn = defaults.UseScheduledTheme; darkHour.Value = defaults.DarkThemeStartHour; lightHour.Value = defaults.LightThemeStartHour;
+            workspaceScale.SelectedItem = "90%"; newTab.SelectedItem = defaults.NewTabAppearance.ToString(); accent.Text = defaults.AccentColor; customColors.IsOn = defaults.UseCustomThemeColors;
+            surfaceColor.Text = defaults.ThemeSurfaceColor; textColor.Text = defaults.ThemeTextColor; backgroundPath = defaults.NewTabBackgroundPath; backgroundLabel.Text = "No custom image";
+            layout.SelectedItem = defaults.TabLayout.ToString(); sidebarCollapsed.IsOn = defaults.SidebarCollapsed; sidebarAutoHide.IsOn = defaults.SidebarAutoHide; sidebarWidth.Value = defaults.SidebarWidth; density.SelectedItem = defaults.ToolbarDensity.ToString();
+            bookmarkBar.IsOn = defaults.BookmarkBarVisible; pinned.IsOn = defaults.ShowPinnedBookmarksOnNewTab; frequent.IsOn = defaults.ShowFrequentSitesOnNewTab; recentlyClosed.IsOn = defaults.ShowRecentlyClosedOnNewTab;
+            showHome.IsOn = defaults.ShowHomeButton; showBookmark.IsOn = defaults.ShowBookmarkButton; showAi.IsOn = defaults.ShowAiButton; showSplit.IsOn = defaults.ShowSplitButton; showMedia.IsOn = defaults.ShowMediaButton;
+            toolbarOrder.Items.Clear(); foreach (var item in defaults.ToolbarOrder) toolbarOrder.Items.Add(item);
+        });
         var engine = new ComboBox { Header = "Default search engine", ItemsSource = Enum.GetNames<SearchEngine>(), SelectedItem = _vm.Settings.SearchEngine.ToString() };
         var searchAliases = new TextBox { Header = "Custom search aliases", AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MinHeight = 72, PlaceholderText = "yt=https://www.youtube.com/results?search_query={query}\nwiki=https://en.wikipedia.org/w/index.php?search={query}", Text = string.Join(Environment.NewLine, _vm.Settings.SearchAliases.OrderBy(x => x.Key).Select(x => $"{x.Key}={x.Value}")) };
         var home = new TextBox { Header = "Home page", Text = _vm.Settings.HomePage };
@@ -849,7 +945,9 @@ public sealed partial class MainWindow
         foreach (var button in new[] { reviewPermissions, clearPermissions, clearHistory, clearCookies, clearCache, clearSiteData, clearDownloads }) dataActions.Children.Add(button);
 
         var stack = new StackPanel { Spacing = 14, MaxWidth = 760, HorizontalAlignment = HorizontalAlignment.Left };
-        stack.Children.Add(SettingsSection("Appearance", "Choose the theme, density, accent, and toolbar controls that fit your desktop.", theme, scheduledTheme, darkHour, lightHour, layout, sidebarCollapsed, sidebarAutoHide, sidebarWidth, density, accent, bookmarkBar, showHome, showBookmark, showAi, showSplit, showMedia));
+        stack.Children.Add(SettingsSection("Appearance and scale", "Set the app theme and reduce or enlarge the Sutra workspace to fit your screen.", theme, scheduledTheme, darkHour, lightHour, workspaceScale, accent, swatches, customColors, surfaceColor, textColor, resetAppearance));
+        stack.Children.Add(SettingsSection("Browser layout", "Choose your tab layout and toolbar density, and decide which controls stay visible.", layout, sidebarCollapsed, sidebarAutoHide, sidebarWidth, density, bookmarkBar, showHome, showBookmark, showAi, showSplit, showMedia, toolbarOrder, toolbarOrderActions));
+        stack.Children.Add(SettingsSection("New tab", "Choose what appears on a new tab. Content comes from local bookmarks, history, and recently closed tabs.", newTab, pinned, frequent, recentlyClosed, backgroundRow));
         stack.Children.Add(SettingsSection("Startup and search", "Control the first page and address-bar search provider. Use an alias followed by a space and your query (for example, yt lofi).", engine, searchAliases, home, restore));
         stack.Children.Add(SettingsSection("Tabs and performance", "The New tab button and Ctrl+T always switch to the new tab. Link-created tabs can stay in the background. Sleeping tabs release their WebView memory conservatively.", backgroundLinkTabs, preventDuplicates, suggestGroups, protectedClose, hibernate, minutes, exclusions));
         stack.Children.Add(SettingsSection("Downloads and history", "An optional retention period removes older history on startup and hourly while Sutra is open. Zero keeps history until you delete it. Private windows never apply retention.", downloadFolder, history, retention));
@@ -860,11 +958,21 @@ public sealed partial class MainWindow
         var save = new Button { Content = "Save settings", CornerRadius = new(8) };
         save.Click += async (_, _) =>
         {
+            var aliasLines = searchAliases.Text.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (aliasLines.Length > 20) { ShowStatus("Keep up to 20 search shortcuts.", InfoBarSeverity.Warning); return; }
+            foreach (var line in aliasLines)
+            {
+                var separator = line.IndexOf('=');
+                if (separator <= 0 || !SearchAliasPolicy.TryValidate(line[..separator], line[(separator + 1)..], out _, out _, out _))
+                { ShowStatus("Each search shortcut needs shortcut=https://example.com/search?q={query}, without credentials.", InfoBarSeverity.Warning); return; }
+            }
             Enum.TryParse<BrowserTheme>(theme.SelectedItem?.ToString(), out var selectedTheme);
             Enum.TryParse<TabLayout>(layout.SelectedItem?.ToString(), out var selectedLayout);
             Enum.TryParse<ToolbarDensity>(density.SelectedItem?.ToString(), out var selectedDensity);
+            Enum.TryParse<NewTabAppearance>(newTab.SelectedItem?.ToString(), out var selectedNewTabAppearance);
             Enum.TryParse<SearchEngine>(engine.SelectedItem?.ToString(), out var selectedEngine);
             Enum.TryParse<AiProviderKind>(provider.SelectedItem?.ToString(), out var selectedProvider);
+            var workspaceScalePercent = int.TryParse(workspaceScale.SelectedItem?.ToString()?.TrimEnd('%'), out var parsedScale) ? parsedScale : 90;
             var retentionDays = double.IsFinite(retention.Value) ? Math.Clamp((int)retention.Value, 0, 3650) : 0;
             if (retentionDays > 0 && (_vm.Settings.HistoryRetentionDays == 0 || retentionDays < _vm.Settings.HistoryRetentionDays) &&
                 !await ConfirmAsync("Automatically remove older history?", $"History last visited more than {retentionDays} days ago will be permanently removed on startup and during hourly cleanup. Bookmarks and saved articles are kept.", "Enable retention")) return;
@@ -875,11 +983,21 @@ public sealed partial class MainWindow
                 DarkThemeStartHour = (int)darkHour.Value,
                 LightThemeStartHour = (int)lightHour.Value,
                 TabLayout = selectedLayout,
+                NewTabAppearance = selectedNewTabAppearance,
+                WorkspaceZoomFactor = Math.Clamp(workspaceScalePercent, 75, 100) / 100d,
                 SidebarCollapsed = sidebarCollapsed.IsOn,
                 SidebarAutoHide = sidebarAutoHide.IsOn,
                 SidebarWidth = (int)sidebarWidth.Value,
                 ToolbarDensity = selectedDensity,
                 AccentColor = accent.Text,
+                UseCustomThemeColors = customColors.IsOn,
+                ThemeSurfaceColor = surfaceColor.Text,
+                ThemeTextColor = textColor.Text,
+                NewTabBackgroundPath = backgroundPath,
+                ShowPinnedBookmarksOnNewTab = pinned.IsOn,
+                ShowFrequentSitesOnNewTab = frequent.IsOn,
+                ShowRecentlyClosedOnNewTab = recentlyClosed.IsOn,
+                ToolbarOrder = toolbarOrder.Items.OfType<string>().ToArray(),
                 BookmarkBarVisible = bookmarkBar.IsOn,
                 ShowHomeButton = showHome.IsOn,
                 ShowBookmarkButton = showBookmark.IsOn,
@@ -913,9 +1031,56 @@ public sealed partial class MainWindow
             });
             if (!string.IsNullOrEmpty(apiKey.Password)) { await _secureStore.SaveAsync(OpenAiKeyId, new("api-key", apiKey.Password)); apiKey.Password = string.Empty; }
             await SaveSettingsSafeAsync();
-            ApplyTheme(); ApplyCustomization(); ApplyTabLayout(); await RefreshBookmarkBarAsync(); HidePage(); ShowStatus("Settings saved. Restart Sutra to apply the native light/dark theme safely.", InfoBarSeverity.Success, 6500);
+            await ApplySutraWorkspaceScaleAsync();
+            ApplyTheme(); ApplyCustomization(); ApplyTabLayout(); await RefreshBookmarkBarAsync();
+            foreach (var tab in _vm.Tabs.Where(x => x.Url == "browser://newtab"))
+                if (_webViews.TryGetValue(tab.Id, out var web)) await ShowNewTabPageAsync(web);
+            HidePage(); ShowStatus("Settings saved. Restart Sutra to apply the native light/dark theme safely.", InfoBarSeverity.Success, 6500);
         };
-        ShowPage("Settings", "Browser preferences are stored locally.", scroll, save);
+
+        var settingsNavigation = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Margin = new(0, 0, 0, 4) };
+        var browserTab = new Button { Content = "Browser", CornerRadius = new(8), Padding = new(16, 8, 16, 8) };
+        var sutraTab = new Button { Content = "Sutra", CornerRadius = new(8), Padding = new(16, 8, 16, 8), IsEnabled = !_isPrivate };
+        settingsNavigation.Children.Add(browserTab); settingsNavigation.Children.Add(sutraTab);
+        var browserContent = new Grid(); browserContent.Children.Add(scroll);
+        var sutraContent = new Grid { Visibility = Visibility.Collapsed };
+        sutraContent.Children.Add(new TextBlock { Text = "Loading Sutra settings…", HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Opacity = .7 });
+        var settingsPanel = new Grid { RowSpacing = 8 };
+        settingsPanel.RowDefinitions.Add(new() { Height = GridLength.Auto }); settingsPanel.RowDefinitions.Add(new() { Height = new(1, GridUnitType.Star) });
+        settingsPanel.Children.Add(settingsNavigation);
+        Grid.SetRow(browserContent, 1); settingsPanel.Children.Add(browserContent);
+        Grid.SetRow(sutraContent, 1); settingsPanel.Children.Add(sutraContent);
+        var showingSutraSettings = sutraSelected && !_isPrivate;
+        var selectionVersion = 0;
+        void UpdateSettingsTabs()
+        {
+            browserTab.Background = new SolidColorBrush(showingSutraSettings ? Colors.Transparent : ColorFromHex(_vm.Settings.AccentColor, 52));
+            sutraTab.Background = new SolidColorBrush(showingSutraSettings ? ColorFromHex(_vm.Settings.AccentColor, 52) : Colors.Transparent);
+            browserContent.Visibility = showingSutraSettings ? Visibility.Collapsed : Visibility.Visible;
+            sutraContent.Visibility = showingSutraSettings ? Visibility.Visible : Visibility.Collapsed;
+            save.Visibility = showingSutraSettings ? Visibility.Collapsed : Visibility.Visible;
+        }
+        async Task SelectSettingsTabAsync(bool selectSutra)
+        {
+            showingSutraSettings = selectSutra && !_isPrivate;
+            var version = ++selectionVersion;
+            UpdateSettingsTabs();
+            if (!showingSutraSettings) { RestoreSutraWorkspaceHost(); return; }
+
+            await EnsureSutraWorkspaceAsync();
+            if (version != selectionVersion || _sutraWorkspaceView is not { } sutraView) return;
+            await SendSutraCommandAsync("workspace.layout", new { mode = "workspace", theme = _root.ActualTheme == ElementTheme.Light ? "light" : "dark" });
+            if (!await SendSutraCommandAsync("workspace.navigate", new { view = "settings" }) || version != selectionVersion) return;
+            if (sutraView.Parent is Panel parent) parent.Children.Remove(sutraView);
+            sutraContent.Children.Clear();
+            sutraContent.Children.Add(sutraView);
+        }
+        browserTab.Click += async (_, _) => await SelectSettingsTabAsync(false);
+        sutraTab.Click += async (_, _) => await SelectSettingsTabAsync(true);
+        UpdateSettingsTabs();
+        void ActivateSettingsPage() => ObserveUiCallback("Settings page activation", () => SelectSettingsTabAsync(showingSutraSettings));
+        ShowPage("Settings", "Sutra and browser preferences are stored together here.", settingsPanel,
+            () => { selectionVersion++; RestoreSutraWorkspaceHost(); }, ActivateSettingsPage, save);
         return Task.CompletedTask;
     }
 
@@ -969,15 +1134,28 @@ public sealed partial class MainWindow
         body.Children.Add(new TextBlock { Text = "A focused Windows browser built with WinUI 3, WebView2, C#, and SQLite.", TextWrapping = TextWrapping.Wrap });
         body.Children.Add(new TextBlock { Text = $"Browser data stays local. Page text is shared with an AI provider only after you invoke {Browser.Core.Branding.AppBrand.AssistantName}. Private windows use WebView2 InPrivate mode and do not write history or sessions.", TextWrapping = TextWrapping.Wrap, Opacity = .72 });
         body.Children.Add(new TextBlock { Text = "The current build is unpackaged and uses the Evergreen WebView2 Runtime.", TextWrapping = TextWrapping.Wrap, Opacity = .72 });
-        ShowPage("About", "Application and privacy information.", body);
+        var executable = typeof(MainWindow).Assembly.Location;
+        body.Children.Add(new TextBlock { Text = $"Build updated: {File.GetLastWriteTime(executable):g}", FontSize = 12, Opacity = .7 });
+        body.Children.Add(new TextBlock { Text = AppContext.BaseDirectory, IsTextSelectionEnabled = true, TextWrapping = TextWrapping.Wrap, FontSize = 11, Opacity = .6 });
+        ShowPage("About", "Application, build, and privacy information.", body,
+            ActionButton("Open application folder", Symbol.Folder, async () => await Windows.System.Launcher.LaunchFolderPathAsync(AppContext.BaseDirectory)));
         return Task.CompletedTask;
     }
 
     private void ShowPage(string title, string subtitle, FrameworkElement body, params Button[] actions)
-        => ShowPage(title, subtitle, body, onClosed: null, actions);
+        => ShowPageCore(title, subtitle, body, onClosed: null, onActivated: null, actions);
 
     private void ShowPage(string title, string subtitle, FrameworkElement body, Action? onClosed, params Button[] actions)
+        => ShowPageCore(title, subtitle, body, onClosed, onActivated: null, actions);
+
+    private void ShowPage(string title, string subtitle, FrameworkElement body, Action? onClosed, Action? onActivated, params Button[] actions)
+        => ShowPageCore(title, subtitle, body, onClosed, onActivated, actions);
+
+    private void ShowPageCore(string title, string subtitle, FrameworkElement body, Action? onClosed, Action? onActivated, Button[] actions)
     {
+        if (_findInput is not null) CloseFindBar(false);
+        if (_workspaceVisible) _ = ShowBrowserModeAsync();
+        CloseSutraCapturePanel();
         var page = BuildManagerPage(title, subtitle, body, actions);
         // Large browser-owned surfaces behave as real, transient tabs. Reuse a
         // page's tab when it is already open, just like a browser settings tab.
@@ -990,9 +1168,12 @@ public sealed partial class MainWindow
             // The previous page instance on this tab is being replaced: retire its
             // lifecycle callback first so it can never update a detached visual.
             if (_nativePageClosedHandlers.Remove(managerTab.Id, out var priorClosed)) priorClosed();
+            _nativePageActivatedHandlers.Remove(managerTab.Id);
             _nativePageClosedHandlers[managerTab.Id] = onClosed ?? (() => { });
+            if (onActivated is not null) _nativePageActivatedHandlers[managerTab.Id] = onActivated;
             _nativePageTabs[managerTab.Id] = page;
             _vm.SelectedTab = managerTab;
+            onActivated?.Invoke();
             ShowNativePageVisual(page);
             _address.Text = pageUrl;
             RefreshTabLists();
@@ -1002,6 +1183,7 @@ public sealed partial class MainWindow
         managerTab = new BrowserTab { Url = pageUrl, Title = title };
         _nativePageTabs[managerTab.Id] = page;
         if (onClosed is not null) _nativePageClosedHandlers[managerTab.Id] = onClosed;
+        if (onActivated is not null) _nativePageActivatedHandlers[managerTab.Id] = onActivated;
         _vm.Add(managerTab, activate: false);
         RefreshTabLists();
         _ = ActivateTabAsync(managerTab);
@@ -1056,10 +1238,20 @@ public sealed partial class MainWindow
     }
 
     private static Button ActionButton(string text, Symbol symbol, Action action)
+        => ActionButton(text, symbol, (Func<Task>)(() => { action(); return Task.CompletedTask; }));
+
+    private static Button ActionButton(string text, Symbol symbol, Func<Task> action)
     {
-        var button = new Button { Content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Children = { new SymbolIcon(symbol) { Width = 16, Height = 16 }, new TextBlock { Text = text, FontSize = 13, VerticalAlignment = VerticalAlignment.Center } } }, CornerRadius = new(9), MinHeight = 36, Padding = new(12, 8, 12, 8) };
+        var button = new Button { Content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Children = { new Viewbox { Width = 16, Height = 16, VerticalAlignment = VerticalAlignment.Center, Child = new SymbolIcon(symbol) }, new TextBlock { Text = text, FontSize = 13, VerticalAlignment = VerticalAlignment.Center } } }, CornerRadius = new(9), MinHeight = 36, Padding = new(12, 8, 12, 8) };
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(button, text);
-        button.Click += (_, _) => action(); return button;
+        var running = false;
+        button.Click += (_, _) =>
+        {
+            if (running) return;
+            running = true;
+            _ = ObserveUiCallbackAsync("Button action", async () => { try { await action(); } finally { running = false; } });
+        };
+        return button;
     }
 
     private static Border SettingsSection(string title, string description, params UIElement[] controls)

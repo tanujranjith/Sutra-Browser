@@ -1,0 +1,382 @@
+/* ===========================================================================
+   Dune — cinematic desert / science-fiction theme
+
+   CSS-only atmosphere, no remote assets or theme-specific data. Decorative
+   layers are pointer-inert and follow Sutra's motion/accessibility controls.
+   ========================================================================== */
+
+body[data-theme="dune"][data-theme-key="dune"] {
+    color-scheme: dark;
+    position: relative;
+    isolation: isolate;
+    overflow-x: clip;
+    --font-heading: "Dune Rise", "Cinzel", "Playfair Display", Georgia, serif;
+    --font-body: "Inter", "Avenir Next", "Segoe UI", sans-serif;
+    --bg-primary: #100a07;
+    --bg-secondary: #1d120c;
+    --bg-hover: rgba(243, 195, 119, 0.12);
+    --bg-elevated: rgba(35, 22, 14, 0.94);
+    --editor-bg: rgba(25, 15, 10, 0.94);
+    --code-bg: #170e0a;
+    --text-primary: #fff3dc;
+    --text-secondary: #dbc5a3;
+    --text-muted: #b49a76;
+    --accent: #efc37a;
+    --accent-rgb: 239, 195, 122;
+    --accent-strong: #dda24e;
+    --accent-soft: rgba(239, 195, 122, 0.18);
+    --border: rgba(245, 205, 139, 0.22);
+    --dune-spice-blue: #78d2e5;
+    --dune-spice-blue-rgb: 120, 210, 229;
+    --dune-copper: #a95c27;
+    --dune-sand: #d79a50;
+    --dune-night: #090604;
+    --glass-01: rgba(37, 23, 15, 0.83);
+    --glass-02: rgba(25, 15, 10, 0.88);
+    --glass-border: rgba(245, 205, 139, 0.23);
+    --glass-blur: 24px;
+    --surface-bg: rgba(255, 228, 183, 0.065);
+    --surface-bg-hover: rgba(255, 228, 183, 0.11);
+    --surface-bg-active: rgba(239, 195, 122, 0.17);
+    --surface-border: rgba(245, 205, 139, 0.19);
+    --surface-border-strong: rgba(245, 205, 139, 0.34);
+    --surface-bg-elevated: rgba(255, 228, 183, 0.045);
+    --surface-inset: rgba(255, 228, 183, 0.075);
+    --sidebar-bg: rgba(25, 15, 10, 0.91);
+    --button-bg: linear-gradient(145deg, #f1c781, #d99a4d);
+    --button-bg-hover: linear-gradient(145deg, #f7d79f, #e5aa5d);
+    --button-border: rgba(255, 224, 170, 0.68);
+    --button-text: #1d1008;
+    --neumo-bg: #21150e;
+    --neumo-shadow-light: rgba(255, 224, 174, 0.045);
+    --neumo-shadow-dark: rgba(0, 0, 0, 0.64);
+    --neumo-inset-dark: rgba(0, 0, 0, 0.58);
+    --neumo-inset-light: rgba(255, 224, 174, 0.06);
+    --shadow-soft: 0 18px 40px rgba(5, 2, 1, 0.44), inset 0 1px 0 rgba(255, 222, 164, 0.035);
+    --shadow-soft-lg: 0 34px 80px rgba(5, 2, 1, 0.58), inset 0 1px 0 rgba(255, 222, 164, 0.045);
+    --theme-gradient-start: #3a2112;
+    --theme-gradient-mid: #1b100a;
+    --theme-gradient-end: #090604;
+    --theme-ui-surface: rgba(29, 18, 12, 0.88);
+    --theme-ui-surface-hover: rgba(48, 29, 17, 0.94);
+    --theme-ui-border: rgba(245, 205, 139, 0.3);
+    --theme-ui-text: #f8e8cb;
+    --theme-ui-text-strong: #fff7e8;
+    --theme-ui-shadow: 0 16px 38px rgba(4, 2, 1, 0.44), inset 0 1px 0 rgba(255, 221, 160, 0.055);
+    --theme-ui-primary-bg: linear-gradient(145deg, #f0c57e, #d59243);
+    --theme-ui-primary-hover: linear-gradient(145deg, #f7d99e, #e4a95d);
+    --theme-ui-primary-text: #211208;
+    --theme-ui-primary-text-hover: #150b05;
+    --theme-ui-primary-border: rgba(255, 226, 175, 0.72);
+    --theme-ui-primary-shadow: 0 12px 28px rgba(6, 3, 1, 0.46), inset 0 1px 0 rgba(255, 248, 228, 0.35);
+    background:
+        radial-gradient(120% 78% at 50% 112%, rgba(157, 73, 28, 0.52), transparent 58%),
+        radial-gradient(74% 52% at 82% 8%, rgba(224, 157, 72, 0.18), transparent 68%),
+        linear-gradient(162deg, #1d0f08 0%, #120a07 44%, #080504 100%);
+}
+
+/* A distant sun, twin moons, spice haze, and sparse dust. */
+body[data-theme="dune"][data-theme-key="dune"]::before,
+body[data-theme="dune"][data-theme-key="dune"]::after {
+    content: "";
+    position: fixed;
+    pointer-events: none;
+    z-index: 0;
+}
+
+body[data-theme="dune"][data-theme-key="dune"]::before {
+    inset: 0;
+    background:
+        radial-gradient(circle at 84% 12%, rgba(255, 231, 184, 0.9) 0 1.55%, rgba(228, 168, 87, 0.34) 1.8%, transparent 4.8%),
+        radial-gradient(circle at 77% 17%, rgba(182, 210, 205, 0.58) 0 0.68%, transparent 1.75%),
+        radial-gradient(circle at 91% 20%, rgba(213, 172, 115, 0.5) 0 0.45%, transparent 1.4%),
+        radial-gradient(ellipse at 72% 8%, rgba(211, 133, 49, 0.18), transparent 30%),
+        radial-gradient(ellipse at 15% 42%, rgba(122, 210, 229, 0.075), transparent 26%),
+        repeating-radial-gradient(circle at 35% 20%, rgba(255, 233, 196, 0.075) 0 0.6px, transparent 0.8px 6px);
+    opacity: 0.72;
+    mix-blend-mode: screen;
+    animation: dune-haze-drift 34s ease-in-out infinite alternate;
+}
+
+body[data-theme="dune"][data-theme-key="dune"]::after {
+    inset: auto -8vw -15vh;
+    height: 53vh;
+    background:
+        radial-gradient(86% 66% at 16% 104%, rgba(127, 56, 22, 0.72) 0 54%, transparent 54.5%),
+        radial-gradient(76% 62% at 76% 111%, rgba(188, 91, 33, 0.5) 0 51%, transparent 51.6%),
+        radial-gradient(62% 50% at 46% 113%, rgba(225, 132, 57, 0.3) 0 46%, transparent 46.6%),
+        linear-gradient(to top, rgba(25, 11, 5, 0.92), transparent 72%);
+    opacity: 0.62;
+    filter: blur(1px) saturate(1.08);
+    transform-origin: 50% 100%;
+    animation: dune-swell 40s ease-in-out infinite alternate;
+}
+
+body[data-theme="dune"][data-theme-key="dune"] .app-container {
+    position: relative;
+    z-index: 1;
+    isolation: isolate;
+    background: transparent;
+}
+
+body[data-theme="dune"][data-theme-key="dune"] .main-content {
+    background:
+        radial-gradient(80% 54% at 92% 4%, rgba(206, 119, 42, 0.1), transparent 66%),
+        linear-gradient(180deg, rgba(16, 10, 7, 0.58), rgba(10, 6, 4, 0.76)) !important;
+    box-shadow: inset 0 1px rgba(255, 225, 173, 0.03);
+}
+
+body[data-theme="dune"][data-theme-key="dune"] .view {
+    background-color: transparent !important;
+}
+
+/* Dark carved-metal chrome over the atmosphere. */
+body[data-theme="dune"][data-theme-key="dune"] :is(
+    .sidebar, .top-nav, .toolbar-wrapper, .storage-options, .theme-panel,
+    .chatbot-panel, .modal-content, .cw-modal-card, .all-tasks-drawer
+) {
+    background:
+        linear-gradient(118deg, rgba(255, 222, 166, 0.035), transparent 38%),
+        linear-gradient(168deg, rgba(39, 24, 15, 0.94), rgba(20, 12, 8, 0.91)) !important;
+    border-color: var(--surface-border) !important;
+    box-shadow: var(--shadow-soft) !important;
+    -webkit-backdrop-filter: blur(22px) saturate(1.16) !important;
+    backdrop-filter: blur(22px) saturate(1.16) !important;
+}
+
+body[data-theme="dune"][data-theme-key="dune"] .sidebar {
+    background:
+        linear-gradient(90deg, rgba(239, 195, 122, 0.035), transparent 24%),
+        repeating-linear-gradient(180deg, transparent 0 42px, rgba(255, 228, 183, 0.018) 43px 44px),
+        linear-gradient(180deg, rgba(29, 18, 12, 0.97), rgba(14, 9, 6, 0.95)) !important;
+    border-right: 1px solid rgba(239, 195, 122, 0.28) !important;
+    box-shadow: 18px 0 55px rgba(3, 1, 0, 0.34), inset -1px 0 rgba(255, 222, 164, 0.045) !important;
+}
+
+body[data-theme="dune"][data-theme-key="dune"] .sidebar::before {
+    background: linear-gradient(180deg, rgba(239, 195, 122, 0.2), transparent 22%, transparent 78%, rgba(120, 210, 229, 0.09)) !important;
+    opacity: 1;
+}
+
+body[data-theme="dune"][data-theme-key="dune"] .top-nav {
+    border: 1px solid rgba(239, 195, 122, 0.28) !important;
+    box-shadow: 0 18px 55px rgba(3, 1, 0, 0.34), inset 0 1px rgba(255, 231, 184, 0.075) !important;
+}
+
+body[data-theme="dune"][data-theme-key="dune"] .toolbar-wrapper {
+    border-top-color: rgba(120, 210, 229, 0.16) !important;
+}
+
+/* Display typography is reserved for landmarks so long-form text stays calm. */
+body[data-theme="dune"][data-theme-key="dune"] :is(
+    .sidebar .app-title span, .view-header h1, .today-greeting h1,
+    .focus-session-title, .theme-panel-title, .cc-header h1, .hw-header-bar h2
+) {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    letter-spacing: 0.105em;
+    text-transform: uppercase;
+    text-wrap: balance;
+}
+
+body[data-theme="dune"][data-theme-key="dune"] .sidebar .app-title span {
+    color: #ffe9bd;
+    text-shadow: 0 0 26px rgba(239, 195, 122, 0.24);
+}
+
+body[data-theme="dune"][data-theme-key="dune"] :is(.view-header h1, .today-greeting h1, .cc-header h1) {
+    background: linear-gradient(100deg, #fff4dd, #e7b86d 72%, #a95c27);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+/* Quiet geometry and a spice-blue instrument-light detail. */
+body[data-theme="dune"][data-theme-key="dune"] :is(.view-tabs, .integrations-dock) {
+    background: rgba(17, 10, 7, 0.56) !important;
+    border-color: rgba(239, 195, 122, 0.18) !important;
+    box-shadow: inset 0 1px rgba(255, 230, 184, 0.04) !important;
+}
+
+body[data-theme="dune"][data-theme-key="dune"] :is(.view-tab, .toolbar-btn, .quick-app-btn, .custom-shortcut-btn) {
+    border-radius: 8px;
+    color: var(--text-secondary) !important;
+    letter-spacing: 0.055em;
+}
+
+body[data-theme="dune"][data-theme-key="dune"] :is(.view-tab.active, .toolbar-btn.active) {
+    color: #201108 !important;
+    background: linear-gradient(140deg, #f0c57d, #d49343) !important;
+    border-color: rgba(255, 230, 185, 0.66) !important;
+    box-shadow: 0 10px 28px rgba(96, 43, 15, 0.38), inset 0 1px rgba(255, 250, 235, 0.42) !important;
+}
+
+body[data-theme="dune"][data-theme-key="dune"] :is(.view-tab.active, .toolbar-btn.active) i {
+    color: #281308 !important;
+}
+
+body[data-theme="dune"][data-theme-key="dune"] :is(.view-tab, .toolbar-btn, .page-item, .cc-settings-nav-item):hover {
+    background-color: rgba(239, 195, 122, 0.11);
+}
+
+body[data-theme="dune"][data-theme-key="dune"] :is(.tabs-shell .tab-clock-embed::before, .storage-status-dot) {
+    background: var(--dune-spice-blue) !important;
+    box-shadow: 0 0 14px rgba(var(--dune-spice-blue-rgb), 0.55);
+}
+
+body[data-theme="dune"][data-theme-key="dune"] :is(.chatbot-btn, #assistantTab, [data-view="assistantview"]) {
+    border-color: rgba(var(--dune-spice-blue-rgb), 0.28) !important;
+    box-shadow: 0 0 22px rgba(var(--dune-spice-blue-rgb), 0.08) !important;
+}
+
+/* Sand-polished instrument panels instead of flat palette-swapped cards. */
+body[data-theme="dune"][data-theme-key="dune"] :is(
+    .glass-card, .neumo-card, .cc-card, .cc-section-card, .today-nextup-card,
+    .today-radar-card, .today-attention-card, .hw-assignment, .hw-course-panel,
+    .hw-lane, .hw-stat-card, .timeline-planner-sidebar, .review-panel,
+    .daily-quotes-panel
+) {
+    background:
+        linear-gradient(128deg, rgba(255, 224, 173, 0.035), transparent 34%),
+        linear-gradient(164deg, rgba(39, 24, 15, 0.9), rgba(22, 13, 9, 0.88)) !important;
+    border-color: rgba(239, 195, 122, 0.2) !important;
+    box-shadow: 0 18px 44px rgba(4, 2, 1, 0.32), inset 0 1px rgba(255, 226, 174, 0.04) !important;
+}
+
+body[data-theme="dune"][data-theme-key="dune"] :is(
+    .today-nextup-card, .today-radar-card, .today-attention-card,
+    .hw-assignment, .cc-card, .daily-quotes-panel
+):hover {
+    border-color: rgba(239, 195, 122, 0.34) !important;
+    box-shadow: 0 22px 52px rgba(4, 2, 1, 0.42), inset 0 1px rgba(255, 226, 174, 0.065) !important;
+}
+
+body[data-theme="dune"][data-theme-key="dune"] :is(.page-item.active, .cc-settings-nav-item.active) {
+    background: linear-gradient(90deg, rgba(239, 195, 122, 0.16), rgba(120, 210, 229, 0.055)) !important;
+    border-color: rgba(239, 195, 122, 0.28) !important;
+    box-shadow: inset 3px 0 var(--accent), 0 10px 24px rgba(4, 2, 1, 0.24) !important;
+}
+
+body[data-theme="dune"][data-theme-key="dune"] :is(.page-item.active .page-title-text, .cc-settings-nav-item.active i) {
+    color: #ffe8bb !important;
+}
+
+body[data-theme="dune"][data-theme-key="dune"] .editor {
+    background:
+        linear-gradient(90deg, rgba(239, 195, 122, 0.045), transparent 1px) 0 0 / 4rem 100%,
+        linear-gradient(180deg, rgba(35, 21, 13, 0.97), rgba(18, 11, 8, 0.96)) !important;
+    border-color: rgba(239, 195, 122, 0.16) !important;
+    box-shadow: inset 0 1px rgba(255, 229, 181, 0.035);
+}
+
+body[data-theme="dune"][data-theme-key="dune"] :is(
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+    textarea, select, .modal-input, .global-search
+) {
+    color: var(--text-primary);
+    background-color: rgba(13, 8, 5, 0.7) !important;
+    border-color: rgba(239, 195, 122, 0.2) !important;
+    box-shadow: inset 0 1px 8px rgba(0, 0, 0, 0.28);
+}
+
+body[data-theme="dune"][data-theme-key="dune"] :is(input, textarea, select, button, [tabindex]):focus-visible {
+    outline: 2px solid var(--dune-spice-blue) !important;
+    outline-offset: 3px;
+    box-shadow: 0 0 0 4px rgba(var(--dune-spice-blue-rgb), 0.14) !important;
+}
+
+body[data-theme="dune"][data-theme-key="dune"] :is(.btn-primary, .cc-btn-primary, .storage-btn.primary, .new-page-btn) {
+    color: #211208 !important;
+    background: linear-gradient(145deg, #f0c77f, #d89746) !important;
+    border-color: rgba(255, 230, 183, 0.68) !important;
+    box-shadow: 0 12px 28px rgba(74, 31, 10, 0.38), inset 0 1px rgba(255, 251, 235, 0.42) !important;
+}
+
+body[data-theme="dune"][data-theme-key="dune"] :is(.btn-primary, .cc-btn-primary, .storage-btn.primary, .new-page-btn):hover {
+    background: linear-gradient(145deg, #f7dca6, #e6aa5c) !important;
+}
+
+body[data-theme="dune"][data-theme-key="dune"] :is(.badge, .chip, .cc-badge, .hw-status-chip) {
+    border-color: rgba(239, 195, 122, 0.24);
+    background-color: rgba(239, 195, 122, 0.08);
+}
+
+/* Theme-picker preview tells the same visual story before selection. */
+.preset-card[data-theme="dune"] .preset-preview {
+    position: relative;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 82% 18%, #ffe0a4 0 4%, transparent 4.8%),
+        radial-gradient(80% 62% at 18% 110%, #91451f 0 54%, transparent 55%),
+        radial-gradient(72% 54% at 78% 116%, #d17b35 0 48%, transparent 49%),
+        linear-gradient(160deg, #281208, #0b0705) !important;
+    border-color: rgba(239, 195, 122, 0.3);
+}
+
+.preset-card[data-theme="dune"] .preset-color { opacity: 0; }
+
+.preset-card[data-theme="dune"].active {
+    box-shadow: 0 0 0 2px rgba(239, 195, 122, 0.72), 0 16px 34px rgba(54, 23, 8, 0.36);
+}
+
+body[data-theme="dune"][data-theme-key="dune"] ::selection {
+    color: #160b05;
+    background: #e8b96e;
+}
+
+body[data-theme="dune"][data-theme-key="dune"] * {
+    scrollbar-color: rgba(239, 195, 122, 0.44) rgba(12, 7, 5, 0.4);
+}
+
+@keyframes dune-haze-drift {
+    from { transform: translate3d(-0.8%, 0, 0) scale(1.01); opacity: 0.64; }
+    to { transform: translate3d(1.1%, -0.8%, 0) scale(1.035); opacity: 0.77; }
+}
+
+@keyframes dune-swell {
+    from { transform: translate3d(-1.2%, 1%, 0) scale(1.015); }
+    to { transform: translate3d(1.2%, -0.5%, 0) scale(1.04); }
+}
+
+@media (max-width: 1024px) {
+    body[data-theme="dune"][data-theme-key="dune"]::before { opacity: 0.55; }
+    body[data-theme="dune"][data-theme-key="dune"]::after { height: 40vh; opacity: 0.45; }
+    body[data-theme="dune"][data-theme-key="dune"] :is(.sidebar, .top-nav, .toolbar-wrapper, .storage-options) {
+        -webkit-backdrop-filter: blur(16px) saturate(1.1) !important;
+        backdrop-filter: blur(16px) saturate(1.1) !important;
+    }
+    body[data-theme="dune"][data-theme-key="dune"] :is(.view-header h1, .today-greeting h1, .cc-header h1) {
+        letter-spacing: 0.075em;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body[data-theme="dune"][data-theme-key="dune"]::before,
+    body[data-theme="dune"][data-theme-key="dune"]::after { animation: none; }
+}
+
+body.motion-off[data-theme="dune"][data-theme-key="dune"]::before,
+body.motion-off[data-theme="dune"][data-theme-key="dune"]::after,
+body[data-theme="dune"][data-theme-key="dune"][data-motion-intensity="off"]::before,
+body[data-theme="dune"][data-theme-key="dune"][data-motion-intensity="off"]::after,
+body[data-theme="dune"][data-theme-key="dune"][data-motion-intensity="reduced"]::before,
+body[data-theme="dune"][data-theme-key="dune"][data-motion-intensity="reduced"]::after {
+    animation: none;
+}
+
+body.focus-mode[data-theme="dune"][data-theme-key="dune"]::before,
+body.focus-mode[data-theme="dune"][data-theme-key="dune"]::after { opacity: 0.14; }
+
+@media (forced-colors: active) {
+    body[data-theme="dune"][data-theme-key="dune"]::before,
+    body[data-theme="dune"][data-theme-key="dune"]::after { display: none; }
+    body[data-theme="dune"][data-theme-key="dune"] :is(.view-header h1, .today-greeting h1, .cc-header h1) {
+        color: CanvasText;
+        background: none;
+    }
+}
+
+@media print {
+    body[data-theme="dune"][data-theme-key="dune"]::before,
+    body[data-theme="dune"][data-theme-key="dune"]::after { display: none; }
+}

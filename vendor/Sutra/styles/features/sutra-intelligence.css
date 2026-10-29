@@ -1,0 +1,372 @@
+/* =============================================================================
+   Sutra Intelligence — study materials, attachments, experimental badge
+   =============================================================================
+   All colors come from theme tokens so light / dark / retro / custom themes
+   stay correct automatically. No hard-coded palette values except via
+   color-mix on tokens (plus fixed semantic green/red for correct/incorrect,
+   which are paired with non-color indicators ✓ / ✗). */
+
+.sutra-exp-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 1px 7px;
+    border-radius: var(--radius-pill, 999px);
+    border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    color: var(--text-primary);
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+/* Attachment chips (assistant composer) */
+.flow-attachment-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 6px 10px;
+}
+
+.flow-attach-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 100%;
+    padding: 5px 8px;
+    border-radius: var(--radius, 10px);
+    border: 1px solid var(--surface-border, rgba(127, 127, 127, 0.3));
+    background: var(--surface-bg, rgba(127, 127, 127, 0.08));
+    color: var(--text-primary);
+    font-size: 0.78rem;
+}
+
+.flow-attach-chip.is-incompatible {
+    border-color: color-mix(in srgb, var(--sutra-warning, #b45309) 65%, transparent);
+    background: color-mix(in srgb, var(--sutra-warning, #b45309) 12%, transparent);
+}
+
+.flow-attach-chip.is-blocked {
+    border-color: color-mix(in srgb, #c0392b 60%, transparent);
+    background: color-mix(in srgb, #c0392b 10%, transparent);
+}
+
+.flow-attach-main {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.flow-attach-name {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 220px;
+}
+
+.flow-attach-meta {
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 220px;
+}
+
+.flow-attach-chip button[data-attach-remove] {
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.8rem;
+    padding: 2px 4px;
+    border-radius: 6px;
+}
+
+.flow-attach-chip button[data-attach-remove]:hover,
+.flow-attach-chip button[data-attach-remove]:focus-visible {
+    color: var(--text-primary);
+    background: var(--surface-bg-hover, rgba(127, 127, 127, 0.15));
+}
+
+.flow-attach-generate-row {
+    flex-basis: 100%;
+}
+
+.flow-attach-generate {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+#chatbotPanel.flow-drop-active {
+    outline: 2px dashed var(--accent);
+    outline-offset: -4px;
+}
+
+.chatbot-thinking-stop {
+    margin-left: 10px;
+    padding: 2px 10px;
+    border-radius: var(--radius-pill, 999px);
+    border: 1px solid var(--surface-border, rgba(127, 127, 127, 0.3));
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.72rem;
+    cursor: pointer;
+}
+
+.chatbot-thinking-stop:hover,
+.chatbot-thinking-stop:focus-visible {
+    color: var(--text-primary);
+    border-color: var(--accent);
+}
+
+/* Retry control appended to a failed-request notice bubble (both the
+   floating chatbotPanel and the full-screen Assistant tab reuse this class). */
+.chatbot-notice-retry {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    width: fit-content;
+    margin: 8px auto 0;
+    padding: 3px 12px;
+    border-radius: var(--radius-pill, 999px);
+    border: 1px solid var(--surface-border, rgba(127, 127, 127, 0.3));
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    cursor: pointer;
+}
+
+.chatbot-notice-retry:hover,
+.chatbot-notice-retry:focus-visible {
+    color: var(--text-primary);
+    border-color: var(--accent);
+    outline: none;
+}
+
+.chatbot-notice-retry:disabled {
+    opacity: 0.55;
+    cursor: default;
+}
+
+/* Generate Study Materials modal */
+.sutra-genmat-body { font-size: 0.9rem; line-height: 1.5; }
+
+.sutra-genmat-source {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: var(--radius, 10px);
+    border: 1px solid var(--surface-border, rgba(127, 127, 127, 0.3));
+    background: var(--surface-bg, rgba(127, 127, 127, 0.08));
+    margin-bottom: 10px;
+}
+
+.sutra-genmat-file-meta { display: block; font-size: 0.74rem; color: var(--text-secondary); }
+.sutra-genmat-model { margin-bottom: 12px; font-size: 0.84rem; }
+.sutra-genmat-ok { color: var(--accent-strong, var(--accent)); font-weight: 600; }
+.sutra-genmat-bad { color: var(--sutra-warning, #b45309); font-weight: 600; }
+.sutra-genmat-reason { font-size: 0.78rem; color: var(--text-secondary); margin-top: 4px; }
+
+.sutra-genmat-fieldset {
+    border: 1px solid var(--surface-border, rgba(127, 127, 127, 0.3));
+    border-radius: var(--radius, 10px);
+    padding: 8px 12px 10px;
+    margin: 0 0 10px;
+}
+
+.sutra-genmat-fieldset legend { font-size: 0.74rem; padding: 0 6px; color: var(--text-secondary); }
+.sutra-genmat-check { display: flex; align-items: center; gap: 8px; padding: 3px 0; cursor: pointer; }
+
+.sutra-genmat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.sutra-genmat-grid label { display: flex; flex-direction: column; gap: 4px; font-size: 0.76rem; color: var(--text-secondary); }
+
+.sutra-genmat-grid select {
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid var(--surface-border, rgba(127, 127, 127, 0.3));
+    background: var(--bg-elevated, var(--bg-secondary));
+    color: var(--text-primary);
+    font-size: 0.84rem;
+}
+
+.sutra-genmat-privacy {
+    font-size: 0.76rem;
+    color: var(--text-secondary);
+    border-left: 3px solid color-mix(in srgb, var(--accent) 60%, transparent);
+    padding-left: 10px;
+    margin: 10px 0;
+}
+
+.sutra-genmat-status { min-height: 22px; font-size: 0.86rem; }
+
+.sutra-genmat-cancel,
+.sutra-genmat-retry,
+.sutra-genmat-open {
+    margin-left: 6px;
+    padding: 4px 12px;
+    border-radius: var(--radius-pill, 999px);
+    border: 1px solid var(--surface-border, rgba(127, 127, 127, 0.35));
+    background: var(--surface-bg, rgba(127, 127, 127, 0.08));
+    color: var(--text-primary);
+    font-size: 0.78rem;
+    cursor: pointer;
+}
+
+.sutra-genmat-open { border-color: var(--accent); }
+
+.sutra-genmat-cancel:hover, .sutra-genmat-retry:hover, .sutra-genmat-open:hover,
+.sutra-genmat-cancel:focus-visible, .sutra-genmat-retry:focus-visible, .sutra-genmat-open:focus-visible {
+    background: var(--surface-bg-hover, rgba(127, 127, 127, 0.16));
+}
+
+.sutra-genmat-filepick {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    width: 100%;
+    text-align: left;
+    padding: 9px 12px;
+    margin-bottom: 6px;
+    border-radius: var(--radius, 10px);
+    border: 1px solid var(--surface-border, rgba(127, 127, 127, 0.3));
+    background: var(--surface-bg, rgba(127, 127, 127, 0.06));
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.sutra-genmat-filepick span { font-size: 0.74rem; color: var(--text-secondary); }
+.sutra-genmat-filepick:hover, .sutra-genmat-filepick:focus-visible { border-color: var(--accent); }
+
+/* Generated practice-test runner */
+.sutra-test-runner { font-size: 0.9rem; }
+.sutra-test-meta { font-size: 0.76rem; color: var(--text-secondary); margin-bottom: 10px; }
+
+.sutra-test-progress,
+.sutra-test-scorebar {
+    padding: 8px 12px;
+    border-radius: var(--radius, 10px);
+    background: var(--surface-bg, rgba(127, 127, 127, 0.08));
+    border: 1px solid var(--surface-border, rgba(127, 127, 127, 0.25));
+    margin: 10px 0;
+    font-size: 0.84rem;
+}
+
+.sutra-test-question {
+    border: 1px solid var(--surface-border, rgba(127, 127, 127, 0.25));
+    border-radius: var(--radius, 10px);
+    padding: 12px 14px;
+    margin-bottom: 12px;
+}
+
+.sutra-test-question header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+}
+
+.sutra-test-qnum { font-weight: 700; color: var(--text-primary); }
+.sutra-test-prompt { margin: 0 0 10px; font-weight: 500; }
+
+.sutra-test-choice {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    cursor: pointer;
+}
+
+.sutra-test-choice:hover { background: var(--surface-bg-hover, rgba(127, 127, 127, 0.1)); }
+
+.sutra-test-choice.is-correct {
+    border-color: color-mix(in srgb, #2e8b57 60%, transparent);
+    background: color-mix(in srgb, #2e8b57 12%, transparent);
+}
+
+.sutra-test-choice.is-wrong {
+    border-color: color-mix(in srgb, #c0392b 55%, transparent);
+    background: color-mix(in srgb, #c0392b 10%, transparent);
+}
+
+.sutra-test-written {
+    width: 100%;
+    border-radius: 8px;
+    border: 1px solid var(--surface-border, rgba(127, 127, 127, 0.3));
+    background: var(--bg-elevated, var(--bg-secondary));
+    color: var(--text-primary);
+    padding: 8px 10px;
+    font-size: 0.86rem;
+    resize: vertical;
+}
+
+.sutra-test-reveal { margin-top: 10px; font-size: 0.82rem; display: flex; flex-direction: column; gap: 6px; }
+.sutra-test-verdict.ok { color: #2e8b57; font-weight: 700; }
+.sutra-test-verdict.bad { color: #c0392b; font-weight: 700; }
+.sutra-test-explanation, .sutra-test-refanswer { color: var(--text-secondary); }
+
+.sutra-test-selfmark { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 0.78rem; }
+
+.sutra-test-selfmark button {
+    padding: 3px 10px;
+    border-radius: var(--radius-pill, 999px);
+    border: 1px solid var(--surface-border, rgba(127, 127, 127, 0.35));
+    background: transparent;
+    color: var(--text-primary);
+    cursor: pointer;
+    font-size: 0.76rem;
+}
+
+.sutra-test-selfmark button.active {
+    background: color-mix(in srgb, var(--accent) 25%, transparent);
+    border-color: var(--accent);
+}
+
+.sutra-test-actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+.sutra-test-pages { font-size: 0.68rem; }
+
+/* Generated tests panel inside Testing Hub practice tab */
+.sutra-gen-tests-panel { margin-bottom: 16px; }
+.cw-icon-generate { color: var(--accent-strong, var(--accent)); }
+
+/* Focus visibility for all new interactive controls */
+.sutra-genmat-filepick:focus-visible,
+.sutra-genmat-open:focus-visible,
+.sutra-test-choice:focus-within,
+.sutra-test-selfmark button:focus-visible,
+.flow-attach-chip button[data-attach-remove]:focus-visible,
+.chatbot-thinking-stop:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+/* Dark-mode verdict colors need higher luminance for contrast */
+body[data-theme="dark"] .sutra-test-verdict.ok,
+body[data-theme="dark"] .sutra-test-choice.is-correct { color: #6fcf97; }
+body[data-theme="dark"] .sutra-test-verdict.bad { color: #ef7261; }
+
+@media (max-width: 640px) {
+    .sutra-genmat-grid { grid-template-columns: 1fr 1fr; }
+    .flow-attach-name, .flow-attach-meta { max-width: 150px; }
+    .sutra-test-question { padding: 10px; }
+}

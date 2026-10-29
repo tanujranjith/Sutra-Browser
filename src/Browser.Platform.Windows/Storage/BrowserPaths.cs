@@ -12,6 +12,7 @@ public sealed class BrowserPaths
     public string CredentialPath => Path.Combine(Root, "Credentials");
     public string FaviconCachePath => Path.Combine(Root, "Favicons");
     public string FilterListPath => Path.Combine(Root, "Filters", "content-filters.txt");
+    public string UpdateDirectory => Path.Combine(Root, "Updates");
 
     public BrowserPaths(string? root = null)
     {

@@ -1,4 +1,4 @@
-
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.11.35327.3
@@ -20,6 +20,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Browser.AI.Tests", "tests\Browser.AI.Tests\Browser.AI.Tests.csproj", "{FE8F16E8-63B1-426D-A3D3-F5CCED721615}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Browser.Platform.Windows.Tests", "tests\Browser.Platform.Windows.Tests\Browser.Platform.Windows.Tests.csproj", "{70A3527D-D2AC-4EF4-86CE-D1CF9B7CD82B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{78AC0F30-0F2C-463F-9EDA-D4C3525C159E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sutra.Updater", "src\Browser.Updater\Sutra.Updater.csproj", "{A2403B29-56F5-4363-B48F-ACE809CCF1DF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -63,5 +67,12 @@ Global
 		{FE8F16E8-63B1-426D-A3D3-F5CCED721615}.Release|Any CPU.Build.0 = Release|Any CPU
 		{70A3527D-D2AC-4EF4-86CE-D1CF9B7CD82B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{70A3527D-D2AC-4EF4-86CE-D1CF9B7CD82B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A2403B29-56F5-4363-B48F-ACE809CCF1DF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A2403B29-56F5-4363-B48F-ACE809CCF1DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A2403B29-56F5-4363-B48F-ACE809CCF1DF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A2403B29-56F5-4363-B48F-ACE809CCF1DF}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{A2403B29-56F5-4363-B48F-ACE809CCF1DF} = {78AC0F30-0F2C-463F-9EDA-D4C3525C159E}
 	EndGlobalSection
 EndGlobal

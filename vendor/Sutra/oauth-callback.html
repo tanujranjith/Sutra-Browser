@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'">
+<title>Connecting…</title>
+<style>
+  html, body { height: 100%; margin: 0; }
+  body { display: flex; align-items: center; justify-content: center;
+         font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+         background: #0f172a; color: #e2e8f0;
+         min-height: 100vh; min-height: 100dvh;
+         padding: max(1rem, env(safe-area-inset-top, 0px)) max(1rem, env(safe-area-inset-right, 0px)) max(1rem, env(safe-area-inset-bottom, 0px)) max(1rem, env(safe-area-inset-left, 0px));
+         box-sizing: border-box; }
+  .box { width: 100%; max-width: 22rem; min-width: 0; padding: 1.5rem; text-align: center; line-height: 1.5; overflow-wrap: anywhere; }
+  .muted { opacity: .7; font-size: .9rem; margin-top: .5rem; }
+</style>
+</head>
+<body>
+<div class="box">
+  <div id="msg">Finishing sign-in…</div>
+  <div class="muted">You can close this window.</div>
+</div>
+<script>
+// Sutra Cloud OAuth redirect target. The cloud-backup providers (OneDrive,
+// Dropbox, …) redirect their authorization popup here with ?code&state. This
+// page lives on the SAME origin as the app, so it can postMessage the result
+// back to the opener (which validates origin + state) and then close itself.
+// It never holds tokens — the opener performs the PKCE code→token exchange.
+(function () {
+  function parse(str) {
+    var out = {};
+    String(str || '').replace(/^[?#]/, '').split('&').forEach(function (pair) {
+      if (!pair) return;
+      var i = pair.indexOf('=');
+      var k = i < 0 ? pair : pair.slice(0, i);
+      var v = i < 0 ? '' : pair.slice(i + 1);
+      try { out[decodeURIComponent(k)] = decodeURIComponent(v.replace(/\+/g, ' ')); }
+      catch (e) { out[k] = v; }
+    });
+    return out;
+  }
+  var p = parse(location.search);
+  if (!p.code && !p.error) {
+    var h = parse(location.hash);
+    for (var k in h) { if (!(k in p)) p[k] = h[k]; }
+  }
+  var msg = {
+    source: 'sutra-oauth',
+    code: p.code || '',
+    state: p.state || '',
+    error: p.error || '',
+    error_description: p.error_description || p.errorDescription || ''
+  };
+  var target = window.opener || window.parent;
+  try { if (target && target !== window) target.postMessage(msg, location.origin); } catch (e) {}
+  if (msg.error) {
+    try { document.getElementById('msg').textContent =
+      'Sign-in failed: ' + (msg.error_description || msg.error); } catch (e) {}
+  }
+  setTimeout(function () { try { window.close(); } catch (e) {} }, 80);
+})();
+</script>
+</body>
+</html>

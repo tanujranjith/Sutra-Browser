@@ -1,0 +1,113 @@
+/* Shared interaction and state contracts. Loaded after feature CSS. */
+
+:where(button, a[href], input, select, textarea, [role="button"], [role="tab"], [tabindex]):focus-visible {
+  outline: var(--sutra-focus-outline);
+  outline-offset: 3px;
+  box-shadow: var(--sutra-focus-ring);
+}
+
+:where(button, [role="button"], [role="tab"]):disabled,
+:where(button, [role="button"], [role="tab"])[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+/*
+ * Blocking surfaces share one layer contract. Keep this list aligned with
+ * SutraModalManager in src/core/app.js: bespoke dialogs previously carried
+ * unrelated z-index values, which allowed fixed mobile chrome to cover their
+ * controls. The emoji picker is a sibling of its backdrop, so both participate.
+ */
+.modal,
+.version-history-modal,
+.command-palette-modal,
+.quick-capture-modal,
+.deadline-radar-modal,
+.google-feedback-modal,
+.doc-stats-modal,
+.acad-modal-overlay,
+.emoji-modal-overlay,
+.emoji-picker,
+.hw-paste-modal,
+.class-dashboard-drawer,
+.atelier-onboarding,
+.onboarding-overlay,
+.cw-modal-overlay,
+.th2-modal-overlay,
+.doc-bg-modal,
+#atelierDialogBackdrop,
+#studentOnboardingOverlay,
+#homeworkPasteImportModal,
+#globalSearchPanel,
+#businessEntityModal,
+#googleFeedbackModal,
+#docStatsModal,
+#todayAcademicDeadlineModal,
+#pageLinkModal,
+#reviewModalRoot,
+#hwCourseQuickModal,
+.sutra-academic-modal,
+[data-sutra-layer="modal"] { z-index: var(--z-modal); }
+.toast,
+[data-sutra-layer="toast"] { z-index: var(--z-toast); }
+[data-sutra-layer="popover"] { z-index: var(--z-popover); }
+[data-sutra-layer="takeover"] { z-index: var(--z-takeover); }
+/* Optional update advice must not intercept a blocking dialog's controls. */
+body:is(.modal-open, .sutra-modal-lock, .onboarding-open, .mobile-more-open, .sidebar-open, .notif-panel-open) .sutra-update-banner {
+  display: none;
+}
+#sutraRecoveryModeBanner { z-index: var(--z-recovery) !important; }
+
+.sutra-state,
+.loading-state,
+.error-state,
+.empty-state {
+  border-radius: var(--sutra-radius-md);
+  color: var(--sutra-color-text-muted);
+  line-height: var(--sutra-line-body);
+}
+.sutra-state[data-state="loading"],
+.loading-state { cursor: progress; }
+.sutra-state[data-state="error"],
+.error-state {
+  background: var(--sutra-color-danger-surface);
+  border: 1px solid color-mix(in srgb, var(--sutra-color-danger) 40%, transparent);
+  color: var(--sutra-color-text);
+}
+
+@media (pointer: coarse) {
+  :where(button, [role="button"], [role="tab"], a[href]).sutra-compact-target,
+  :where(button, [role="button"], [role="tab"], a[href]):not(.sutra-allow-small-target) {
+    min-block-size: var(--sutra-target-min);
+  }
+  :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea) {
+    min-block-size: var(--sutra-target-min);
+  }
+}
+
+@media (max-width: 640px) {
+  body:has(#sutraBottomNav) .main-content,
+  body:has(#sutraBottomNav) .view.active {
+    padding-bottom: max(
+      var(--sutra-mobile-nav-height),
+      calc(var(--sutra-mobile-nav-height) + var(--sutra-safe-bottom))
+    );
+    scroll-padding-bottom: calc(var(--sutra-mobile-nav-height) + var(--sutra-safe-bottom) + var(--sutra-space-4));
+  }
+  #sutraBottomNav {
+    min-height: calc(var(--sutra-mobile-nav-height) + var(--sutra-safe-bottom));
+    padding-bottom: var(--sutra-safe-bottom);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:focus-within { scroll-behavior: auto !important; }
+  *, *::before, *::after {
+    animation-delay: 0ms !important;
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-delay: 0ms !important;
+    transition-duration: 1ms !important;
+  }
+}

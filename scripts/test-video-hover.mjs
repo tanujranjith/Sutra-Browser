@@ -1,0 +1,36 @@
+import { chromium } from 'playwright';
+import fs from 'node:fs/promises';
+import assert from 'node:assert/strict';
+const source=await fs.readFile('src/Browser.App/Views/MainWindow.VideoOverlays.cs','utf8');
+const script=source.match(/private const string VideoHoverButtonScript = """\r?\n([\s\S]*?)\r?\n\s*""";/)?.[1].replace('__SUTRA_VIDEO_TOKEN__',JSON.stringify('test-token'));
+assert.ok(script);
+const browser=await chromium.launch({channel:'msedge',headless:true});
+try{
+  const page=await browser.newPage({viewport:{width:900,height:700}});
+  await page.route('https://video.test/**',route=>route.fulfill({contentType:'text/html',body:'<style>video{display:block;width:500px;height:280px;margin:50px;background:#203050}.controls{position:absolute;left:58px;top:50px;width:500px;height:280px;background:transparent}</style><video id="one"></video><div class="controls"></div><video id="two"></video>'}));
+  await page.goto('https://video.test/');
+  await page.evaluate(()=>{window.messages=[];window.chrome=window.chrome||{};window.chrome.webview={postMessage:message=>window.messages.push(message)}});
+  await page.evaluate(script=>(0,eval)(script),script);
+  await page.mouse.move(250,150);
+  const button=page.getByRole('button',{name:'Open video in mini player'});
+  await button.waitFor({state:'visible'});
+  const bounds=await button.boundingBox(),video=await page.locator('#one').boundingBox();
+  assert.ok(bounds.x>video.x+video.width/2&&bounds.x+bounds.width<=video.x+video.width);
+  assert.ok(Math.abs(bounds.y-video.y-10)<1);
+  await button.dispatchEvent('click');
+  assert.deepEqual(await page.evaluate(()=>window.messages),[],'Synthetic page clicks cannot open a native player');
+  await button.click();
+  assert.deepEqual(await page.evaluate(()=>window.messages),[{kind:'video-mini-player',token:'test-token',mediaId:'sutra-1'}]);
+  assert.equal(await page.locator('#one').evaluate(video=>video.__sutraMediaId),'sutra-1');
+  await page.mouse.move(250,500);
+  await button.waitFor({state:'visible'});
+  await button.click();
+  assert.equal(await page.locator('#two').evaluate(video=>video.__sutraMediaId),'sutra-2','Each hovered video receives its own control target');
+  await page.mouse.move(850,10);
+  await button.waitFor({state:'hidden'});
+  await page.evaluate(()=>{const popup=document.createElement('div');popup.id='data-sutra-video-test-overlay';document.documentElement.append(popup)});
+  await page.mouse.move(250,150);
+  await page.waitForTimeout(80);
+  assert.equal(await button.isVisible(),false,'Shortcut must stay hidden inside the mini-player');
+  console.log('PASS: top-right hover shortcut, overlay-covered video, individual targets, trusted click, pointer exit, pop-out suppression.');
+}finally{await browser.close()}

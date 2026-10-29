@@ -1,0 +1,113 @@
+/* Calendar-first Timeline surface. Scoped to the Timeline view so themes and
+   user CSS keep their established cascade. */
+.view-timeline.timeline-redesign { min-height: calc(100vh - 150px); }
+.sutra-calendar-shell { min-height: inherit; display: grid; grid-template-rows: auto minmax(520px, 1fr) auto; gap: 10px; }
+.view-timeline.timeline-redesign .timeline-hero-header.sutra-calendar-toolbar { position: sticky; top: 0; z-index: 8; min-height: 52px; padding: 8px 0; margin: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; background: color-mix(in srgb, var(--bg-primary) 92%, transparent); backdrop-filter: blur(12px); }
+.view-timeline.timeline-redesign .timeline-hero-titles { min-width: 0; }
+.view-timeline.timeline-redesign #timelineHeading { margin: 0; font-size: clamp(18px, 2vw, 24px); line-height: 1.2; white-space: nowrap; }
+.view-timeline.timeline-redesign .timeline-hero-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 7px; }
+.view-timeline.timeline-redesign .timeline-date-stepper { border: 0; padding: 0; gap: 2px; background: transparent; }
+.view-timeline.timeline-redesign .timeline-date-input { width: 132px; height: 34px; padding: 4px 7px; font-size: 12px; }
+.view-timeline.timeline-redesign .timeline-step-btn, .view-timeline.timeline-redesign .timeline-today-btn, .view-timeline.timeline-redesign .timeline-more-btn { min-width: 34px; min-height: 34px; }
+.view-timeline.timeline-redesign .timeline-mode-switcher { padding: 3px; gap: 2px; border-radius: 9px; box-shadow: none; }
+.view-timeline.timeline-redesign .timeline-mode-tab { padding: 7px 10px; border-radius: 7px; font-size: 12px; }
+.view-timeline.timeline-redesign .timeline-primary-add { min-height: 34px; padding: 7px 11px; }
+.view-timeline.timeline-redesign .sutra-calendar-body { min-height: 520px; padding: 0; overflow: hidden; border: 1px solid var(--surface-border, var(--border)); border-radius: 14px; background: var(--surface-bg, var(--bg-secondary)); box-shadow: none; }
+.view-timeline.timeline-redesign .timeline-calendar-view { display: block; min-height: 520px; height: 100%; }
+.sutra-calendar-month { display: grid; height: min(72vh, 820px); min-height: 520px; grid-template-rows: 36px 1fr; overflow: hidden; border-radius: 13px; background: var(--surface-bg, var(--bg-secondary)); }
+.sutra-calendar-weekdays, .sutra-calendar-month-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.sutra-calendar-weekdays { border-bottom: 1px solid var(--surface-border, var(--border)); color: var(--text-muted); font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.sutra-calendar-weekdays > div { display: grid; place-items: center; border-right: 1px solid var(--surface-border, var(--border)); }
+.sutra-calendar-weekdays > div:last-child { border-right: 0; }
+.sutra-calendar-month-grid { grid-template-rows: repeat(var(--weeks, 6), minmax(0, 1fr)); grid-auto-rows: minmax(82px, 1fr); overflow: hidden; }
+.sutra-calendar-day { position: relative; min-width: 0; min-height: 82px; padding: 6px; border-right: 1px solid var(--surface-border, var(--border)); border-bottom: 1px solid var(--surface-border, var(--border)); background: color-mix(in srgb, var(--surface-bg, var(--bg-secondary)) 96%, var(--bg-primary)); cursor: pointer; }
+.sutra-calendar-day:nth-child(7n), .sutra-calendar-day:nth-last-child(-n+7) { border-right: 0; }
+.sutra-calendar-day:hover { background: var(--surface-bg-hover, color-mix(in srgb, var(--accent) 7%, transparent)); }
+.sutra-calendar-day:focus-visible, .sutra-calendar-event:focus-visible, .sutra-calendar-month-event:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; z-index: 3; }
+.sutra-calendar-day.is-outside { color: var(--text-muted); background: color-mix(in srgb, var(--surface-bg, var(--bg-secondary)) 85%, var(--bg-primary)); }
+.sutra-calendar-day-number { display: grid; place-items: center; width: 27px; height: 27px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: inherit; font: inherit; font-weight: 700; cursor: pointer; }
+.sutra-calendar-day.is-today .sutra-calendar-day-number { background: var(--accent); color: var(--button-text, #fff); }
+.sutra-calendar-day.is-selected:not(.is-today) .sutra-calendar-day-number { box-shadow: inset 0 0 0 2px var(--accent); color: var(--accent-strong, var(--accent)); }
+.sutra-calendar-month-events { display: grid; gap: 2px; margin-top: 4px; }
+.sutra-calendar-month-event, .sutra-calendar-more { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border: 0; border-left: 3px solid var(--sutra-calendar-event-color, var(--accent)); border-radius: 3px; padding: 2px 4px; background: color-mix(in srgb, var(--sutra-calendar-event-color, var(--accent)) 18%, transparent); color: var(--text-primary); font: 600 11px/1.25 var(--font-body, inherit); text-align: left; cursor: pointer; }
+.sutra-calendar-month-event:hover { background: color-mix(in srgb, var(--sutra-calendar-event-color, var(--accent)) 27%, transparent); }
+.sutra-calendar-more { color: var(--text-secondary); background: transparent; border-left-color: transparent; font-weight: 700; }
+.sutra-calendar-time-view { height: min(72vh, 820px); min-height: 520px; overflow: hidden; }
+.sutra-calendar-time-scroll { height: 100%; overflow: auto; scrollbar-gutter: stable; }
+.sutra-calendar-time-grid { display: grid; grid-template-columns: 58px repeat(var(--sutra-calendar-day-count), minmax(115px, 1fr)); grid-template-rows: 52px auto; min-width: calc(58px + var(--sutra-calendar-day-count) * 115px); }
+.sutra-calendar-time-header { position: sticky; top: 0; z-index: 4; display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 52px; border-right: 1px solid var(--surface-border, var(--border)); border-bottom: 1px solid var(--surface-border, var(--border)); background: var(--surface-bg, var(--bg-secondary)); color: var(--text-secondary); font-size: 12px; }
+.sutra-calendar-time-header strong { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; color: var(--text-primary); font-size: 14px; }
+.sutra-calendar-time-header.is-today strong { background: var(--accent); color: var(--button-text, #fff); }
+.sutra-calendar-time-gutter { color: var(--text-muted); }
+.sutra-calendar-time-labels { position: relative; border-right: 1px solid var(--surface-border, var(--border)); background: var(--surface-bg, var(--bg-secondary)); }
+.sutra-calendar-time-labels span { position: absolute; right: 8px; font-size: 10px; white-space: nowrap; }
+.sutra-calendar-time-column { position: relative; min-width: 0; border-right: 1px solid var(--surface-border, var(--border)); background: color-mix(in srgb, var(--surface-bg, var(--bg-secondary)) 96%, var(--bg-primary)); cursor: crosshair; }
+.sutra-calendar-time-column:hover { background: color-mix(in srgb, var(--accent) 3%, var(--surface-bg, var(--bg-secondary))); }
+.sutra-calendar-time-lines { position: absolute; inset: 0; pointer-events: none; }
+.timeline-hour-row { position: absolute; right: 0; left: 0; height: 64px; border-top: 1px solid var(--surface-border, var(--border)); background: repeating-linear-gradient(to bottom, transparent 0 31px, color-mix(in srgb, var(--surface-border, var(--border)) 55%, transparent) 31px 32px); }
+.sutra-calendar-event { position: absolute; z-index: 2; display: grid; align-content: start; gap: 2px; overflow: hidden; padding: 4px 6px; border: 1px solid color-mix(in srgb, var(--sutra-calendar-event-color) 65%, var(--surface-border)); border-left: 3px solid var(--sutra-calendar-event-color); border-radius: 5px; background: color-mix(in srgb, var(--sutra-calendar-event-color) 22%, var(--surface-bg)); color: var(--text-primary); text-align: left; font: inherit; cursor: pointer; }
+.sutra-calendar-event:hover { z-index: 3; background: color-mix(in srgb, var(--sutra-calendar-event-color) 32%, var(--surface-bg)); }
+.sutra-calendar-event-time { font-size: 10px; font-weight: 700; line-height: 1.1; white-space: nowrap; }.sutra-calendar-event-title { overflow: hidden; font-size: 12px; font-weight: 700; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }.sutra-calendar-event-source { overflow: hidden; color: var(--text-secondary); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.view-timeline .sutra-calendar-event.is-compact { align-content: center; padding: 3px 6px; }
+.sutra-calendar-event.is-compact .sutra-calendar-event-title { font-size: 11px; }
+.sutra-calendar-now-line { position: absolute; z-index: 3; right: 0; left: 0; height: 2px; background: var(--accent-strong, #e16363); pointer-events: none; }.sutra-calendar-now-line span { position: absolute; top: -8px; left: -2px; padding: 2px 5px; border-radius: 5px; background: var(--accent-strong, #e16363); color: #fff; font-size: 9px; font-weight: 700; }
+.view-timeline.timeline-redesign .current-block-compact { min-height: 0; padding: 9px 12px; border-radius: 10px; box-shadow: none; }.view-timeline.timeline-redesign .current-block-info { font-size: 13px; }.view-timeline.timeline-redesign .current-block-compact .progress-bar { margin-top: 6px; height: 4px; }
+@media (max-width: 768px) {
+    .view-timeline.timeline-redesign { min-height: 0; }
+    .sutra-calendar-shell { min-height: 0; grid-template-rows: auto minmax(420px, 68dvh) auto; }
+    .view-timeline.timeline-redesign .timeline-hero-header.sutra-calendar-toolbar { align-items: flex-start; }
+    .view-timeline.timeline-redesign .timeline-hero-controls { justify-content: flex-start; }
+    .sutra-calendar-month { min-height: 420px; height: 68dvh; }
+    .sutra-calendar-day { min-height: 64px; padding: 4px; }
+    .sutra-calendar-month-event { font-size: 10px; padding: 1px 3px; }
+    .sutra-calendar-time-view { min-height: 420px; height: 68dvh; }
+    .sutra-calendar-time-grid { grid-template-columns: 52px repeat(var(--sutra-calendar-day-count), minmax(96px, 1fr)); min-width: calc(52px + var(--sutra-calendar-day-count) * 96px); }
+    .sutra-calendar-time-header { min-height: 48px; }
+    .view-timeline.timeline-redesign .timeline-date-input { width: 122px; }
+    .sutra-calendar-time-scroll { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+}
+
+@media (max-width: 480px) {
+    .view-timeline.timeline-redesign .timeline-hero-header.sutra-calendar-toolbar { position: static; }
+    .sutra-calendar-shell { grid-template-rows: auto auto auto; }
+    .sutra-calendar-month { height: auto; min-height: 0; grid-template-rows: 32px auto; }
+    .sutra-calendar-weekdays { font-size: 9px; letter-spacing: 0; }
+    .sutra-calendar-month-grid { grid-auto-rows: minmax(48px, 1fr); overflow: visible; }
+    .sutra-calendar-day {
+        min-height: 48px;
+        display: grid;
+        align-content: start;
+        justify-items: center;
+        padding: 2px 1px 3px;
+    }
+    .sutra-calendar-day-number { width: 34px; height: 34px; }
+    .sutra-calendar-month-events { min-height: 16px; margin-top: 0; place-items: center; }
+    .sutra-calendar-month-events[data-event-count="0"] { display: none; }
+    .sutra-calendar-month-events:not([data-event-count="0"])::before {
+        content: attr(data-event-count);
+        display: grid;
+        place-items: center;
+        min-width: 16px;
+        height: 16px;
+        padding: 0 4px;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--accent) 18%, var(--surface-bg));
+        color: var(--accent-strong, var(--accent));
+        font-size: 9px;
+        font-weight: 800;
+        line-height: 1;
+    }
+    .sutra-calendar-month-event,
+    .sutra-calendar-more { display: none; }
+    .sutra-calendar-time-view { min-height: min(520px, 62dvh); height: 62dvh; }
+    .sutra-calendar-time-grid { grid-template-columns: 48px repeat(var(--sutra-calendar-day-count), minmax(92px, 1fr)); min-width: calc(48px + var(--sutra-calendar-day-count) * 92px); }
+    /* Day time views must not inherit the Month-cell .sutra-calendar-day rules:
+       those center a grid at its intrinsic width and squeeze the schedule on phones. */
+    .sutra-calendar-time-day.sutra-calendar-time-view { display: block; min-height: min(520px, 62dvh); padding: 0; border: 0; background: transparent; cursor: default; }
+    .sutra-calendar-time-day.sutra-calendar-time-view .sutra-calendar-time-scroll,
+    .sutra-calendar-time-day.sutra-calendar-time-view .sutra-calendar-time-grid { width: 100%; }
+    .sutra-calendar-time-day.sutra-calendar-time-view .sutra-calendar-time-grid { min-width: 100%; grid-template-columns: 48px minmax(0, 1fr); }
+    .sutra-calendar-time-column { cursor: pointer; }
+}
+@media (prefers-reduced-motion: reduce) { .sutra-calendar-day, .sutra-calendar-event, .sutra-calendar-month-event { transition: none !important; } }
+@media (forced-colors: active) { .sutra-calendar-event, .sutra-calendar-month-event { border: 1px solid CanvasText; } }

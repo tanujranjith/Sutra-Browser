@@ -1,0 +1,1343 @@
+/* ================================================================
+   NoteFlow Atelier — Microinteractions Layer  v1.0
+   Adds premium interaction polish on top of base styles.
+   All animations respect the app's motionIntensity system
+   and the browser's prefers-reduced-motion preference.
+
+   Motion language:
+     Durations: 80ms press · 150ms fast · 220ms base
+     Easing: cubic-bezier(0.22, 1, 0.36, 1) — smooth deceleration
+     Scale: 0.97 press · 1.01–1.02 hover lift
+     Prefer opacity + transform over layout-affecting props
+   ================================================================ */
+
+/* ----------------------------------------------------------------
+   1. Motion tokens
+   ---------------------------------------------------------------- */
+:root {
+  --transition-press   : 90ms  cubic-bezier(0.22, 1, 0.36, 1);
+  --transition-pop     : 200ms cubic-bezier(0.34, 1.4,  0.64, 1); /* mild spring */
+  --shadow-lift-sm     : 0 6px 18px rgba(22, 30, 45, 0.10);
+  --shadow-lift-md     : 0 10px 28px rgba(22, 30, 45, 0.14);
+  --shadow-press       : 0 2px  6px rgba(22, 30, 45, 0.06);
+  --focus-ring         : 0 0 0 2.5px rgba(var(--accent-rgb), 0.55);
+  --focus-ring-strong  : 0 0 0 3px   rgba(var(--accent-rgb), 0.70);
+}
+
+/* ================================================================
+   2. Buttons — press states, hover lift, tactile depth
+   ================================================================ */
+
+/* --- neumo-btn -------------------------------------------------- */
+.neumo-btn {
+  transition: transform var(--transition-fast),
+              box-shadow var(--transition-fast),
+              background var(--transition-fast),
+              color var(--transition-fast);
+}
+
+.neumo-btn:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    8px 8px 20px var(--neumo-shadow-dark),
+    -8px -8px 20px var(--neumo-shadow-light),
+    var(--shadow-lift-sm);
+}
+
+.neumo-btn:active {
+  transform: scale(0.97) translateY(0) !important;
+  box-shadow:
+    inset 3px 3px 7px var(--neumo-inset-dark),
+    inset -3px -3px 7px var(--neumo-shadow-light) !important;
+  transition:
+    transform var(--transition-press),
+    box-shadow var(--transition-press) !important;
+}
+
+/* --- toolbar-btn, btn, new-page-btn, etc. ----------------------- */
+.new-page-btn,
+.todo-add-btn,
+.toolbar-btn,
+.btn,
+.todo-filter-btn,
+.theme-switcher-btn {
+  transition: transform var(--transition-fast),
+              box-shadow var(--transition-fast),
+              background var(--transition-fast),
+              color var(--transition-fast);
+}
+
+.new-page-btn:active,
+.todo-add-btn:active,
+.toolbar-btn:active,
+.btn:active,
+.todo-filter-btn:active,
+.theme-switcher-btn:active {
+  transform: scale(0.97) translateY(0) !important;
+  box-shadow: var(--shadow-press) !important;
+  transition: transform var(--transition-press), box-shadow var(--transition-press) !important;
+}
+
+/* Cleaner btn:hover — replaces the bare opacity:0.9 */
+.btn:hover {
+  opacity: 1 !important;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lift-sm);
+}
+
+.btn-danger:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(211, 47, 47, 0.18);
+}
+
+/* hw-btn press */
+.hw-btn:active {
+  transform: scale(0.97) !important;
+  transition: transform var(--transition-press) !important;
+}
+
+/* ================================================================
+   3. Toolbar-btn — active/selected state shadow
+   ================================================================ */
+.toolbar-btn.active {
+  box-shadow:
+    inset 2px 2px 5px var(--neumo-inset-dark),
+    inset -2px -2px 5px var(--neumo-inset-light),
+    0 0 0 1px rgba(var(--accent-rgb), 0.22);
+}
+
+/* ================================================================
+   4. New-page-btn — icon rotates on hover (plus sign feels live)
+   ================================================================ */
+.new-page-btn i,
+.add-page-btn i {
+  transition: transform var(--transition-fast);
+  display: inline-block;
+}
+
+.new-page-btn:hover i,
+.add-page-btn:hover i {
+  transform: rotate(90deg) scale(1.1);
+}
+
+/* ================================================================
+   5. Sidebar page items — active left-bar indicator
+   ================================================================ */
+
+/* Inset box-shadow creates a 3 px left-edge accent bar.
+   No pseudo-element so it never conflicts with drag indicators. */
+.page-item {
+  transition: background var(--transition-fast),
+              box-shadow var(--transition-fast),
+              color var(--transition-fast),
+              border-color var(--transition-fast);
+}
+
+.page-item.active {
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+/* Page item icons — slide in from right when parent hovered */
+body.animations-enabled .page-item:hover .page-item-icons {
+  animation: atelierIconsReveal 140ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes atelierIconsReveal {
+  from { opacity: 0; transform: translateX(5px); }
+  to   { opacity: 0.6; transform: translateX(0); }
+}
+
+/* Icon hover — scale + opacity */
+.page-item-icons i {
+  transition: transform var(--transition-fast), color var(--transition-fast);
+}
+
+.page-item-icons i:hover {
+  transform: scale(1.2);
+  opacity: 1;
+}
+
+/* Star icon — slight rotate on hover */
+.page-item-icons .fa-star:hover {
+  transform: scale(1.22) rotate(10deg);
+}
+
+/* ================================================================
+   6. View tabs — press feedback
+   ================================================================ */
+.view-tab {
+  transition: background var(--transition-fast),
+              color var(--transition-fast),
+              box-shadow var(--transition-fast),
+              transform var(--transition-fast);
+}
+
+.view-tab:active {
+  transform: scale(0.95) !important;
+  transition: transform var(--transition-press) !important;
+}
+
+/* Theme icon button — gentle rotation on hover */
+.view-tab-theme {
+  transition: background var(--transition-fast),
+              color var(--transition-fast),
+              transform var(--transition-fast);
+}
+
+.view-tab-theme:hover {
+  transform: rotate(20deg) scale(1.1);
+}
+
+.view-tab-theme:active {
+  transform: scale(0.9) !important;
+  transition: transform var(--transition-press) !important;
+}
+
+/* ================================================================
+   7. Modal — backdrop fade-in + improved content entrance
+   ================================================================ */
+
+/* Backdrop fades in when modal becomes active */
+body.animations-enabled .modal.active {
+  animation: atelierBackdropIn 180ms ease both;
+}
+
+@keyframes atelierBackdropIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Content entrance — replaces generic scaleIn with more refined motion */
+body.animations-enabled .modal.active .modal-content {
+  animation: atelierModalIn 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes atelierModalIn {
+  from {
+    transform: scale(0.93) translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* acad-modal — uses its own overlay but same pattern */
+body.animations-enabled .acad-modal-overlay .acad-modal-content {
+  animation: atelierModalIn 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* hw-setup card entrance */
+body.animations-enabled .hw-setup-card {
+  animation: atelierModalIn 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ================================================================
+   8. Dropdowns & Date panel — smooth entrance
+   ================================================================ */
+.nf-select-menu--portal.is-open,
+.nf-date-panel--portal.is-open,
+.nf-select-menu.is-open,
+.nf-date-panel.is-open {
+  animation: atelierDropIn 160ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes atelierDropIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Drop-up variants */
+.nf-select-menu--portal.nf-select-menu--open-up.is-open,
+.nf-date-panel--portal.nf-date-panel--open-up.is-open {
+  animation: atelierDropInUp 160ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes atelierDropInUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Options hover */
+.nf-select-option {
+  transition: background var(--transition-press), color var(--transition-press);
+}
+
+/* ================================================================
+   9. Input focus rings — accent glow
+   ================================================================ */
+.modal-input {
+  transition: border-color var(--transition-fast),
+              box-shadow var(--transition-fast),
+              background var(--transition-fast);
+}
+
+.modal-input:focus {
+  border-color: var(--accent) !important;
+  box-shadow: var(--focus-ring), 0 2px 8px rgba(22, 30, 45, 0.06) !important;
+  background: var(--surface-bg-hover) !important;
+}
+
+.neumo-input:focus {
+  box-shadow:
+    inset 2px 2px 4px var(--neumo-inset-dark),
+    inset -2px -2px 4px var(--neumo-inset-light),
+    var(--focus-ring-strong) !important;
+}
+
+/* Global keyboard-nav focus ring — consistent across all interactive elements.
+   Using outline (not box-shadow) so neumo/card shadows are preserved. */
+.view-tab:focus-visible,
+.toolbar-btn:focus-visible,
+.neumo-btn:focus-visible,
+.btn:focus-visible,
+.page-item:focus-visible,
+.nf-select-trigger:focus-visible,
+.nf-date-trigger:focus-visible,
+.new-page-btn:focus-visible,
+.todo-add-btn:focus-visible,
+.todo-filter-btn:focus-visible,
+.hw-btn:focus-visible {
+  outline: 2px solid var(--accent-strong, var(--accent)) !important;
+  outline-offset: 3px !important;
+}
+
+/* Suppress default browser outline on mouse click (only show for keyboard) */
+.view-tab:focus:not(:focus-visible),
+.toolbar-btn:focus:not(:focus-visible),
+.neumo-btn:focus:not(:focus-visible),
+.btn:focus:not(:focus-visible),
+.page-item:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ================================================================
+   10. Todo items — hover state
+   ================================================================ */
+.todo-item {
+  border-radius: 8px;
+  transition: background var(--transition-fast),
+              box-shadow var(--transition-fast);
+}
+
+.todo-item:hover {
+  background: var(--surface-bg-hover);
+  box-shadow: 0 2px 8px rgba(22, 30, 45, 0.05);
+}
+
+/* ================================================================
+   11. Save / autosave status indicator
+   ================================================================ */
+@keyframes atelierSavePulse {
+  0%, 100% { opacity: 0.65; }
+  50%       { opacity: 1; }
+}
+
+@keyframes atelierSavedFlash {
+  0%   { opacity: 0.6; transform: scale(0.97); }
+  50%  { opacity: 1;   transform: scale(1.02); }
+  100% { opacity: 1;   transform: scale(1); }
+}
+
+.taskbar-save-status.saving {
+  animation: atelierSavePulse 1.4s ease-in-out infinite;
+}
+
+.taskbar-save-status.saved {
+  animation: atelierSavedFlash 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ================================================================
+   12. Cards — hover lift
+   ================================================================ */
+
+/* Preset cards */
+.preset-card {
+  transition: transform var(--transition-fast),
+              box-shadow var(--transition-fast),
+              border-color var(--transition-fast);
+}
+
+.preset-card:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 14px 40px rgba(22, 30, 45, 0.14);
+  border-color: rgba(var(--accent-rgb), 0.40) !important;
+}
+
+.preset-card:active {
+  transform: scale(0.98) translateY(0) !important;
+  transition: transform var(--transition-press) !important;
+}
+
+/* Homework stat cards */
+.hw-stat-card {
+  transition: transform var(--transition-fast),
+              box-shadow var(--transition-fast);
+}
+
+.hw-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(22, 30, 45, 0.10);
+}
+
+/* ================================================================
+   13. Theme panel entrance
+   ================================================================ */
+body.animations-enabled .theme-panel.active {
+  animation: atelierDropIn 200ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ================================================================
+   14. Mode buttons (apply-mode-toggle inside theme panel)
+   ================================================================ */
+.mode-btn {
+  transition: background var(--transition-fast),
+              color var(--transition-fast),
+              border-color var(--transition-fast),
+              box-shadow var(--transition-fast),
+              transform var(--transition-fast);
+}
+
+.mode-btn:hover:not(.active) {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lift-sm);
+}
+
+.mode-btn:active {
+  transform: scale(0.97) !important;
+  transition: transform var(--transition-press) !important;
+}
+
+/* ================================================================
+   15. Breadcrumb links — accent on hover
+   ================================================================ */
+.breadcrumb-link {
+  transition: background var(--transition-fast),
+              color var(--transition-fast),
+              transform var(--transition-fast);
+}
+
+.breadcrumb-link:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lift-sm);
+}
+
+.breadcrumb-link:active {
+  transform: scale(0.97) !important;
+  transition: transform var(--transition-press) !important;
+}
+
+/* ================================================================
+   16. Storage options — already has nice hover expand; polish icon
+   ================================================================ */
+.storage-collapsed-icon {
+  transition: transform var(--transition-fast),
+              opacity var(--transition-fast);
+}
+
+.storage-options:hover .storage-collapsed-icon {
+  transform: scale(1.06);
+}
+
+/* ================================================================
+   17. Sidebar section-title — new-page affordance
+   ================================================================ */
+.sidebar-section .section-title .new-page-btn,
+.sidebar-section .section-title button {
+  opacity: 0.55;
+  transition: opacity var(--transition-fast), transform var(--transition-fast);
+}
+
+.sidebar-section .section-title:hover .new-page-btn,
+.sidebar-section .section-title:hover button {
+  opacity: 1;
+}
+
+/* ================================================================
+   18. Checklist items in notes editor
+   ================================================================ */
+.editor .checklist-item {
+  transition: opacity var(--transition-fast);
+}
+
+.editor .checklist-item.done,
+.editor .checklist-item[data-done="true"] {
+  opacity: 0.55;
+}
+
+/* ================================================================
+   19. View tab — active state entrance
+   ================================================================ */
+body.animations-enabled .view-tab.active {
+  animation: atelierTabActivate 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes atelierTabActivate {
+  from { transform: scale(0.94); opacity: 0.6; }
+  to   { transform: scale(1);    opacity: 1;   }
+}
+
+/* ================================================================
+   20. Sidebar collapse — smooth active indicator hide
+   ================================================================ */
+.sidebar.collapsed .page-item.active {
+  box-shadow: none;
+}
+
+/* ================================================================
+   21. Misc interactive elements — polish for smaller surfaces
+   ================================================================ */
+
+/* Reset-theme-btn press */
+.reset-theme-btn:active {
+  transform: scale(0.97) !important;
+  transition: transform var(--transition-press) !important;
+}
+
+/* nf-date navigation buttons */
+.nf-date-nav {
+  transition: background var(--transition-fast),
+              transform var(--transition-fast);
+}
+
+.nf-date-nav:active {
+  transform: scale(0.92) !important;
+  transition: transform var(--transition-press) !important;
+}
+
+/* nf-date day hover */
+.nf-date-day {
+  transition: background var(--transition-fast),
+              color var(--transition-fast),
+              transform var(--transition-fast),
+              box-shadow var(--transition-fast);
+}
+
+.nf-date-day:hover:not(.nf-date-day--disabled) {
+  transform: scale(1.08);
+  box-shadow: 0 3px 10px rgba(22, 30, 45, 0.10);
+}
+
+.nf-date-day--selected,
+.nf-date-day--today {
+  transform: scale(1.05);
+}
+
+/* ================================================================
+   REDUCED MOTION — graceful degradation
+   Matches and extends the app's existing motion preference system.
+   The global [data-motionIntensity="off"] rule in styles.css already
+   sets transition/animation to none; we add safety-net overrides here.
+   ================================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  /* Collapse all transform-based effects; preserve color/shadow feedback */
+  .neumo-btn:hover,
+  .neumo-btn:active,
+  .new-page-btn:hover,
+  .new-page-btn:active,
+  .todo-add-btn:hover,
+  .todo-add-btn:active,
+  .toolbar-btn:hover,
+  .toolbar-btn:active,
+  .btn:hover,
+  .btn:active,
+  .todo-filter-btn:hover,
+  .todo-filter-btn:active,
+  .theme-switcher-btn:hover,
+  .theme-switcher-btn:active,
+  .hw-btn:active,
+  .view-tab:active,
+  .view-tab-theme:hover,
+  .view-tab-theme:active,
+  .preset-card:hover,
+  .preset-card:active,
+  .hw-stat-card:hover,
+  .breadcrumb-link:hover,
+  .breadcrumb-link:active,
+  .mode-btn:hover,
+  .mode-btn:active,
+  .reset-theme-btn:active,
+  .nf-date-nav:active,
+  .nf-date-day:hover,
+  .nf-date-day--selected,
+  .nf-date-day--today,
+  .new-page-btn:hover i,
+  .add-page-btn:hover i,
+  .page-item-icons i:hover,
+  .page-item-icons .fa-star:hover {
+    transform: none !important;
+    animation: none !important;
+  }
+
+  .modal.active,
+  .modal.active .modal-content,
+  .acad-modal-overlay .acad-modal-content,
+  .hw-setup-card,
+  .theme-panel.active,
+  .nf-select-menu--portal.is-open,
+  .nf-date-panel--portal.is-open,
+  .nf-select-menu.is-open,
+  .nf-date-panel.is-open,
+  .page-item:hover .page-item-icons,
+  .view-tab.active,
+  .taskbar-save-status.saving,
+  .taskbar-save-status.saved {
+    animation: none !important;
+  }
+
+  /* Still show active indicator without the scale-in animation */
+  .page-item.active {
+    box-shadow: inset 3px 0 0 var(--accent);
+  }
+}
+
+/* When the app's own motion toggle is fully off, zero all tokens */
+:is([data-motionIntensity="off"]) {
+  --transition-press  : 0ms !important;
+  --transition-pop    : 0ms !important;
+}
+
+/* When reduced, keep color/opacity but minimize transforms */
+:is([data-motionIntensity="reduced"]) .neumo-btn:hover,
+:is([data-motionIntensity="reduced"]) .toolbar-btn:hover,
+:is([data-motionIntensity="reduced"]) .btn:hover,
+:is([data-motionIntensity="reduced"]) .preset-card:hover,
+:is([data-motionIntensity="reduced"]) .hw-stat-card:hover {
+  transform: none !important;
+}
+
+/* ================================================================
+   Today view task-list scrollbar — slim, blended, no parallax look
+   The global scrollbar style (12px dark track + blue glow) clashes
+   inside the card, making the thumb look like a floating parallax
+   stripe. Override with a 4px transparent-track style.
+   ================================================================ */
+#view-today .task-list,
+.today-panel .task-list,
+.all-tasks-drawer .task-list {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(var(--accent-rgb), 0.28) transparent;
+}
+
+#view-today .task-list::-webkit-scrollbar,
+.today-panel .task-list::-webkit-scrollbar,
+.all-tasks-drawer .task-list::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+#view-today .task-list::-webkit-scrollbar-track,
+.today-panel .task-list::-webkit-scrollbar-track,
+.all-tasks-drawer .task-list::-webkit-scrollbar-track {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+#view-today .task-list::-webkit-scrollbar-thumb,
+.today-panel .task-list::-webkit-scrollbar-thumb,
+.all-tasks-drawer .task-list::-webkit-scrollbar-thumb {
+  background: rgba(var(--accent-rgb), 0.28);
+  border-radius: 999px;
+  border: none;
+  box-shadow: none;
+}
+
+#view-today .task-list::-webkit-scrollbar-thumb:hover,
+.today-panel .task-list::-webkit-scrollbar-thumb:hover,
+.all-tasks-drawer .task-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--accent-rgb), 0.50);
+}
+
+
+/* ===== Modal overlay cards: opaque background overrides all glass/frosted effects ===== */
+body .quick-capture-card.glass-card,
+body .command-palette-card.glass-card,
+body .deadline-radar-card.glass-card {
+    background: var(--bg-primary) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+}
+
+
+/* ================================================================
+   v1.1 — Microinteractions extension layer
+   Builds on the v1.0 core above. Same motion language, same gating.
+   New surfaces: review/AP cards, popover menus, more inputs,
+   completion states, tab indicator, mobile tap, empty states.
+   ================================================================ */
+
+/* ----------------------------------------------------------------
+   E1. Card surfaces — gentle hover lift across the dashboard.
+   Each card already has its own hover or no hover; we only add a
+   universal soft transition baseline so state changes look smooth.
+   We do NOT translate cards that are already translated by their
+   own rule (AP class/subject cards, hw-stat-card, preset-card).
+   ---------------------------------------------------------------- */
+.glass-card,
+.summary-card,
+.today-panel,
+.settings-card,
+.feature-toggle-card,
+.feature-setup-card {
+  transition:
+    border-color 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    background 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Subtle hover for review deck cards (didn't have one) */
+.review-deck-card {
+  transition:
+    transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.review-deck-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--deck-color, var(--accent, #d8c4a1)) 14%, transparent);
+}
+
+/* Review mode card press feedback (already has hover) */
+.review-mode-card {
+  transition:
+    transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    background 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.review-mode-card:active:not(:disabled) {
+  transform: scale(0.985) !important;
+  transition: transform var(--transition-press) !important;
+}
+
+/* Review mode pill press feedback */
+.review-mode-pill:active:not(:disabled) {
+  transform: scale(0.96) !important;
+  transition: transform var(--transition-press) !important;
+}
+
+/* Review action buttons — match the rest of the press language */
+.review-btn,
+.review-btn-primary,
+.review-btn-ghost,
+.review-btn-danger {
+  transition:
+    transform 140ms cubic-bezier(0.22, 1, 0.36, 1),
+    background 160ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 160ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 160ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.review-btn:active:not(:disabled),
+.review-btn-primary:active:not(:disabled),
+.review-btn-ghost:active:not(:disabled),
+.review-btn-danger:active:not(:disabled) {
+  transform: scale(0.97) translateY(0) !important;
+  transition: transform var(--transition-press) !important;
+}
+.review-btn:focus-visible,
+.review-btn-primary:focus-visible,
+.review-btn-ghost:focus-visible,
+.review-btn-danger:focus-visible {
+  outline: 2.5px solid rgba(var(--accent-rgb), 0.65) !important;
+  outline-offset: 2px !important;
+}
+
+/* AP class cards — already lift; add a press feedback to match */
+.ap-study-class-card:active {
+  transform: translateY(-1px) scale(0.992) !important;
+  transition: transform var(--transition-press) !important;
+}
+.ap-study-subject-card {
+  transition:
+    transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.ap-study-subject-card:active {
+  transform: scale(0.985) !important;
+  transition: transform var(--transition-press) !important;
+}
+
+/* Homework task items — light hover affordance */
+.hw-task-item {
+  transition:
+    transform 160ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 160ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 160ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.hw-task-item:hover {
+  border-color: var(--surface-border-strong);
+  box-shadow: 0 4px 14px rgba(22, 30, 45, 0.06);
+}
+
+/* HW course panel hover */
+.hw-course-panel {
+  transition:
+    border-color 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.hw-course-panel:hover {
+  border-color: var(--surface-border-strong);
+  box-shadow: 0 4px 14px rgba(22, 30, 45, 0.05);
+}
+
+/* HW lane action button press */
+.hw-lane-action {
+  transition:
+    transform var(--transition-fast),
+    background var(--transition-fast),
+    border-color var(--transition-fast);
+}
+.hw-lane-action:active {
+  transform: scale(0.97) !important;
+  transition: transform var(--transition-press) !important;
+}
+
+/* Today task cards — gentle hover already exists; add press feedback */
+.task-card {
+  transition:
+    transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    background 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.task-card:active {
+  transform: translateY(-1px) scale(0.995) !important;
+  transition: transform var(--transition-press) !important;
+}
+
+/* ----------------------------------------------------------------
+   E2. Sidebar shortcut buttons — hover/active polish
+   ---------------------------------------------------------------- */
+.sidebar-shortcut,
+.sidebar-shortcut-btn {
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+.sidebar-shortcut:hover,
+.sidebar-shortcut-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lift-sm);
+}
+.sidebar-shortcut:active,
+.sidebar-shortcut-btn:active {
+  transform: scale(0.96) !important;
+  transition: transform var(--transition-press) !important;
+}
+.sidebar-shortcut:focus-visible,
+.sidebar-shortcut-btn:focus-visible {
+  outline: 2.5px solid rgba(var(--accent-rgb), 0.65) !important;
+  outline-offset: 2px !important;
+}
+
+/* "Add shortcut" small + button */
+.sidebar-shortcut-add {
+  transition:
+    background var(--transition-fast),
+    transform var(--transition-fast),
+    color var(--transition-fast);
+}
+.sidebar-shortcut-add:hover {
+  transform: scale(1.08) rotate(90deg);
+}
+.sidebar-shortcut-add:active {
+  transform: scale(0.92) !important;
+  transition: transform var(--transition-press) !important;
+}
+
+/* ----------------------------------------------------------------
+   E3. Icon buttons (.icon-btn) — small affordances on hover/press
+   Used by the focus timer controls and elsewhere.
+   ---------------------------------------------------------------- */
+.icon-btn {
+  transition:
+    transform var(--transition-fast),
+    background var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+.icon-btn:not(:disabled):hover {
+  transform: translateY(-1px);
+}
+.icon-btn:not(:disabled):active {
+  transform: scale(0.92) !important;
+  transition: transform var(--transition-press) !important;
+}
+.icon-btn:focus-visible {
+  outline: 2.5px solid rgba(var(--accent-rgb), 0.65) !important;
+  outline-offset: 2px !important;
+}
+
+/* ----------------------------------------------------------------
+   E4. Timeline mode tabs — match the polish of the main view tabs
+   ---------------------------------------------------------------- */
+.timeline-mode-tab {
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
+}
+.timeline-mode-tab:active {
+  transform: scale(0.96) !important;
+  transition: transform var(--transition-press) !important;
+}
+
+/* ----------------------------------------------------------------
+   E5. Three-dot / "more" popover menus — entrance animations
+   These menus are toggled with the `hidden` attribute by inline
+   scripts in the HTML. Animate on appearance for a softer reveal.
+   ---------------------------------------------------------------- */
+body.animations-enabled .today-hero-menu:not([hidden]),
+body.animations-enabled .timeline-more-menu:not([hidden]) {
+  animation: atelierPopIn 160ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes atelierPopIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Items inside popover menus — subtle hover */
+.today-hero-menu-item,
+.timeline-more-menu button,
+.view-more-menu .view-tab {
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
+    transform var(--transition-fast);
+}
+.today-hero-menu-item:active,
+.timeline-more-menu button:active,
+.view-more-menu .view-tab:active {
+  transform: scale(0.98) !important;
+  transition: transform var(--transition-press) !important;
+}
+
+/* The big "more views" portal menu (overflow tabs) */
+body.animations-enabled .view-more-menu.open,
+body.animations-enabled .view-more-menu--portal.open {
+  animation: atelierDropIn 160ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ----------------------------------------------------------------
+   E6. Inputs / textareas / selects — focus polish across the app
+   The base CSS focuses `.modal-input` and `.neumo-input` already;
+   extend to native form controls and feature-specific inputs.
+   ---------------------------------------------------------------- */
+.search-input,
+.college-input,
+.college-textarea,
+.college-select,
+.review-deck-name-input,
+.review-deck-desc-input,
+.review-deck-subject-input,
+.hw-inline-add input,
+.hw-inline-add select,
+.hw-chip-input,
+.hw-chip-input input,
+.timer-field,
+.timer-custom-input {
+  transition:
+    border-color 160ms cubic-bezier(0.22, 1, 0.36, 1),
+    background 160ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 160ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.search-input:focus,
+.college-input:focus,
+.college-textarea:focus,
+.college-select:focus,
+.review-deck-name-input:focus,
+.review-deck-desc-input:focus,
+.review-deck-subject-input:focus,
+.hw-inline-add input:focus,
+.hw-inline-add select:focus,
+.hw-chip-input:focus-within,
+.timer-field:focus,
+.timer-custom-input:focus {
+  outline: none;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2.5px rgba(var(--accent-rgb), 0.25);
+}
+
+/* nf-select / nf-date triggers — gentle hover/focus */
+.nf-select-trigger,
+.nf-date-trigger {
+  transition:
+    border-color var(--transition-fast),
+    background var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+.nf-select-trigger:hover,
+.nf-date-trigger:hover {
+  background: var(--surface-bg-hover, color-mix(in srgb, currentColor 4%, transparent));
+}
+
+/* ----------------------------------------------------------------
+   E7. Tab indicator — soft underline for the active view tab
+   Pure decoration; pseudo-element so it never displaces content
+   or interferes with the existing active-tab box-shadow styles.
+   ---------------------------------------------------------------- */
+.view-tab {
+  position: relative;
+}
+.view-tab::after {
+  content: "";
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  bottom: 4px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--accent);
+  opacity: 0;
+  transform: scaleX(0.4);
+  transform-origin: center;
+  transition:
+    opacity 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+.view-tab.active::after {
+  opacity: 0.9;
+  transform: scaleX(1);
+}
+
+/* Don't show the underline for the round theme switch icon */
+.view-tab.view-tab-theme::after { display: none !important; }
+
+/* ----------------------------------------------------------------
+   E8. Checkbox / completion feedback — small confirmation flash
+   Targets the editor's checklist items, the Today task checkboxes,
+   and the AP quick-tasks checkboxes. The :checked transition gives
+   a brief scale + opacity flash; subsequent line-through fade is
+   handled by existing rules.
+   ---------------------------------------------------------------- */
+@keyframes atelierCheckPop {
+  0%   { transform: scale(0.85); }
+  60%  { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+
+body.animations-enabled .editor .checklist-item input[type="checkbox"]:checked,
+body.animations-enabled .ap-study-quick-tasks__item input[type="checkbox"]:checked,
+body.animations-enabled .task-card input[type="checkbox"]:checked,
+body.animations-enabled .hw-task-item input[type="checkbox"]:checked {
+  animation: atelierCheckPop 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* When a task transitions to "done" state, fade the row gently */
+.task-card,
+.editor .checklist-item,
+.ap-study-quick-tasks__item,
+.hw-task-item {
+  transition: opacity 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ----------------------------------------------------------------
+   E9. Progress bars and rings — smooth value transitions
+   .progress-fill already has 300ms; extend to AP rings and other
+   progress visuals so value changes glide instead of snap.
+   ---------------------------------------------------------------- */
+.progress-fill,
+.timer-progress-bar,
+.ap-study-progress-track span,
+.ap-study-ring__fill {
+  transition:
+    width 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    stroke-dashoffset 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    background 220ms ease;
+}
+
+/* ----------------------------------------------------------------
+   E10. Empty states — gentle fade-in on first paint
+   ---------------------------------------------------------------- */
+@keyframes atelierEmptyFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+body.animations-enabled .empty-state,
+body.animations-enabled .ap-study-empty-state,
+body.animations-enabled .timeline-empty-state,
+body.animations-enabled .business-empty-state,
+body.animations-enabled .review-empty-card,
+body.animations-enabled .review-empty-hero,
+body.animations-enabled .hw-lane-empty {
+  animation: atelierEmptyFadeIn 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ----------------------------------------------------------------
+   E11. Today-view review card — soft entrance when it un-hides
+   The card uses the `hidden` attribute, toggled by JS once review
+   data is computed. Animate when it appears.
+   ---------------------------------------------------------------- */
+body.animations-enabled #todayReviewCard:not([hidden]) {
+  animation: atelierEmptyFadeIn 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ----------------------------------------------------------------
+   E12. Mobile tap feedback — keep press scale on touch devices
+   mobile.css disables hover transforms on (hover: none) devices,
+   which is correct. We still want the :active scale to fire on
+   touch — preserve it explicitly.
+   ---------------------------------------------------------------- */
+@media (hover: none) and (pointer: coarse) {
+  .neumo-btn:active,
+  .btn:active,
+  .toolbar-btn:active,
+  .new-page-btn:active,
+  .todo-add-btn:active,
+  .todo-filter-btn:active,
+  .theme-switcher-btn:active,
+  .hw-btn:active,
+  .hw-lane-action:active,
+  .review-btn:active,
+  .review-btn-primary:active,
+  .review-btn-ghost:active,
+  .review-btn-danger:active,
+  .review-mode-pill:active,
+  .review-mode-card:active,
+  .icon-btn:active,
+  .view-tab:active,
+  .timeline-mode-tab:active,
+  .sidebar-shortcut:active,
+  .sidebar-shortcut-btn:active,
+  .sidebar-shortcut-add:active,
+  .ap-study-class-card:active,
+  .ap-study-subject-card:active,
+  .preset-card:active,
+  .breadcrumb-link:active,
+  .mode-btn:active,
+  .reset-theme-btn:active,
+  .nf-date-nav:active {
+    transform: scale(0.97) !important;
+    transition: transform var(--transition-press) !important;
+  }
+}
+
+/* ----------------------------------------------------------------
+   E13. Modal close-button polish (where present)
+   ---------------------------------------------------------------- */
+.acad-modal-close-btn,
+.modal-close,
+.modal-close-btn {
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+.acad-modal-close-btn:hover,
+.modal-close:hover,
+.modal-close-btn:hover {
+  transform: rotate(90deg);
+}
+.acad-modal-close-btn:active,
+.modal-close:active,
+.modal-close-btn:active {
+  transform: scale(0.92) !important;
+  transition: transform var(--transition-press) !important;
+}
+
+/* ----------------------------------------------------------------
+   E14. Reduced-motion safety net for the v1.1 additions
+   ---------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .review-deck-card:hover,
+  .review-mode-card:active,
+  .review-mode-pill:active,
+  .review-btn:active,
+  .review-btn-primary:active,
+  .review-btn-ghost:active,
+  .review-btn-danger:active,
+  .ap-study-class-card:active,
+  .ap-study-subject-card:active,
+  .hw-lane-action:active,
+  .task-card:active,
+  .sidebar-shortcut:hover,
+  .sidebar-shortcut-btn:hover,
+  .sidebar-shortcut:active,
+  .sidebar-shortcut-btn:active,
+  .sidebar-shortcut-add:hover,
+  .sidebar-shortcut-add:active,
+  .icon-btn:not(:disabled):hover,
+  .icon-btn:not(:disabled):active,
+  .timeline-mode-tab:active,
+  .acad-modal-close-btn:hover,
+  .acad-modal-close-btn:active,
+  .modal-close:hover,
+  .modal-close:active,
+  .modal-close-btn:hover,
+  .modal-close-btn:active,
+  .view-tab::after {
+    transform: none !important;
+    animation: none !important;
+  }
+  .view-tab.active::after {
+    /* Still show the indicator, just without the scale-in animation */
+    opacity: 0.9;
+    transform: none !important;
+  }
+  body.animations-enabled .empty-state,
+  body.animations-enabled .ap-study-empty-state,
+  body.animations-enabled .timeline-empty-state,
+  body.animations-enabled .business-empty-state,
+  body.animations-enabled .review-empty-card,
+  body.animations-enabled .review-empty-hero,
+  body.animations-enabled .hw-lane-empty,
+  body.animations-enabled #todayReviewCard:not([hidden]),
+  body.animations-enabled .today-hero-menu:not([hidden]),
+  body.animations-enabled .timeline-more-menu:not([hidden]),
+  body.animations-enabled .view-more-menu.open,
+  body.animations-enabled .view-more-menu--portal.open,
+  body.animations-enabled .editor .checklist-item input[type="checkbox"]:checked,
+  body.animations-enabled .ap-study-quick-tasks__item input[type="checkbox"]:checked,
+  body.animations-enabled .task-card input[type="checkbox"]:checked,
+  body.animations-enabled .hw-task-item input[type="checkbox"]:checked {
+    animation: none !important;
+  }
+}
+
+/* When the in-app motion intensity is reduced (but not off), keep
+   color/shadow feedback but drop the additional transforms. */
+:is([data-motionIntensity="reduced"]) .review-deck-card:hover,
+:is([data-motionIntensity="reduced"]) .ap-study-class-card:active,
+:is([data-motionIntensity="reduced"]) .ap-study-subject-card:active,
+:is([data-motionIntensity="reduced"]) .task-card:active,
+:is([data-motionIntensity="reduced"]) .sidebar-shortcut:hover,
+:is([data-motionIntensity="reduced"]) .sidebar-shortcut-btn:hover,
+:is([data-motionIntensity="reduced"]) .icon-btn:not(:disabled):hover {
+  transform: none !important;
+}
+
+/* ================================================================
+   EXTENSION: Notification Center microinteractions
+   Added 2026-06-05
+   All animations gate on body.animations-enabled and respect
+   prefers-reduced-motion (handled via the existing reduced-motion
+   block above and via notifications.css).
+   ================================================================ */
+
+/* ---- Notification bell -------------------------------------------------- */
+body.animations-enabled .notif-bell-btn {
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
+    transform 160ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 160ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+body.animations-enabled .notif-bell-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lift-sm);
+}
+
+body.animations-enabled .notif-bell-btn:active {
+  transform: scale(0.92) translateY(0) !important;
+  transition-duration: 80ms;
+}
+
+/* Badge pop when count increases — scoped to animations-enabled */
+body.animations-enabled .notif-bell-badge[data-count]:not([data-count="0"]) {
+  transform: scale(1);
+  transition: transform 240ms cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+/* ---- Notification rows -------------------------------------------------- */
+body.animations-enabled .notif-row {
+  transition:
+    background 140ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+body.animations-enabled .notif-row.read .notif-row-title {
+  transition: color 200ms ease, font-weight 200ms ease;
+}
+
+/* ---- Settings row hover / active ---------------------------------------- */
+body.animations-enabled .cc-sidebar-item {
+  transition:
+    background 150ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 150ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 150ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 100ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+body.animations-enabled .cc-sidebar-item:active {
+  transform: scale(0.98) !important;
+  transition-duration: 70ms !important;
+}
+
+body.animations-enabled .cc-btn {
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform 100ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+body.animations-enabled .cc-btn:active {
+  transform: scale(0.97) !important;
+  transition-duration: 70ms !important;
+}
+
+body.animations-enabled .cc-switch-track {
+  transition: background 220ms cubic-bezier(0.22, 1, 0.36, 1), border-color 220ms ease;
+}
+
+body.animations-enabled .cc-switch-thumb {
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+body.animations-enabled .cc-search-input:focus {
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+/* ---- Reduced-motion guard for new additions ------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  .notif-bell-btn,
+  .notif-row,
+  .cc-sidebar-item,
+  .cc-btn,
+  .cc-switch-track,
+  .cc-switch-thumb {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+body.motion-off .notif-bell-btn,
+body.motion-off .notif-row,
+body.motion-off .cc-sidebar-item,
+body.motion-off .cc-btn,
+body.motion-off .cc-switch-track,
+body.motion-off .cc-switch-thumb {
+  transition: none !important;
+  animation: none !important;
+}

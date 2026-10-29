@@ -1,0 +1,470 @@
+/* Theme cohesion layer.
+ * Loaded after the authored preset sheets so brand identity and the canonical
+ * Heritage preset remain visible even when legacy shell selectors are present.
+ */
+
+/* The Sutra mark is a dark raster asset. Give it a deliberate, theme-aware
+   frame so it remains visible on both light and dark brand surfaces. */
+body[data-theme-key] .global-app-brand {
+    color: var(--text-primary) !important;
+    border-radius: 12px;
+    transition: background .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+
+body[data-theme-key] .global-app-brand .app-title-mark {
+    width: 30px;
+    height: 30px;
+    padding: 3px;
+    object-fit: contain;
+    background: #ffffff;
+    border: 1px solid color-mix(in srgb, var(--accent) 38%, #ffffff 62%);
+    border-radius: 9px;
+    box-shadow: 0 5px 14px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+body[data-theme-key] .global-app-brand .app-title-wordmark {
+    color: var(--text-primary) !important;
+    text-shadow: 0 1px 0 color-mix(in srgb, var(--bg-primary) 55%, transparent);
+}
+
+body[data-theme-key] .global-app-brand:hover {
+    background: color-mix(in srgb, var(--accent) 10%, transparent) !important;
+}
+
+body:is([data-theme-key="windows11"], [data-theme-key="github"], [data-theme-key="paper"], [data-theme-key="heritage"]) .global-app-brand .app-title-mark {
+    background: #fffdf8;
+    border-color: color-mix(in srgb, var(--accent) 46%, #ffffff 54%);
+}
+
+body:is([data-theme-key="ubuntu"], [data-theme-key="spotify"], [data-theme-key="netflix"], [data-theme-key="slack"], [data-theme-key="dune"]) .global-app-brand .app-title-mark {
+    background: #fffaf3;
+    border-color: color-mix(in srgb, var(--accent) 54%, #ffffff 46%);
+}
+
+/* Make brand themes use their actual identity selector. The bridge also sets
+   data-theme, while these key-based fallbacks cover the first paint and stale
+   saved sessions. */
+body[data-theme-key="windows11"] {
+    --font-heading: "Segoe UI Variable", "Segoe UI", sans-serif;
+}
+
+body[data-theme-key="github"] {
+    --font-heading: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+body[data-theme-key="spotify"] {
+    --font-heading: "Montserrat", "Inter", sans-serif;
+}
+
+body[data-theme-key="netflix"] {
+    --font-heading: "Montserrat", "Inter", sans-serif;
+}
+
+body[data-theme-key="slack"] {
+    --font-heading: "Slack-Lato", "Lato", "Inter", sans-serif;
+}
+
+body[data-theme-key="ubuntu"] {
+    --font-heading: "Ubuntu", "Fira Sans", "Segoe UI", sans-serif;
+}
+
+body:is([data-theme-key="spotify"], [data-theme-key="netflix"], [data-theme-key="slack"], [data-theme-key="ubuntu"]) .global-app-brand .app-title-wordmark {
+    letter-spacing: .01em;
+    font-weight: 760;
+}
+
+body[data-theme-key="github"] .global-app-brand .app-title-wordmark {
+    font-weight: 650;
+    letter-spacing: -.02em;
+}
+
+body[data-theme-key="windows11"] .global-app-brand .app-title-wordmark {
+    letter-spacing: -.025em;
+    font-weight: 650;
+}
+
+/* Brand-specific controls stay recognizable without turning the whole app
+   into a literal clone of another product. */
+body[data-theme-key="spotify"] :is(.view-tab.active, .toolbar-btn.active, .btn-primary, .cc-btn-primary) {
+    background: linear-gradient(135deg, #1ed760, #16a34a) !important;
+    border-color: #69f59b !important;
+    color: #04150b !important;
+}
+
+body[data-theme-key="netflix"] :is(.view-tab.active, .toolbar-btn.active, .btn-primary, .cc-btn-primary) {
+    background: linear-gradient(135deg, #e50914, #b20710) !important;
+    border-color: #ff6b73 !important;
+    color: #ffffff !important;
+}
+
+body[data-theme-key="slack"] :is(.view-tab.active, .toolbar-btn.active, .btn-primary, .cc-btn-primary) {
+    background: linear-gradient(135deg, #36c5f0, #611f69 72%) !important;
+    border-color: #c8a8ff !important;
+    color: #ffffff !important;
+}
+
+body[data-theme-key="ubuntu"] :is(.view-tab.active, .toolbar-btn.active, .btn-primary, .cc-btn-primary) {
+    background: linear-gradient(135deg, #e95420, #77216f) !important;
+    border-color: #ffb38b !important;
+    color: #ffffff !important;
+}
+
+body[data-theme-key="github"] :is(.view-tab.active, .toolbar-btn.active, .btn-primary, .cc-btn-primary) {
+    background: #1f883d !important;
+    border-color: #1a7f37 !important;
+    color: #ffffff !important;
+}
+
+body[data-theme-key="windows11"] :is(.view-tab.active, .toolbar-btn.active, .btn-primary, .cc-btn-primary) {
+    background: linear-gradient(135deg, #0078d4, #0b5cad) !important;
+    border-color: #67b8ff !important;
+    color: #ffffff !important;
+}
+
+/* Dune: keep the cinematic desert idea, but remove the over-layered haze and
+   oversized glow that made the workspace muddy and visually unstable. */
+body[data-theme-key="dune"] {
+    --font-heading: "Cinzel", "Playfair Display", Georgia, serif;
+    --font-body: "Inter", "Segoe UI", sans-serif;
+    --bg-primary: #140c08;
+    --bg-secondary: #25150d;
+    --text-primary: #fff2d2;
+    --text-secondary: #d7b98c;
+    --text-muted: #a98963;
+    --accent: #e7ae5c;
+    --accent-rgb: 231, 174, 92;
+    --surface-bg: rgba(255, 220, 156, .07);
+    --surface-bg-hover: rgba(255, 220, 156, .12);
+    --surface-border: rgba(231, 174, 92, .24);
+    --surface-border-strong: rgba(231, 174, 92, .4);
+    background: linear-gradient(160deg, #2a170d 0%, #160b07 56%, #090504 100%) !important;
+}
+
+body[data-theme-key="dune"]::before {
+    background:
+        radial-gradient(circle at 82% 14%, rgba(255, 226, 170, .75) 0 1.2%, transparent 4.5%),
+        radial-gradient(ellipse at 18% 18%, rgba(228, 157, 69, .14), transparent 30%),
+        linear-gradient(150deg, rgba(33, 17, 9, .05), rgba(6, 3, 2, .24));
+    opacity: .62;
+    animation: none !important;
+}
+
+body[data-theme-key="dune"]::after {
+    inset: auto 0 0;
+    height: 30vh;
+    background: linear-gradient(to top, rgba(113, 48, 18, .42), transparent 78%);
+    opacity: .48;
+    filter: none;
+    animation: none !important;
+}
+
+body[data-theme-key="dune"] .main-content {
+    background: linear-gradient(180deg, rgba(19, 10, 6, .64), rgba(10, 5, 3, .8)) !important;
+}
+
+body[data-theme-key="dune"] :is(.sidebar, .top-nav, .toolbar-wrapper, .theme-panel, .modal-content, .storage-options) {
+    background: linear-gradient(145deg, rgba(47, 27, 15, .96), rgba(22, 12, 7, .94)) !important;
+    border-color: rgba(231, 174, 92, .26) !important;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, .38) !important;
+    -webkit-backdrop-filter: blur(12px) saturate(1.08) !important;
+    backdrop-filter: blur(12px) saturate(1.08) !important;
+}
+
+body[data-theme-key="dune"] :is(.view-header h1, .today-greeting h1, .cc-header h1, .theme-panel-title) {
+    color: #ffe7b4 !important;
+    background: none !important;
+    letter-spacing: .055em;
+    text-shadow: 0 2px 22px rgba(231, 174, 92, .16);
+}
+
+body[data-theme-key="dune"] .global-app-brand .app-title-wordmark {
+    color: #ffe7b4 !important;
+}
+
+/* One canonical warm preset. Luxury and Sepia remain recognized legacy keys,
+   but the picker exposes one clearly differentiated Heritage direction. */
+body[data-theme="heritage"][data-theme-key="heritage"] {
+    color-scheme: light;
+    --font-heading: "Cormorant Garamond", "Playfair Display", Georgia, serif;
+    --font-body: "Avenir Next", "Segoe UI", sans-serif;
+    --bg-primary: #f8f1e5;
+    --bg-secondary: #e9dcc9;
+    --bg-hover: #dfcfb8;
+    --bg-elevated: #fffaf1;
+    --editor-bg: #fffaf2;
+    --text-primary: #2f251b;
+    --text-secondary: #66513d;
+    --text-muted: #927860;
+    --accent: #a96f3f;
+    --accent-rgb: 169, 111, 63;
+    --accent-strong: #7e4c29;
+    --accent-soft: rgba(169, 111, 63, .15);
+    --border: rgba(72, 52, 32, .17);
+    --glass-01: rgba(255, 250, 241, .92);
+    --glass-02: rgba(248, 240, 227, .96);
+    --glass-border: rgba(72, 52, 32, .18);
+    --surface-bg: rgba(72, 52, 32, .045);
+    --surface-bg-hover: rgba(72, 52, 32, .08);
+    --surface-bg-active: rgba(169, 111, 63, .12);
+    --surface-border: rgba(72, 52, 32, .17);
+    --surface-border-strong: rgba(169, 111, 63, .32);
+    --surface-bg-elevated: rgba(255, 255, 255, .48);
+    --sidebar-bg: #e9dcc9;
+    --button-bg: #a96f3f;
+    --button-bg-hover: #8e5a33;
+    --button-border: #7e4c29;
+    --button-text: #fffaf1;
+    --theme-gradient-start: #f8f1e5;
+    --theme-gradient-mid: #eadcc9;
+    --theme-gradient-end: #f4eadc;
+    background:
+        radial-gradient(circle at 88% 12%, rgba(169, 111, 63, .12), transparent 30%),
+        linear-gradient(155deg, #fbf6ed, #eadcc9 58%, #f4eadc) !important;
+}
+
+body[data-theme="heritage"][data-theme-key="heritage"]::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    opacity: .58;
+    background:
+        radial-gradient(circle, rgba(83, 58, 36, .12) 0 .6px, transparent .8px) 0 0 / 9px 9px,
+        repeating-linear-gradient(96deg, rgba(104, 74, 44, .025) 0 1px, transparent 1px 8px);
+}
+
+body[data-theme="heritage"][data-theme-key="heritage"] .app-container {
+    position: relative;
+    z-index: 1;
+    background: transparent;
+}
+
+body[data-theme="heritage"][data-theme-key="heritage"] :is(.sidebar, .top-nav, .toolbar-wrapper, .theme-panel, .modal-content, .storage-options) {
+    background: rgba(255, 250, 241, .9) !important;
+    border-color: rgba(72, 52, 32, .18) !important;
+    box-shadow: 0 12px 25px rgba(72, 52, 32, .1) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    backdrop-filter: blur(10px) !important;
+}
+
+body[data-theme="heritage"][data-theme-key="heritage"] .sidebar {
+    background: linear-gradient(180deg, #eee2d0, #e4d3bc) !important;
+}
+
+body[data-theme="heritage"][data-theme-key="heritage"] :is(.view-header h1, .today-greeting h1, .cc-header h1, .theme-panel-title) {
+    font-family: var(--font-heading);
+    color: #3c2c1e !important;
+    letter-spacing: -.02em;
+}
+
+body[data-theme="heritage"][data-theme-key="heritage"] :is(.view-tab.active, .toolbar-btn.active, .btn-primary, .cc-btn-primary) {
+    background: linear-gradient(135deg, #b77b4c, #8e5a33) !important;
+    border-color: #754621 !important;
+    color: #fffaf1 !important;
+    box-shadow: 0 8px 18px rgba(126, 76, 41, .2) !important;
+}
+
+/* Picker previews: the single Heritage card is visibly different from the
+   older warm aliases that remain only for compatibility. */
+.preset-card[data-theme="heritage"] .preset-preview {
+    background:
+        radial-gradient(circle at 76% 24%, rgba(169, 111, 63, .36), transparent 32%),
+        linear-gradient(145deg, #fffaf1, #e9dcc9 62%, #a96f3f) !important;
+}
+
+.preset-card:is([data-theme="luxury"], [data-theme="sepia"]) {
+    display: none !important;
+}
+
+/* Custom theme creator: keep the modal readable during live preview, prevent
+   inherited preset styling from flattening the six color controls, and make
+   the action row remain reachable on short screens. */
+#customThemeSetupModal .custom-theme-setup-modal-content {
+    width: min(560px, calc(100vw - 28px));
+    max-height: min(760px, calc(100vh - 28px));
+    overflow: auto;
+    background: var(--bg-elevated, #fff) !important;
+    color: var(--text-primary, #1f2937) !important;
+}
+
+#customThemeSetupModal .custom-theme-setup-color-input {
+    width: 42px;
+    height: 34px;
+    min-width: 42px;
+    padding: 2px;
+    cursor: pointer;
+    background: var(--surface-bg-elevated, #fff) !important;
+    border: 1px solid var(--surface-border, #d7dce5) !important;
+    border-radius: 8px;
+}
+
+#customThemeSetupModal .modal-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    background: var(--bg-elevated, #fff) !important;
+    border-top: 1px solid var(--surface-border, #d7dce5);
+}
+
+/* -------------------------------------------------------------------------
+   Glass desktop continuity
+   The contextual shell owns the normal Notes toolbar flow, but the Glass
+   theme uses a floating Liquid Glass chrome layer. Keep this late override
+   scoped to Glass so other themes retain their contextual-shell behavior.
+   ------------------------------------------------------------------------- */
+@media (min-width: 1025px) {
+    body:is([data-theme="glass"], [data-theme="liquidglass"]) #view-notes .toolbar-wrapper {
+        position: fixed !important;
+        top: calc(var(--top-nav-height, var(--sutra-global-nav-height, 72px)) + 10px) !important;
+        left: calc(var(--sidebar-width) + 28px) !important;
+        right: 28px !important;
+        width: auto !important;
+        max-width: none !important;
+        min-height: 52px !important;
+        height: 52px !important;
+        margin: 0 !important;
+        padding: 5px 9px !important;
+        display: flex !important;
+        align-items: center;
+        justify-content: flex-start !important;
+        border: 1px solid var(--glass-chrome-edge, rgba(255, 255, 255, 0.58)) !important;
+        border-radius: 18px !important;
+        background:
+            linear-gradient(180deg, var(--glass-chrome-top, rgba(255, 255, 255, 0.68)), var(--glass-chrome-bottom, rgba(255, 255, 255, 0.38))) !important;
+        -webkit-backdrop-filter: blur(var(--glass-blur, 24px)) saturate(var(--glass-saturate, 175%)) !important;
+        backdrop-filter: blur(var(--glass-blur, 24px)) saturate(var(--glass-saturate, 175%)) !important;
+        box-shadow:
+            inset 0 1px 0 var(--glass-inner-highlight, rgba(255, 255, 255, 0.9)),
+            inset 0 0 0 1px color-mix(in srgb, var(--glass-rim, #fff) 35%, transparent),
+            0 10px 26px rgba(36, 54, 88, 0.12) !important;
+    }
+
+    body:is([data-theme="glass"], [data-theme="liquidglass"]):has(.sidebar.collapsed) #view-notes .toolbar-wrapper,
+    body:is([data-theme="glass"], [data-theme="liquidglass"]) .sidebar.collapsed ~ .main-content #view-notes .toolbar-wrapper {
+        left: calc(var(--sidebar-collapsed-width) + 28px) !important;
+    }
+
+    body:is([data-theme="glass"], [data-theme="liquidglass"]) #view-notes .toolbar {
+        width: 100% !important;
+        min-width: 0;
+        margin: 0 !important;
+        padding: 0 3px !important;
+        justify-content: flex-start !important;
+        align-items: center;
+        gap: 7px;
+    }
+
+    body:is([data-theme="glass"], [data-theme="liquidglass"]) #view-notes .toolbar-btn,
+    body:is([data-theme="glass"], [data-theme="liquidglass"]) #view-notes .toolbar-field,
+    body:is([data-theme="glass"], [data-theme="liquidglass"]) #view-notes .nf-select-trigger {
+        color: var(--text-secondary, #3f4652) !important;
+        border-color: var(--surface-border-strong, rgba(87, 102, 128, 0.12)) !important;
+        background: var(--surface-bg-elevated, rgba(255, 255, 255, 0.32)) !important;
+        box-shadow: inset 0 1px 0 var(--glass-inner-highlight, rgba(255, 255, 255, 0.55)) !important;
+    }
+
+    body:is([data-theme="glass"], [data-theme="liquidglass"]) #view-notes .toolbar-btn:hover,
+    body:is([data-theme="glass"], [data-theme="liquidglass"]) #view-notes .toolbar-field:hover,
+    body:is([data-theme="glass"], [data-theme="liquidglass"]) #view-notes .nf-select-trigger:hover {
+        color: var(--text-primary, #1d1d1f) !important;
+        background: var(--glass-fill-strong, rgba(255, 255, 255, 0.64)) !important;
+        border-color: color-mix(in srgb, var(--accent, #0a84ff) 24%, transparent) !important;
+    }
+
+    body:is([data-theme="glass"], [data-theme="liquidglass"]) #view-notes .toolbar-btn.active,
+    body:is([data-theme="glass"], [data-theme="liquidglass"]) #view-notes .toolbar-btn[aria-pressed="true"] {
+        color: var(--accent-strong, #0069d9) !important;
+        background: var(--accent-soft, rgba(10, 132, 255, 0.14)) !important;
+        border-color: color-mix(in srgb, var(--accent, #0a84ff) 28%, transparent) !important;
+    }
+
+    body:is([data-theme="glass"], [data-theme="liquidglass"]) #view-notes .toolbar-separator {
+        background: var(--surface-border-strong, rgba(72, 88, 116, 0.22)) !important;
+    }
+}
+
+/* Brand lockup: the existing raster mark is deliberately framed once, while
+   the wordmark stays crisp and optically aligned with it. */
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .global-app-brand {
+    gap: 10px;
+    min-width: 140px;
+    border-radius: 14px;
+}
+
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .global-app-brand .app-title-mark {
+    display: block;
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
+    padding: 4px;
+    object-fit: contain;
+    background: rgba(255, 255, 255, 0.78) !important;
+    background-image: none !important;
+    background-clip: border-box !important;
+    -webkit-background-clip: border-box !important;
+    -webkit-text-fill-color: initial !important;
+    border: 1px solid rgba(10, 132, 255, 0.24) !important;
+    border-radius: 10px;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.92),
+        0 5px 14px rgba(10, 92, 190, 0.16) !important;
+    mix-blend-mode: normal;
+}
+
+body:is([data-theme="glass"], [data-theme="liquidglass"]) .global-app-brand .app-title-wordmark {
+    color: #1d1d1f !important;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", "Segoe UI", sans-serif;
+    font-size: 1.18rem;
+    font-weight: 720;
+    line-height: 1;
+    letter-spacing: -0.025em;
+    text-shadow: none;
+}
+
+/* Editor surface: retain a clean writing canvas, but give it the same lit
+   edge and depth as the surrounding glass chrome. */
+body:is([data-theme="glass"], [data-theme="liquidglass"]) #view-notes .editor-container {
+    background: var(--glass-document-fill, rgba(255, 255, 255, 0.86)) !important;
+    border: 1px solid var(--glass-surface-edge, rgba(72, 98, 138, 0.18)) !important;
+    -webkit-backdrop-filter: blur(8px) saturate(125%) !important;
+    backdrop-filter: blur(8px) saturate(125%) !important;
+    box-shadow:
+        inset 0 1px 0 var(--glass-surface-highlight, rgba(255, 255, 255, 0.78)),
+        0 10px 30px rgba(35, 55, 90, 0.10),
+        0 1px 4px rgba(35, 55, 90, 0.08) !important;
+}
+
+/* The responsive layer also contains a legacy floating-toolbar offset for
+   widths up to 1024px. Glass keeps the tablet toolbar in the Notes flow, so
+   its offset must be reset here or the document title can slide underneath
+   the toolbar at rest. */
+@media (min-width: 641px) and (max-width: 1024px) {
+    body:is([data-theme="glass"], [data-theme="liquidglass"])[data-view="notes"]:not(.notes-split-active) #view-notes .toolbar-wrapper {
+        position: sticky !important;
+        inset: 0 8px auto !important;
+        top: 0 !important;
+        transform: none !important;
+    }
+
+    body:is([data-theme="glass"], [data-theme="liquidglass"])[data-view="notes"]:not(.notes-split-active) #view-notes #notesEditorContainer {
+        margin-top: 0 !important;
+    }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    body:is([data-theme="glass"], [data-theme="liquidglass"]) #view-notes .toolbar-wrapper,
+    body:is([data-theme="glass"], [data-theme="liquidglass"]) .top-nav,
+    body:is([data-theme="glass"], [data-theme="liquidglass"]) .sidebar {
+        background: #eef3fb !important;
+        -webkit-backdrop-filter: none !important;
+        backdrop-filter: none !important;
+    }
+}
+
+@media (max-width: 640px) {
+    #customThemeSetupModal .custom-theme-setup-modal-content {
+        width: calc(100vw - 16px);
+        max-height: calc(100vh - 16px);
+    }
+}

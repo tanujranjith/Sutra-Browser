@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "pages": [],
+  "tasks": [],
+  "homeworkWorkspace": {
+    "courses": [{ "id": "bio", "name": "Biology" }],
+    "tasks": [{ "id": "read", "title": "Read chapter", "courseId": "bio", "dueDate": "2026-07-20" }],
+    "legacyCourses": [{ "id": "chem", "name": "Chemistry" }],
+    "legacyTasks": [{ "id": "lab", "title": "Lab", "courseId": "chem", "dueDate": "2026-07-21" }]
+  },
+  "pluginOwnedFutureField": { "preserve": true }
+}

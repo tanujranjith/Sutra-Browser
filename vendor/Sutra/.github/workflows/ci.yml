@@ -1,0 +1,158 @@
+name: CI — verified artifact
+
+on:
+  push:
+    branches:
+      - "codex/**"
+  pull_request:
+    branches: ["main"]
+  schedule:
+    - cron: "17 5 * * 1"
+  workflow_dispatch:
+    inputs:
+      full_browser_matrix:
+        description: "Also run Firefox, WebKit, and responsive projects"
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: "20"
+
+jobs:
+  build-and-check:
+    name: Build, static checks, and unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run check:all
+      - run: npm run test:unit
+      - run: npm run build:deploy
+      - run: npm run check:deploy
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: verified-deploy-${{ github.sha }}
+          path: .deploy/
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 7
+
+  browser-tests:
+    name: Browser tests (Chromium shard ${{ matrix.shard }}, verified artifact)
+    needs: build-and-check
+    if: ${{ github.event_name != 'schedule' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: verified-deploy-${{ github.sha }}
+          path: .deploy
+      - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ${{ runner.temp }}/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-chromium
+      - run: npx playwright install --with-deps chromium
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/ms-playwright
+      - name: Test the verified artifact
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/ms-playwright
+          SUTRA_SERVE_ROOT: .deploy
+        # The static app is intentionally boot-tested from a clean browser
+        # context. Two workers keep the three shards parallel without
+        # overloading the shared GitHub runner during cold startup.
+        run: npx playwright test --workers=2 --project=chromium --shard=${{ matrix.shard }}/${{ strategy.job-total }}
+      - name: Upload failure diagnostics
+        if: ${{ failure() && !cancelled() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: playwright-chromium-failure-${{ github.sha }}
+          path: .tmp/playwright-results/
+          if-no-files-found: ignore
+          include-hidden-files: true
+          retention-days: 14
+
+  browser-compatibility-matrix:
+    name: Browser compatibility (${{ matrix.label }}, verified artifact)
+    needs: build-and-check
+    if: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.full_browser_matrix) }}
+    runs-on: ubuntu-latest
+    strategy:
+      # Sutra is a large classic-script application. Running every engine in one
+      # two-worker Playwright process caused independent browser contexts to
+      # contend for cold-start and IndexedDB initialization, producing
+      # non-reproducible failures. Keep each browser lane serial and isolated;
+      # the lanes themselves run concurrently on GitHub-hosted runners.
+      fail-fast: false
+      matrix:
+        include:
+          - label: Desktop Chrome
+            id: chrome
+            project_args: --project=chrome
+            browser_install: chrome
+          - label: Desktop Firefox
+            id: firefox
+            project_args: --project=firefox
+            browser_install: firefox
+          - label: Desktop WebKit
+            id: webkit
+            project_args: --project=webkit
+            browser_install: webkit
+          - label: Responsive devices
+            id: responsive
+            project_args: --project=mobile-chromium --project=mobile-webkit --project=tablet --project=narrow-desktop
+            browser_install: chromium firefox webkit
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: verified-deploy-${{ github.sha }}
+          path: .deploy
+      - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ${{ runner.temp }}/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ matrix.id }}
+      - run: npx playwright install --with-deps ${{ matrix.browser_install }}
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/ms-playwright
+      - name: Test the verified artifact in the isolated compatibility lane
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/ms-playwright
+          SUTRA_SERVE_ROOT: .deploy
+        run: npx playwright test --workers=1 ${{ matrix.project_args }}
+      - name: Upload failure diagnostics
+        if: ${{ failure() && !cancelled() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: playwright-compatibility-failure-${{ github.sha }}-${{ matrix.id }}
+          path: .tmp/playwright-results/
+          if-no-files-found: ignore
+          include-hidden-files: true
+          retention-days: 14

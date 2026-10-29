@@ -1,0 +1,562 @@
+/* Extracted from Sutra.html inline <style data-sutra-inline-style-legacy="mobile-global">.
+   Loaded by a <link> at the SAME cascade position in Sutra.html, so the
+   visual result is identical. Legacy block kept whole; split incrementally. */
+        @media (max-width: 1024px) {
+            html, body {
+                overflow-x: hidden;
+            }
+
+            .main-content,
+            .view,
+            .glass-panel,
+            .glass-card,
+            .task-card,
+            .today-panel,
+            .settings-card,
+            .timeline-wrapper,
+            .modal-content {
+                min-width: 0;
+                box-sizing: border-box;
+            }
+
+            .view {
+                padding: 8px 10px calc(126px + env(safe-area-inset-bottom, 0px)) !important;
+            }
+
+            .view-header {
+                gap: 10px !important;
+            }
+
+            .view-header h2 {
+                font-size: clamp(21px, 5.6vw, 30px) !important;
+                line-height: 1.12;
+            }
+
+            .theme-switcher-btn {
+                top: 12px !important;
+                right: 12px !important;
+                width: 44px !important;
+                height: 44px !important;
+            }
+
+            .tabs-shell {
+                width: 100%;
+                min-width: 0;
+                padding-right: 56px;
+            }
+
+            .view-tabs {
+                max-width: 100%;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+
+            .view-tabs::-webkit-scrollbar {
+                display: none;
+            }
+
+            .integrations-dock {
+                width: 100%;
+                justify-content: flex-start;
+                overflow-x: auto;
+            }
+
+            .integrations-label {
+                display: none;
+            }
+
+            .quick-app-launchers,
+            .custom-shortcut-launchers {
+                gap: 6px !important;
+                margin-left: 0 !important;
+            }
+
+            .quick-app-btn,
+            .custom-shortcut-btn {
+                padding: 7px 9px !important;
+                min-height: 38px;
+            }
+
+            .quick-app-btn span,
+            .custom-shortcut-btn .shortcut-label {
+                display: none;
+            }
+
+            .storage-options {
+                left: 8px !important;
+                right: 8px !important;
+                bottom: calc(env(safe-area-inset-bottom, 0px) + 8px) !important;
+                gap: 6px !important;
+                padding: 8px 10px !important;
+                z-index: 3000 !important;
+                border-radius: 12px !important;
+            }
+
+            .storage-options .taskbar-save-status {
+                width: 100%;
+                justify-content: center;
+                font-size: 12px;
+                margin-bottom: 2px;
+            }
+
+            .storage-options .taskbar-divider {
+                display: none;
+            }
+
+            .storage-options .storage-btn {
+                flex: 1 1 calc(33.333% - 6px);
+                min-width: 0;
+                justify-content: center;
+                min-height: 38px;
+            }
+
+            .chatbot-btn {
+                right: 10px !important;
+                bottom: calc(env(safe-area-inset-bottom, 0px) + 156px) !important;
+                width: 46px !important;
+                height: 46px !important;
+            }
+
+            .chatbot-panel {
+                left: 8px !important;
+                right: 8px !important;
+                width: auto !important;
+                max-width: none !important;
+                top: calc(var(--top-nav-height-mobile, 64px) + 8px) !important;
+                bottom: calc(env(safe-area-inset-bottom, 0px) + 92px) !important;
+                max-height: none !important;
+                height: auto !important;
+            }
+
+            .chatbot-info {
+                left: 8px !important;
+                right: 8px !important;
+                width: auto !important;
+                max-width: none !important;
+                bottom: calc(env(safe-area-inset-bottom, 0px) + 214px) !important;
+            }
+
+            .chatbot-input {
+                display: grid;
+                /* Three children: attach button, textarea, send button. A 2-col
+                   template squeezed the textarea into the narrow second column. */
+                grid-template-columns: auto minmax(0, 1fr) auto;
+                align-items: end;
+            }
+
+            .chatbot-settings {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .chat-settings-row {
+                grid-template-columns: 1fr;
+            }
+
+            .chat-settings-actions button {
+                width: 100%;
+            }
+
+            #view-today .panel-header {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            #view-today .task-card {
+                grid-template-columns: 1fr !important;
+                gap: 10px;
+            }
+
+            #view-today .task-actions-compact {
+                justify-content: flex-start !important;
+                gap: 6px;
+            }
+
+            #view-today .today-panel {
+                min-height: 230px !important;
+            }
+
+            #view-timeline {
+                padding-bottom: calc(126px + env(safe-area-inset-bottom, 0px)) !important;
+            }
+
+            #view-timeline .view-header {
+                align-items: flex-start !important;
+            }
+
+            #view-timeline .timeline-header-controls {
+                width: 100%;
+                display: grid !important;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 8px !important;
+                align-items: stretch !important;
+            }
+
+            #view-timeline .timeline-header-controls > * {
+                width: 100% !important;
+                min-width: 0 !important;
+            }
+
+            #view-timeline .timeline-mode-field {
+                grid-column: span 2;
+            }
+
+            #view-timeline #addBlockBtn {
+                grid-column: span 2;
+            }
+
+            #view-timeline .timeline-wrapper {
+                padding: 10px;
+                border-radius: 14px;
+                overflow: hidden;
+            }
+
+            #view-timeline .timeline-inline-field {
+                width: 100%;
+            }
+
+            #view-timeline .timeline-mode-switcher {
+                overflow-x: auto;
+                flex-wrap: nowrap;
+            }
+
+            #view-timeline .timeline-block {
+                border-radius: 10px;
+                padding: 8px 10px;
+            }
+
+            #view-timeline .current-block-card {
+                margin-top: 12px !important;
+            }
+
+            #view-notes {
+                padding: 0 8px calc(126px + env(safe-area-inset-bottom, 0px)) !important;
+            }
+
+            #view-notes .toolbar-wrapper {
+                left: 8px !important;
+                right: 8px !important;
+                width: auto !important;
+                max-width: none !important;
+                border-radius: 12px !important;
+            }
+
+            #view-notes .toolbar {
+                padding: 7px 8px !important;
+                overflow-x: auto;
+                white-space: nowrap;
+                scrollbar-width: none;
+            }
+
+            #view-notes .toolbar::-webkit-scrollbar {
+                display: none;
+            }
+
+            #view-notes .editor-container {
+                padding: 84px 8px calc(130px + env(safe-area-inset-bottom, 0px)) !important;
+            }
+
+            #view-notes .breadcrumbs {
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+
+            #view-notes .page-title-input {
+                font-size: clamp(20px, 6vw, 30px) !important;
+                margin-top: 8px !important;
+            }
+
+            #view-notes .editor {
+                min-height: 52vh !important;
+                padding: 14px 12px !important;
+                font-size: 16px;
+                line-height: 1.55;
+            }
+
+            #view-notes .editor table {
+                display: block;
+                overflow-x: auto;
+                max-width: 100%;
+            }
+
+            #view-settings .settings-grid {
+                grid-template-columns: 1fr !important;
+                gap: 10px !important;
+            }
+
+            #view-settings .settings-main-stack {
+                gap: 10px !important;
+            }
+
+            #view-settings .settings-card {
+                padding: 14px !important;
+                gap: 10px !important;
+            }
+
+            #view-settings .settings-row {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 8px !important;
+            }
+
+            #view-settings .settings-actions {
+                width: 100%;
+                gap: 8px !important;
+            }
+
+            #view-settings .settings-actions .neumo-btn,
+            #view-settings .settings-row > .neumo-btn,
+            #view-settings .settings-row .modal-input {
+                width: 100%;
+                max-width: none !important;
+            }
+
+            #view-settings #taskOrderStrategySelect {
+                width: 100% !important;
+                max-width: none !important;
+            }
+
+            #view-homework {
+                padding-bottom: calc(126px + env(safe-area-inset-bottom, 0px)) !important;
+            }
+
+            #view-homework #hwMainArea {
+                padding: 10px !important;
+            }
+
+            #view-homework .hw-header-bar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
+            }
+
+            #view-homework .hw-header-actions {
+                width: 100%;
+                display: grid !important;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 8px !important;
+            }
+
+            #view-homework .hw-header-actions .hw-btn {
+                width: 100%;
+                text-align: center;
+            }
+
+            #view-homework .hw-dashboard-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            #view-homework .hw-dashboard-body {
+                grid-template-columns: 1fr;
+            }
+
+            #view-homework .hw-lane {
+                padding: 10px;
+            }
+
+            .theme-panel {
+                top: calc(var(--top-nav-height-mobile) + 8px) !important;
+                left: 10px !important;
+                right: 10px !important;
+                width: auto !important;
+                max-height: calc(100dvh - var(--top-nav-height-mobile) - 18px) !important;
+                padding: 14px !important;
+                z-index: 5600 !important;
+                border-radius: 14px !important;
+            }
+
+            .apply-mode-toggle {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .preset-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .tutorial-card {
+                width: calc(100vw - 16px) !important;
+                max-height: calc(100dvh - 16px);
+                overflow-y: auto;
+                border-radius: 14px;
+                padding: 14px !important;
+            }
+
+            .tutorial-actions {
+                flex-wrap: wrap;
+                justify-content: stretch;
+                gap: 8px;
+            }
+
+            .tutorial-actions .neumo-btn {
+                flex: 1 1 calc(50% - 8px);
+            }
+
+            .modal {
+                padding: 10px !important;
+                align-items: flex-end !important;
+            }
+
+            .modal-content {
+                width: 100% !important;
+                max-width: none !important;
+                max-height: calc(100dvh - 20px) !important;
+                overflow-y: auto !important;
+                border-radius: 14px 14px 10px 10px !important;
+                padding: 16px !important;
+            }
+
+            .modal-header {
+                margin-bottom: 12px !important;
+                position: sticky;
+                top: 0;
+                z-index: 2;
+                background: inherit;
+            }
+
+            .modal-body {
+                margin-bottom: 12px !important;
+            }
+
+            .modal-footer {
+                flex-wrap: wrap;
+                justify-content: stretch;
+                gap: 8px !important;
+                position: sticky;
+                bottom: 0;
+                padding-top: 10px;
+                background: linear-gradient(180deg, rgba(255, 255, 255, 0), var(--bg-primary));
+            }
+
+            .modal-footer .btn,
+            .modal-footer .neumo-btn {
+                flex: 1 1 calc(50% - 8px);
+                min-height: 42px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .view {
+                padding: 8px 8px calc(136px + env(safe-area-inset-bottom, 0px)) !important;
+            }
+
+            .top-nav {
+                margin: 6px !important;
+                padding: 8px 10px !important;
+                gap: 8px !important;
+            }
+
+            .brand-label {
+                font-size: 15px !important;
+            }
+
+            .view-tabs-toggle {
+                right: 8px !important;
+            }
+
+            #view-today .summary-grid {
+                grid-template-columns: 1fr !important;
+            }
+
+            /* Calendar header controls keep the 2-up grid from the 1024px rules:
+               [Today | stepper] / [view modes | more] / [+ Block]. The previous
+               single-column stack consumed ~360px before any calendar content. */
+
+            #view-timeline .timeline-calendar-grid.week,
+            #view-timeline .timeline-calendar-grid.month {
+                grid-template-columns: 1fr;
+            }
+
+            #view-timeline .timeline-year-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            #view-homework .hw-dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            #view-homework .hw-stat-card {
+                padding: 10px;
+            }
+
+            #view-homework .hw-inline-add {
+                grid-template-columns: 1fr;
+                gap: 8px;
+                padding: 10px;
+            }
+
+            #view-homework .hw-course-row {
+                align-items: flex-start;
+            }
+
+            #view-homework .hw-course-title,
+            #view-homework .hw-task-text {
+                white-space: normal;
+                overflow-wrap: break-word;
+                word-break: break-word;
+            }
+
+            #view-homework .hw-task-main {
+                grid-template-columns: auto minmax(0, 1fr);
+            }
+
+            #view-homework .hw-task-status {
+                grid-column: 1 / -1;
+            }
+
+            #view-homework .hw-task-meta {
+                grid-template-columns: 1fr;
+            }
+
+            #view-homework .hw-inline-add input,
+            #view-homework .hw-inline-add select,
+            #view-homework .hw-inline-add button {
+                width: 100%;
+            }
+
+            .tutorial-actions .neumo-btn,
+            .modal-footer .btn,
+            .modal-footer .neumo-btn {
+                flex: 1 1 100%;
+            }
+        }
+
+        @media (max-width: 560px) {
+            .storage-options .taskbar-save-status {
+                display: none;
+            }
+
+            .storage-options .storage-btn {
+                min-height: 36px;
+                padding: 8px 6px !important;
+            }
+
+            .storage-options .storage-btn .btn-text {
+                display: none !important;
+            }
+
+            #view-timeline .timeline-year-grid {
+                grid-template-columns: 1fr;
+            }
+
+            #view-notes .editor {
+                font-size: 15px;
+                padding: 12px 10px !important;
+            }
+        }
+
+        @media (max-width: 1024px) and (max-height: 760px) {
+            .top-nav {
+                top: 4px !important;
+            }
+
+            #view-notes .toolbar-wrapper {
+                top: calc(var(--top-nav-height-mobile) + 4px) !important;
+            }
+
+            .chatbot-panel {
+                max-height: calc(100dvh - var(--top-nav-height-mobile, 64px) - 104px) !important;
+            }
+        }

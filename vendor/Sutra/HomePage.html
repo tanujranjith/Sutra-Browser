@@ -1,0 +1,3892 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' https://accounts.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://i.ytimg.com; font-src 'self'; connect-src 'self' https://api.groq.com https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com https://openrouter.ai https://integrate.api.nvidia.com https://api.mistral.ai https://api.together.xyz https://api.deepseek.com https://api.x.ai https://api.perplexity.ai https://www.googleapis.com https://accounts.google.com https://login.microsoftonline.com https://graph.microsoft.com https://www.dropbox.com https://api.dropboxapi.com https://content.dropboxapi.com https://*.supabase.co https://*.1drv.com https://*.sharepoint.com https://*.microsoftpersonalcontent.com https://*.dms.live.net http://localhost:* http://127.0.0.1:*; frame-src 'self' https://accounts.google.com https://docs.google.com https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com https://open.spotify.com https://w.soundcloud.com https://codepen.io https://www.figma.com https://embed.figma.com https://codesandbox.io data: blob:; media-src 'self' data: blob: https://open.spotify.com https://w.soundcloud.com; worker-src 'self' blob:; form-action 'self' https://docs.google.com">
+  <title>Sutra | Student OS for School, Projects, and Life</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/sutra/generated/sutra-icon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/brand/sutra/generated/sutra-icon-16.png">
+  <link rel="shortcut icon" href="assets/brand/sutra/generated/favicon.ico">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/brand/sutra/generated/sutra-icon-180.png">
+  <meta name="application-name" content="Sutra">
+  <meta name="apple-mobile-web-app-title" content="Sutra">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="author" content="Tanuj Ranjith">
+  <meta name="description" content="Sutra is a local-first student OS ? a private student workspace that brings school, projects, tasks, notes, and planning into one place, with an optional AI assistant. Your workspace stays in your browser by default.">
+  <meta name="keywords" content="Sutra, student OS, student workspace, local-first, notes, assignments, planning, school, projects, tasks, student productivity, Tanuj Ranjith">
+  <meta name="theme-color" content="#07111f">
+  <link rel="manifest" href="manifest.webmanifest">
+
+  <!-- Canonical + social metadata.
+       Primary canonical URL: https://tanujranjith.github.io/Sutra/HomePage.html
+       Sutra is served from identical static files on several deployments
+       (Vercel + GitHub Pages); every copy canonicalizes to the URL below so
+       only the primary deployment competes for indexing in Google. -->
+  <link rel="canonical" href="https://tanujranjith.github.io/Sutra/HomePage.html">
+  <!-- Open Graph / social preview -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Sutra">
+  <meta property="og:title" content="Sutra | Student OS for School, Projects, and Life">
+  <meta property="og:url" content="https://tanujranjith.github.io/Sutra/HomePage.html">
+  <meta property="og:description" content="A private, local-first student workspace for school, projects, tasks, notes, and planning ? built by a student, for students.">
+  <meta property="og:image" content="https://tanujranjith.github.io/Sutra/assets/brand/sutra/generated/social-preview.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Sutra ? a private, local-first student workspace">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Sutra | Student OS for School, Projects, and Life">
+  <meta name="twitter:description" content="A private, local-first student workspace for school, projects, tasks, notes, and planning ? built by a student, for students.">
+  <meta name="twitter:image" content="https://tanujranjith.github.io/Sutra/assets/brand/sutra/generated/social-preview.png">
+
+  <!-- Structured data: describes Sutra to search engines as a student
+       productivity / workspace web app. Canonical URL + author kept in sync
+       with the metadata above. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://tanujranjith.github.io/Sutra/#website",
+        "url": "https://tanujranjith.github.io/Sutra/HomePage.html",
+        "name": "Sutra",
+        "alternateName": "Sutra Student OS",
+        "description": "A private, local-first student workspace for school, projects, tasks, notes, and planning.",
+        "inLanguage": "en",
+        "publisher": { "@id": "https://tanujranjith.github.io/Sutra/#person" }
+      },
+      {
+        "@type": "SoftwareApplication",
+        "@id": "https://tanujranjith.github.io/Sutra/#app",
+        "name": "Sutra",
+        "url": "https://tanujranjith.github.io/Sutra/HomePage.html",
+        "description": "Sutra is a local-first student OS ? a private student workspace that brings school, projects, tasks, notes, and planning into one coherent system, with an optional context-aware AI assistant. Your data stays on your device by default.",
+        "applicationCategory": "EducationApplication",
+        "applicationSubCategory": "Student productivity workspace",
+        "operatingSystem": "Web browser (Chrome, Edge, Firefox, Safari)",
+        "browserRequirements": "Requires a modern web browser with JavaScript enabled",
+        "image": "https://tanujranjith.github.io/Sutra/assets/brand/sutra/generated/social-preview.png",
+        "screenshot": "https://tanujranjith.github.io/Sutra/assets/brand/sutra/generated/social-preview.png",
+        "softwareVersion": "Public beta",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "featureList": [
+          "Local-first notes and rich documents",
+          "Assignment and deadline tracking",
+          "Semester and timeline planning",
+          "Review and study tools",
+          "Optional context-aware AI assistant"
+        ],
+        "author": { "@id": "https://tanujranjith.github.io/Sutra/#person" },
+        "creator": { "@id": "https://tanujranjith.github.io/Sutra/#person" }
+      },
+      {
+        "@type": "Person",
+        "@id": "https://tanujranjith.github.io/Sutra/#person",
+        "name": "Tanuj Ranjith",
+        "url": "https://github.com/tanujranjith"
+      }
+    ]
+  }
+  </script>
+  <!-- Local-first: the landing page makes no third-party font requests.
+       It renders with the system font stack defined in --font-sans / --font-serif. -->
+
+  <style>
+    :root {
+      --bg: #04060b;
+      --bg-surface: rgba(12, 14, 20, 0.4);
+      --border: rgba(255, 255, 255, 0.05);
+      --border-light: rgba(255, 255, 255, 0.1);
+      
+      --text: #ffffff;
+      --text-muted: #888890;
+      --text-faint: #55555c;
+      
+      --accent: #5078f2;
+      --accent-glow: rgba(80, 120, 242, 0.3);
+      --blur: blur(24px);
+      
+      --font-sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-serif: Georgia, "Times New Roman", serif;
+      
+      --radius-sm: 8px;
+      --radius-md: 16px;
+      --radius-lg: 24px;
+      
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      overflow-x: hidden;
+      overflow-y: hidden;
+    }
+
+    html,
+    body {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      overflow-x: hidden;
+      overflow-y: auto;
+      height: 100vh;
+      height: 100dvh;
+      min-height: 100vh;
+      min-height: 100dvh;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      min-height: 100vh;
+      /* Vignette Edge Lock-in */
+      box-shadow: inset 0 0 200px rgba(0,0,0,0.8);
+      position: relative;
+    }
+
+    /* Atelier scrollbar */
+    body {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(130, 168, 236, 0.75) rgba(6, 10, 18, 0.88);
+    }
+
+    body::-webkit-scrollbar {
+      width: 13px;
+    }
+
+    body::-webkit-scrollbar-track {
+      background: linear-gradient(180deg, rgba(8, 12, 22, 0.92) 0%, rgba(5, 8, 15, 0.95) 100%);
+      border-left: 1px solid rgba(120, 160, 230, 0.12);
+    }
+
+    body::-webkit-scrollbar-thumb {
+      border-radius: 999px;
+      border: 2px solid rgba(8, 12, 22, 0.95);
+      background: linear-gradient(180deg, rgba(182, 212, 255, 0.92) 0%, rgba(132, 171, 238, 0.82) 100%);
+      box-shadow: inset 0 0 0 1px rgba(220, 236, 255, 0.25), 0 0 10px rgba(100, 150, 235, 0.35);
+    }
+
+    body::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(180deg, rgba(204, 227, 255, 0.96) 0%, rgba(151, 188, 245, 0.9) 100%);
+    }
+
+    body::-webkit-scrollbar-corner {
+      background: transparent;
+    }
+
+    #ambient-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .noise-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      opacity: 0.02;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    }
+
+    main,
+    footer {
+      position: relative;
+      z-index: 5;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 5%;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 0 24px;
+      }
+    }
+
+    nav {
+      position: fixed;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90%;
+      max-width: 600px;
+      z-index: 100;
+      padding: 12px 24px;
+      border-radius: 999px;
+      background: rgba(10, 12, 16, 0.62);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: var(--blur) saturate(140%);
+      -webkit-backdrop-filter: var(--blur) saturate(140%);
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+      transition: all 0.4s var(--ease-out);
+    }
+
+    nav.scrolled {
+      background: rgba(14, 18, 26, 0.85);
+      border-color: rgba(255, 255, 255, 0.1);
+      top: 16px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+    }
+
+    .nav-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      font-size: 15px;
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .brand-logo {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      object-fit: contain;
+      background: rgba(255, 255, 255, 0.05); /* very subtle backplate padding */
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      align-items: center;
+    }
+
+    .nav-link {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 14px;
+      transition: color 0.2s;
+    }
+
+    .nav-link:hover {
+      color: var(--text);
+    }
+
+    /* Mobile hamburger button ? hidden on desktop */
+    .nav-toggle {
+      display: none;
+      background: none;
+      border: 1px solid var(--border-light);
+      color: var(--text);
+      width: 38px;
+      height: 38px;
+      border-radius: 999px;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      padding: 0;
+      transition: background 0.2s ease, border-color 0.2s ease;
+      flex-shrink: 0;
+    }
+    .nav-toggle:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.18);
+    }
+    .nav-toggle-bars {
+      width: 16px;
+      height: 12px;
+      position: relative;
+      display: inline-block;
+    }
+    .nav-toggle-bars::before,
+    .nav-toggle-bars::after,
+    .nav-toggle-bars span {
+      content: '';
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 1.5px;
+      background: currentColor;
+      border-radius: 1px;
+      transition: transform 0.25s var(--ease-out), opacity 0.2s ease, top 0.25s var(--ease-out);
+    }
+    .nav-toggle-bars::before { top: 0; }
+    .nav-toggle-bars span { top: 5px; display: block; }
+    .nav-toggle-bars::after { top: 10px; }
+    nav.menu-open .nav-toggle-bars::before { top: 5px; transform: rotate(45deg); }
+    nav.menu-open .nav-toggle-bars span { opacity: 0; }
+    nav.menu-open .nav-toggle-bars::after { top: 5px; transform: rotate(-45deg); }
+
+    @media (max-width: 768px) {
+      nav {
+        width: calc(100% - 28px);
+        padding: 11px 16px;
+        transition: width 0.4s var(--ease-out), padding 0.4s var(--ease-out),
+                    background 0.4s var(--ease-out), border-color 0.4s var(--ease-out),
+                    border-radius 0.4s var(--ease-out), top 0.4s var(--ease-out);
+      }
+      .nav-content {
+        gap: 10px;
+        justify-content: space-between;
+      }
+      .brand {
+        gap: 8px;
+        font-size: 14px;
+        flex-shrink: 0;
+      }
+      .brand-logo {
+        width: 24px;
+        height: 24px;
+        border-radius: 7px;
+      }
+      .brand-text {
+        display: inline;
+      }
+      /* Convert inline nav-links into a collapsible mobile menu */
+      .nav-toggle {
+        display: inline-flex;
+      }
+      .nav-links {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        left: 0;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 4px;
+        padding: 10px;
+        background: rgba(14, 18, 26, 0.96);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 18px;
+        backdrop-filter: var(--blur);
+        -webkit-backdrop-filter: var(--blur);
+        box-shadow: 0 18px 48px rgba(0, 0, 0, 0.55);
+        opacity: 0;
+        transform: translateY(-6px) scale(0.98);
+        pointer-events: none;
+        transition: opacity 0.22s var(--ease-out), transform 0.22s var(--ease-out);
+      }
+      nav.menu-open .nav-links {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        pointer-events: auto;
+      }
+      .nav-link {
+        font-size: 15px;
+        color: var(--text);
+        padding: 12px 14px;
+        border-radius: 12px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        transition: background 0.18s ease, color 0.18s ease;
+      }
+      .nav-link:hover,
+      .nav-link:active {
+        background: rgba(255, 255, 255, 0.06);
+      }
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 20px;
+      border-radius: 99px;
+      font-size: 14px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 0.2s var(--ease-out);
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: var(--text);
+      color: var(--bg);
+      border: 1px solid transparent;
+      box-shadow: 0 2px 12px rgba(255, 255, 255, 0.1);
+    }
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 20px rgba(255, 255, 255, 0.2);
+      background: #f0f0f0;
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text);
+      border: 1px solid var(--border-light);
+      backdrop-filter: var(--blur);
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .btn-lg {
+      padding: 14px 32px;
+      font-size: 16px;
+    }
+
+    @media (max-width: 1024px) {
+      .btn,
+      .btn-lg {
+        min-height: 46px;
+      }
+    }
+
+    .hero {
+      position: relative;
+      padding-top: 108px;
+      padding-bottom: 120px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Soft focus lock-in behind the hero */
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 150%;
+      height: 150vh;
+      background: radial-gradient(circle, rgba(60, 100, 200, 0.12) 0%, rgba(20, 30, 60, 0.03) 40%, transparent 80%);
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    /* Vignette for deep focus tunnel */
+    .noise-overlay::after {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at center, transparent 40%, rgba(0, 0, 0, 0.3) 100%);
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .hero h1 {
+      font-size: clamp(3rem, 7vw, 5.5rem);
+      line-height: 1.1;
+      font-weight: 500;
+      letter-spacing: -0.04em;
+      margin-bottom: 16px;
+      max-width: 900px;
+      color: #fff;
+      animation: fadeUp 1s 0.3s both var(--ease-out);
+    }
+
+    .hero h1 span {
+      font-family: var(--font-serif);
+      font-style: italic;
+      font-weight: 400;
+      color: #e2e8f0;
+    }
+
+    /* Typewriter Phrase Animation */
+    .phrase-container {
+      display: inline-flex;
+      min-width: 480px;
+      min-height: 1.15em;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #rotating-phrase-wrapper {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      min-height: 1.15em;
+    }
+
+    #rotating-phrase-wrapper .phrase {
+      border-right: 1.5px solid rgba(226, 232, 240, 0.85);
+      animation: blink-caret 1.05s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      white-space: nowrap;
+      overflow: hidden;
+      display: inline-block;
+      min-height: 1.15em;
+    }
+
+    @keyframes blink-caret {
+      0%, 45% { border-right-color: rgba(226, 232, 240, 0.92); }
+      55%, 100% { border-right-color: rgba(226, 232, 240, 0.08); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #rotating-phrase-wrapper .phrase {
+        animation: none;
+        border-right-color: rgba(226, 232, 240, 0.6);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .phrase-container {
+        min-width: 0;
+        max-width: 100%;
+        display: block;
+      }
+      #rotating-phrase-wrapper {
+        max-width: 100%;
+      }
+      /* On phones the longest rotating phrase can exceed viewport width because
+         the .phrase span uses white-space: nowrap to keep the typewriter caret
+         from breaking lines. Allow it to wrap on phones ? the caret still looks
+         right and we avoid horizontal overflow on 320?414px screens. */
+      #rotating-phrase-wrapper .phrase {
+        white-space: normal;
+        overflow: visible;
+        line-height: 1.1;
+      }
+    }
+
+    .hero-mobile-break {
+      display: none;
+    }
+
+    .hero-microcopy {
+      font-size: 1rem;
+      letter-spacing: 0.02em;
+      color: rgba(200, 210, 225, 0.78);
+      margin-bottom: 24px;
+      font-weight: 500;
+      text-transform: uppercase;
+      text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
+      animation: fadeUp 1s 0.35s both var(--ease-out);
+    }
+
+    .hero p {
+      font-size: clamp(1.125rem, 2vw, 1.375rem);
+      color: var(--text-muted);
+      max-width: 600px;
+      margin-bottom: 48px;
+      animation: fadeUp 1s 0.4s both var(--ease-out);
+    }
+
+    .focus-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-faint);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      animation: fadeUp 1s 0.45s both var(--ease-out);
+    }
+    .focus-status-dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: #4ade80;
+      box-shadow: 0 0 8px rgba(74, 222, 128, 0.4);
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      animation: fadeUp 1s 0.5s both var(--ease-out);
+    }
+
+    .hero-mockup-wrapper {
+      margin-top: 12px;
+      width: 100vw;
+      margin-left: calc(50% - 50vw);
+      margin-right: calc(50% - 50vw);
+      perspective: none;
+      animation: revealMockup 1.5s 0.6s both var(--ease-out);
+      position: relative;
+      will-change: transform;
+    }
+
+    .hero h1,
+    .hero-microcopy,
+    .hero p,
+    .focus-status {
+      will-change: transform, opacity;
+    }
+
+    .hero-mockup {
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.95),
+                  0 0 0 1px rgba(255, 255, 255, 0.03);
+      background: rgba(10, 12, 16, 0.6);
+      backdrop-filter: var(--blur);
+      position: relative;
+    }
+
+    /* Live Session Micro-UI over mockup */
+    .mockup-overlay {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      gap: 8px;
+    }
+    .mockup-tag {
+      background: rgba(0,0,0,0.6);
+      border: 1px solid rgba(255,255,255,0.1);
+      backdrop-filter: blur(12px);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.8);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .mockup-tag-accent {
+      color: #4ade80;
+    }
+
+    .hero-mockup img {
+      display: block;
+      opacity: 0.95;
+    }
+
+    .section {
+      padding-top: 160px;
+      padding-bottom: 160px;
+      position: relative;
+    }
+
+    /* Founder Note ? "Why Atelier exists" */
+    .founder-note {
+      padding: 40px 0 0;
+      position: relative;
+    }
+
+    .founder-note-inner {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .founder-note-card {
+      position: relative;
+      padding: 48px 56px;
+      border-radius: var(--radius-lg);
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.035) 0%, rgba(255, 255, 255, 0.0) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+      border-left: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow:
+        inset 0 1px 1px rgba(255, 255, 255, 0.03),
+        0 8px 32px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(10px) saturate(120%);
+      -webkit-backdrop-filter: blur(10px) saturate(120%);
+      overflow: hidden;
+    }
+
+    .founder-note-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 2px;
+      height: 100%;
+      background: linear-gradient(180deg,
+        rgba(80, 120, 242, 0.0) 0%,
+        rgba(80, 120, 242, 0.45) 35%,
+        rgba(80, 120, 242, 0.45) 65%,
+        rgba(80, 120, 242, 0.0) 100%);
+      opacity: 0.6;
+    }
+
+    .founder-note-label {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      margin-bottom: 18px;
+    }
+
+    .founder-note-title {
+      font-size: clamp(1.6rem, 2.6vw, 2rem);
+      line-height: 1.18;
+      font-weight: 500;
+      letter-spacing: -0.025em;
+      color: var(--text);
+      margin-bottom: 20px;
+    }
+
+    .founder-note-title span {
+      font-family: var(--font-serif);
+      font-style: italic;
+      font-weight: 400;
+      color: #e2e8f0;
+    }
+
+    .founder-note-body {
+      font-size: 1.05rem;
+      line-height: 1.7;
+      color: var(--text-muted);
+      max-width: 580px;
+    }
+
+    .founder-note-body em {
+      font-family: var(--font-serif);
+      font-style: italic;
+      font-weight: 400;
+      color: #d8dde8;
+    }
+
+    .founder-note-signature {
+      margin-top: 24px;
+      font-size: 13px;
+      letter-spacing: 0.04em;
+      color: var(--text-faint);
+    }
+
+    .section-header {
+      max-width: 680px;
+      margin-bottom: 80px;
+    }
+    .section-header h2 {
+      font-size: clamp(2.5rem, 4vw, 3.5rem);
+      line-height: 1.1;
+      font-weight: 500;
+      letter-spacing: -0.03em;
+      margin-bottom: 24px;
+    }
+    .section-header h2 span {
+      font-family: var(--font-serif);
+      font-style: italic;
+      color: var(--text-muted);
+    }
+    .section-header p {
+      font-size: 1.25rem;
+      color: var(--text-muted);
+    }
+
+    .bento-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 24px;
+    }
+
+    .bento-item {
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.0) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+      border-left: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-lg);
+      padding: 40px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 
+        inset 0 1px 1px rgba(255, 255, 255, 0.03),
+        0 8px 32px rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(10px) saturate(120%);
+      -webkit-backdrop-filter: blur(10px) saturate(120%);
+      transition: all 0.4s var(--ease-out);
+    }
+    .bento-item:hover {
+      border-color: rgba(255, 255, 255, 0.1);
+      border-top-color: rgba(255, 255, 255, 0.2);
+      transform: translateY(-4px);
+      box-shadow: 
+        inset 0 1px 1px rgba(255, 255, 255, 0.06),
+        0 12px 40px rgba(0, 0, 0, 0.5);
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
+    }
+    .bento-large { grid-column: span 8; }
+    .bento-small { grid-column: span 4; }
+
+    @media (max-width: 960px) {
+      .bento-large, .bento-small { grid-column: span 12; }
+    }
+
+    .bento-content h3 {
+      font-size: 1.5rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+    }
+    .bento-content p {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      line-height: 1.6;
+    }
+
+    .bento-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+      font-family: var(--font-serif);
+      font-size: 24px;
+      font-style: italic;
+    }
+
+    .workflow-section {
+      display: flex;
+      flex-direction: column;
+      gap: 48px;
+    }
+
+    .workflow-list {
+      display: grid !important;
+      grid-template-columns: repeat(3, 1fr) !important;
+      gap: 0 !important;
+    }
+    @media (max-width: 960px) {
+      .workflow-list {
+        grid-template-columns: 1fr !important;
+        gap: 24px !important;
+      }
+    }
+
+    .workflow-visual {
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+      width: 100%;
+      box-shadow: 0 40px 100px -16px rgba(0, 0, 0, 0.85),
+                  0 0 0 1px rgba(255, 255, 255, 0.04);
+    }
+    .workflow-visual img {
+      width: 100%;
+      height: auto;
+      display: block;
+      opacity: 0.95;
+    }
+
+    .workflow-list {
+      display: flex;
+      flex-direction: column;
+      gap: 40px;
+    }
+    .workflow-step {
+      opacity: 0.4;
+      transition: opacity 0.4s var(--ease-out), transform 0.4s var(--ease-out);
+      cursor: default;
+      border-left: 2px solid transparent;
+      padding-left: 24px;
+    }
+    .workflow-step:hover, .workflow-step.active {
+      opacity: 1;
+      transform: translateX(4px);
+      border-left-color: var(--text);
+    }
+    .workflow-step h4 {
+      font-size: 1.25rem;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+    .workflow-step p {
+      color: var(--text-muted);
+      font-size: 1rem;
+    }
+
+    .cta-section {
+      padding: 160px 0;
+      text-align: center;
+      border-top: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+    .cta-section::after {
+      content: '';
+      position: absolute;
+      bottom: -50%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      height: 100vh;
+      background: radial-gradient(circle, rgba(60, 90, 160, 0.08) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .cta-section h2 {
+      font-size: clamp(2.5rem, 5vw, 4rem);
+      font-weight: 500;
+      letter-spacing: -0.03em;
+      margin-bottom: 40px;
+    }
+
+    @media (max-width: 768px) {
+      html {
+        overflow-y: auto;
+      }
+
+      body.no-parallax nav {
+        width: calc(100% - 24px);
+        padding: 11px 16px;
+      }
+
+      .hero,
+      body.no-parallax .hero {
+        padding-top: 96px;
+        padding-bottom: 88px;
+      }
+
+      body.no-parallax .hero {
+        padding-top: 62px;
+      }
+
+      .hero h1 {
+        font-size: clamp(2.35rem, 10.5vw, 3.4rem);
+        line-height: 1.08;
+        letter-spacing: -0.03em;
+        margin-bottom: 14px;
+      }
+
+      .hero-microcopy {
+        font-size: 0.84rem;
+        letter-spacing: 0.06em;
+        margin-bottom: 20px;
+      }
+
+      .hero p {
+        font-size: 1.06rem;
+        margin-bottom: 36px;
+      }
+
+      .focus-status {
+        margin-bottom: 14px;
+      }
+
+      .hero-actions {
+        gap: 14px;
+        flex-wrap: wrap;
+      }
+
+      .btn,
+      .btn-lg {
+        min-height: 46px;
+        padding: 12px 26px;
+        font-size: 15px;
+      }
+
+      .hero-mockup-wrapper {
+        margin-top: 10px;
+      }
+
+      .hero-marquee {
+        padding: 4px 0 36px;
+      }
+
+      .carousel-track {
+        gap: 10px;
+      }
+
+      .carousel-slide {
+        height: 190px;
+      }
+
+      .carousel-card:hover .carousel-slide {
+        height: 245px;
+      }
+
+      .carousel-label {
+        font-size: 10px;
+        margin-bottom: 7px;
+      }
+
+      .mockup-overlay {
+        top: 12px;
+        right: 12px;
+        gap: 6px;
+      }
+
+      .mockup-tag {
+        font-size: 10px;
+        padding: 3px 8px;
+      }
+
+      .section {
+        padding-top: 118px;
+        padding-bottom: 118px;
+      }
+
+      .section-header {
+        margin-bottom: 56px;
+      }
+
+      .section-header h2 {
+        font-size: clamp(2.2rem, 8.8vw, 3rem);
+        margin-bottom: 16px;
+      }
+
+      .section-header p {
+        font-size: 1.08rem;
+      }
+
+      .founder-note {
+        padding: 20px 0 0;
+      }
+
+      .founder-note-card {
+        padding: 32px 26px;
+        border-radius: 20px;
+      }
+
+      .founder-note-label {
+        font-size: 10.5px;
+        letter-spacing: 0.16em;
+        margin-bottom: 14px;
+      }
+
+      .founder-note-title {
+        font-size: clamp(1.4rem, 6.5vw, 1.75rem);
+        margin-bottom: 16px;
+      }
+
+      .founder-note-body {
+        font-size: 0.98rem;
+        line-height: 1.65;
+      }
+
+      .founder-note-signature {
+        margin-top: 20px;
+        font-size: 12.5px;
+      }
+
+      .bento-grid {
+        gap: 18px;
+      }
+
+      .bento-item {
+        padding: 28px 24px;
+        border-radius: 20px;
+      }
+
+      .bento-icon {
+        width: 42px;
+        height: 42px;
+        margin-bottom: 18px;
+      }
+
+      .bento-content h3 {
+        font-size: 1.25rem;
+      }
+
+      .bento-content p {
+        font-size: 0.96rem;
+      }
+
+      .workflow-section {
+        gap: 28px;
+      }
+
+      .workflow-step h4 {
+        font-size: 1.12rem;
+      }
+
+      .workflow-step p {
+        font-size: 0.97rem;
+      }
+
+      .cta-section {
+        padding: 118px 0 102px;
+      }
+
+      .cta-section h2 {
+        margin-bottom: 24px;
+      }
+
+      body footer {
+        padding: 28px 0 34px;
+        font-size: 13px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 0 14px;
+      }
+
+      body.no-parallax nav {
+        width: calc(100% - 16px);
+        border-radius: 999px;
+        padding: 9px 11px;
+      }
+
+      body.no-parallax .hero {
+        padding-top: 86px;
+      }
+
+      .nav-content {
+        gap: 8px;
+      }
+
+      .brand {
+        gap: 6px;
+        font-size: 13px;
+      }
+
+      .brand-logo {
+        width: 22px;
+        height: 22px;
+      }
+
+      .nav-links {
+        gap: 10px;
+      }
+
+      .nav-link {
+        font-size: 11.5px;
+      }
+
+      .hero h1 {
+        font-size: clamp(1.72rem, 8vw, 2rem);
+        line-height: 1.09;
+        width: 100%;
+      }
+
+      .hero-mobile-break {
+        display: none;
+      }
+
+      .phrase-container {
+        min-height: 1.15em;
+      }
+
+      .hero p {
+        font-size: 0.96rem;
+        margin-bottom: 30px;
+      }
+
+      .hero-microcopy {
+        font-size: 0.74rem;
+        letter-spacing: 0.045em;
+      }
+
+      .hero-mockup-wrapper {
+        margin-top: 8px;
+      }
+
+      .hero-marquee {
+        padding: 4px 0 24px;
+      }
+
+      .carousel-track {
+        gap: 8px;
+      }
+
+      .carousel-slide {
+        height: 148px;
+      }
+
+      .carousel-card:hover .carousel-slide {
+        height: 190px;
+      }
+
+      .carousel-label {
+        font-size: 9px;
+        letter-spacing: 0.06em;
+        margin-bottom: 5px;
+      }
+
+      .mockup-overlay {
+        top: 10px;
+        right: 10px;
+      }
+
+      .mockup-tag {
+        font-size: 9.5px;
+        padding: 3px 7px;
+      }
+
+      .bento-item {
+        padding: 20px 18px;
+      }
+
+      .founder-note-card {
+        padding: 26px 20px;
+      }
+
+      .founder-note-body {
+        font-size: 0.94rem;
+      }
+
+      .workflow-step {
+        padding-left: 10px;
+      }
+
+      .cta-section .hero-actions {
+        margin-top: 24px !important;
+      }
+    }
+
+    .classic-notice {
+      border-top: 1px solid rgba(255, 160, 60, 0.18);
+      background: rgba(255, 130, 30, 0.04);
+      padding: 36px 0;
+    }
+    .classic-notice-inner {
+      max-width: 640px;
+      margin: 0 auto;
+      text-align: center;
+      padding: 0 24px;
+    }
+    .classic-notice-label {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255, 150, 50, 0.75);
+      border: 1px solid rgba(255, 150, 50, 0.25);
+      border-radius: 4px;
+      padding: 3px 10px;
+      margin-bottom: 14px;
+    }
+    .classic-notice-heading {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    .classic-notice-body {
+      font-size: 13px;
+      color: var(--text-faint);
+      line-height: 1.7;
+      margin-bottom: 18px;
+    }
+    .classic-notice-link {
+      font-size: 13px;
+      color: rgba(255, 150, 50, 0.5);
+      text-decoration: none;
+      border-bottom: 1px solid rgba(255, 150, 50, 0.2);
+      padding-bottom: 1px;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .classic-notice-link:hover {
+      color: rgba(255, 150, 50, 0.8);
+      border-color: rgba(255, 150, 50, 0.5);
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 40px 0;
+      text-align: center;
+      color: var(--text-faint);
+      font-size: 14px;
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.8s var(--ease-out), transform 0.8s var(--ease-out);
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes revealMockup {
+      from { opacity: 0; transform: translateY(40px) scale(0.985); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    body.no-parallax #ambient-canvas,
+    body.no-parallax .noise-overlay,
+    body.no-parallax .noise-overlay::after {
+      position: absolute;
+      inset: 0;
+    }
+
+    body.no-parallax .hero {
+      padding-top: 120px;
+    }
+
+    body.no-parallax .reveal,
+    body.no-parallax .reveal.visible {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
+
+    /* Hero Screenshot Marquee
+       NOTE: no mask-image here. The previous mask faded cards to
+       *transparent*, which let the navy field + ribs show through
+       half-visible screenshots ? that's the "weird edge" effect.
+       Instead we use solid opaque dark gradient overlays on the
+       left and right that hide cards behind a proper bg-coloured
+       fade. */
+    .hero-marquee {
+      overflow: hidden;
+      position: relative;
+      padding: 6px 0 64px;
+    }
+
+    /* Left edge: opaque dark gradient. Bg color matches --bg so the
+       fade reads as the page background swallowing the cards. */
+    .hero-marquee::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: 18%;
+      pointer-events: none;
+      background: linear-gradient(to right,
+        rgba(4, 6, 11, 1) 0%,
+        rgba(4, 6, 11, 0.96) 20%,
+        rgba(4, 6, 11, 0.78) 45%,
+        rgba(4, 6, 11, 0.4) 70%,
+        rgba(4, 6, 11, 0) 100%);
+      z-index: 3;
+    }
+
+    /* Right edge: same, mirrored */
+    .hero-marquee::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 18%;
+      pointer-events: none;
+      background: linear-gradient(to left,
+        rgba(4, 6, 11, 1) 0%,
+        rgba(4, 6, 11, 0.96) 20%,
+        rgba(4, 6, 11, 0.78) 45%,
+        rgba(4, 6, 11, 0.4) 70%,
+        rgba(4, 6, 11, 0) 100%);
+      z-index: 3;
+    }
+
+    .carousel-track {
+      display: flex;
+      gap: 14px;
+      width: max-content;
+      animation: marqueeScroll 38s linear infinite;
+      will-change: transform;
+      align-items: center;
+    }
+
+    .hero-marquee:hover .carousel-track {
+      animation-play-state: paused;
+    }
+
+    .carousel-card {
+      flex-shrink: 0;
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+      cursor: default;
+      transition: opacity 0.25s ease;
+      z-index: 1;
+    }
+
+    .hero-marquee:hover .carousel-card {
+      opacity: 0.55;
+    }
+
+    .carousel-card:hover {
+      z-index: 10;
+      opacity: 1 !important;
+    }
+
+    .carousel-slide {
+      height: 320px;
+      width: auto;
+      display: block;
+      border-radius: 8px;
+      opacity: 1;
+      transition: height 0.45s cubic-bezier(0.34, 1.1, 0.64, 1);
+    }
+
+    .carousel-card:hover .carousel-slide {
+      height: 420px;
+    }
+
+    .carousel-label {
+      display: block;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.38);
+      margin-bottom: 10px;
+      transition: color 0.25s ease;
+      white-space: nowrap;
+    }
+
+    .carousel-card:hover .carousel-label {
+      color: rgba(255, 255, 255, 0.75);
+    }
+
+    @keyframes marqueeScroll {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+
+    /* Image expand modal */
+    .img-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 9000;
+      background: rgba(0, 0, 0, 0.86);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.22s ease;
+    }
+
+    .img-modal.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .img-modal-img {
+      max-width: 88vw;
+      max-height: 86vh;
+      object-fit: contain;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 40px 120px rgba(0, 0, 0, 0.9);
+      transform: scale(0.94);
+      transition: transform 0.32s cubic-bezier(0.34, 1.2, 0.64, 1);
+      display: block;
+    }
+
+    .img-modal.open .img-modal-img {
+      transform: scale(1);
+    }
+
+    .img-modal-close {
+      position: absolute;
+      top: 20px;
+      right: 24px;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: rgba(255, 255, 255, 0.85);
+      font-size: 20px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s ease, transform 0.2s ease;
+    }
+
+    .img-modal-close:hover {
+      background: rgba(255, 255, 255, 0.18);
+      transform: scale(1.1);
+    }
+
+    .img-zoomable {
+      cursor: zoom-in;
+    }
+
+    .img-modal-close:focus-visible,
+    .img-zoomable:focus-visible {
+      outline: 3px solid #9bb8ff;
+      outline-offset: 4px;
+    }
+
+    @media (max-width: 768px) {
+      .carousel-track {
+        animation-duration: 26s;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .carousel-track {
+        animation-duration: 20s;
+      }
+      /* touch devices: disable stuck-hover expansion */
+      .carousel-card:hover .carousel-slide {
+        height: 148px;
+      }
+      .hero-marquee:hover .carousel-card {
+        opacity: 1;
+      }
+      .hero-marquee:hover .carousel-track {
+        animation-play-state: running;
+      }
+    }
+
+    /* ================================================================
+       ACADEMIC PLANNING SECTION
+       ================================================================ */
+    .academic-section {
+      padding: 120px 0;
+      position: relative;
+    }
+    .academic-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+      position: relative;
+    }
+    /* Subtle cross-thread lines in the gap between the four cards */
+    .academic-thread-h,
+    .academic-thread-v {
+      position: absolute;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .academic-thread-h {
+      top: 50%; left: 48px; right: 48px; height: 1px;
+      background: linear-gradient(90deg, transparent 0%, rgba(120, 150, 240, 0.16) 20%, rgba(120, 150, 240, 0.16) 80%, transparent 100%);
+      transform: translateY(-50%);
+    }
+    .academic-thread-v {
+      left: 50%; top: 48px; bottom: 48px; width: 1px;
+      background: linear-gradient(180deg, transparent 0%, rgba(120, 150, 240, 0.16) 20%, rgba(120, 150, 240, 0.16) 80%, transparent 100%);
+      transform: translateX(-50%);
+    }
+    .academic-card {
+      position: relative;
+      z-index: 1;
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.0) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+      border-left: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-lg);
+      padding: 36px;
+      overflow: hidden;
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.03), 0 8px 32px rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(10px) saturate(120%);
+      -webkit-backdrop-filter: blur(10px) saturate(120%);
+      transition: border-top-color 0.4s var(--ease-out), box-shadow 0.4s var(--ease-out);
+    }
+    .academic-card:hover {
+      border-top-color: rgba(255, 255, 255, 0.2);
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.06), 0 12px 40px rgba(0, 0, 0, 0.5);
+    }
+    .academic-card-num {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(150, 175, 240, 0.55);
+      margin-bottom: 10px;
+      display: block;
+    }
+    .academic-card h3 {
+      font-size: 1.35rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      margin-bottom: 10px;
+    }
+    .academic-card > p {
+      color: var(--text-muted);
+      font-size: 0.97rem;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+    .academic-mini {
+      border-radius: 12px;
+      background: rgba(8, 12, 22, 0.65);
+      border: 1px solid rgba(120, 150, 240, 0.12);
+      padding: 14px 16px;
+    }
+    /* School schedule mini-visual */
+    .sched-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    .sched-row:last-child { border-bottom: none; }
+    .sched-period {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: rgba(130, 160, 240, 0.6);
+      width: 20px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .sched-label {
+      color: rgba(195, 210, 238, 0.62);
+      font-size: 0.8rem;
+      width: 82px;
+      flex-shrink: 0;
+    }
+    .sched-block {
+      flex: 1;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(90, 120, 220, 0.18);
+    }
+    .sched-block.active {
+      background: rgba(90, 130, 230, 0.52);
+      box-shadow: 0 0 6px rgba(100, 140, 235, 0.28);
+    }
+    /* Grade planner mini-visual */
+    .grade-bar-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 9px;
+    }
+    .grade-bar-row:last-child { margin-bottom: 0; }
+    .grade-bar-label {
+      width: 54px;
+      font-size: 0.77rem;
+      color: var(--text-faint);
+      flex-shrink: 0;
+    }
+    .grade-bar-track {
+      flex: 1;
+      height: 5px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.05);
+      overflow: hidden;
+    }
+    .grade-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: linear-gradient(90deg, rgba(90, 130, 220, 0.62), rgba(120, 165, 245, 0.78));
+    }
+    .grade-bar-val {
+      font-size: 0.77rem;
+      color: rgba(195, 212, 240, 0.68);
+      width: 26px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+    /* Semester setup mini-visual */
+    .setup-item {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      font-size: 0.8rem;
+      color: rgba(195, 210, 238, 0.65);
+    }
+    .setup-item:last-child { border-bottom: none; }
+    .setup-check {
+      width: 14px;
+      height: 14px;
+      border-radius: 4px;
+      border: 1px solid rgba(120, 150, 240, 0.36);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      color: rgba(180, 210, 255, 0.86);
+    }
+    .setup-check.checked {
+      background: rgba(80, 120, 240, 0.22);
+      border-color: rgba(120, 155, 240, 0.55);
+    }
+    /* Assignment studio mini-visual */
+    .studio-milestone {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 7px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    .studio-milestone:last-child { border-bottom: none; }
+    .studio-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: rgba(120, 150, 240, 0.38);
+      flex-shrink: 0;
+      margin-top: 4px;
+    }
+    .studio-dot.active {
+      background: rgba(100, 145, 245, 0.78);
+      box-shadow: 0 0 5px rgba(100, 140, 240, 0.38);
+    }
+    .studio-label {
+      font-size: 0.82rem;
+      color: rgba(205, 218, 240, 0.7);
+      display: block;
+    }
+    .studio-sub {
+      font-size: 0.74rem;
+      color: var(--text-faint);
+      display: block;
+      margin-top: 2px;
+    }
+    @media (max-width: 840px) {
+      .academic-grid { grid-template-columns: 1fr; }
+      .academic-thread-h, .academic-thread-v { display: none; }
+    }
+    @media (max-width: 768px) {
+      .academic-section { padding: 80px 0; }
+      .academic-card { padding: 26px 22px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .academic-card { transition: none; }
+    }
+
+    /* ================================================================
+       SUTRA ASSISTANT SECTION
+       ================================================================ */
+    .assistant-section {
+      padding: 120px 0;
+      position: relative;
+    }
+    .assistant-layout {
+      display: grid;
+      grid-template-columns: 1fr 1.1fr;
+      gap: 80px;
+      align-items: center;
+    }
+    .assistant-trust-points {
+      margin-top: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      list-style: none;
+      padding-left: 0;
+    }
+    .trust-point {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 0.97rem;
+      color: rgba(195, 210, 238, 0.7);
+      line-height: 1.45;
+    }
+    .trust-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: rgba(120, 155, 240, 0.62);
+      flex-shrink: 0;
+      margin-top: 8px;
+    }
+    /* Assistant panel CSS mockup */
+    .assistant-panel {
+      border-radius: var(--radius-lg);
+      background: linear-gradient(160deg, rgba(14, 18, 30, 0.97), rgba(8, 12, 22, 0.97));
+      border: 1px solid rgba(120, 150, 240, 0.18);
+      border-top: 1px solid rgba(120, 150, 240, 0.3);
+      overflow: hidden;
+      box-shadow: 0 40px 100px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(100, 130, 220, 0.06);
+    }
+    .ap-header {
+      padding: 13px 18px;
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .ap-header-title {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: rgba(218, 228, 248, 0.86);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .ap-icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      background: rgba(80, 120, 242, 0.2);
+      border: 1px solid rgba(100, 140, 230, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      color: rgba(180, 210, 255, 0.82);
+    }
+    .ap-badge {
+      padding: 11px 18px;
+      background: rgba(80, 120, 242, 0.07);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .ap-badge-icon {
+      width: 26px;
+      height: 26px;
+      border-radius: 7px;
+      background: rgba(80, 120, 242, 0.18);
+      border: 1px solid rgba(100, 140, 230, 0.25);
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+      color: rgba(180, 210, 255, 0.8);
+      flex-shrink: 0;
+    }
+    .ap-badge-title {
+      font-size: 0.77rem;
+      font-weight: 600;
+      color: rgba(198, 218, 255, 0.84);
+      letter-spacing: 0.01em;
+    }
+    .ap-badge-sub {
+      font-size: 0.72rem;
+      color: var(--text-faint);
+      margin-top: 1px;
+    }
+    .ap-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 10px 18px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    .ap-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: rgba(80, 120, 242, 0.09);
+      border: 1px solid rgba(100, 140, 230, 0.2);
+      font-size: 0.72rem;
+      color: rgba(172, 198, 248, 0.73);
+      font-weight: 500;
+    }
+    .ap-chip-dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: rgba(120, 165, 245, 0.72);
+    }
+    .ap-body {
+      padding: 14px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .ap-user-msg {
+      align-self: flex-end;
+      background: rgba(80, 120, 242, 0.17);
+      border: 1px solid rgba(100, 140, 230, 0.27);
+      border-radius: 13px 13px 4px 13px;
+      padding: 9px 13px;
+      font-size: 0.84rem;
+      color: rgba(218, 228, 255, 0.84);
+      max-width: 90%;
+      line-height: 1.4;
+    }
+    .ap-action-card {
+      background: rgba(20, 26, 42, 0.7);
+      border: 1px solid rgba(120, 150, 240, 0.18);
+      border-radius: 12px;
+      padding: 13px;
+    }
+    .ap-action-label {
+      font-size: 0.69rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(138, 168, 240, 0.52);
+      margin-bottom: 7px;
+    }
+    .ap-action-text {
+      font-size: 0.83rem;
+      color: rgba(202, 216, 245, 0.78);
+      line-height: 1.5;
+      margin-bottom: 11px;
+    }
+    .ap-action-btns {
+      display: flex;
+      gap: 7px;
+    }
+    .ap-btn {
+      padding: 6px 13px;
+      border-radius: 7px;
+      font-size: 0.79rem;
+      font-weight: 600;
+      border: 1px solid transparent;
+    }
+    .ap-btn-apply {
+      background: rgba(80, 120, 242, 0.24);
+      border-color: rgba(100, 145, 240, 0.42);
+      color: rgba(198, 218, 255, 0.88);
+    }
+    .ap-btn-decline {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(255, 255, 255, 0.09);
+      color: rgba(172, 182, 208, 0.58);
+    }
+    .ap-optional-note {
+      padding: 9px 18px 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
+      font-size: 0.74rem;
+      color: var(--text-faint);
+      text-align: center;
+    }
+    @media (max-width: 900px) {
+      .assistant-layout {
+        grid-template-columns: 1fr;
+        gap: 48px;
+      }
+    }
+    @media (max-width: 768px) {
+      .assistant-section { padding: 80px 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .assistant-panel { transition: none; }
+    }
+
+    /* Keep the Assistant in its real workspace context rather than shrinking it
+       into a panel mockup. */
+    .assistant-section { overflow: hidden; }
+    .assistant-layout {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .assistant-copy {
+      max-width: 720px;
+      text-align: center;
+    }
+    .assistant-copy .section-header p { margin-left: auto; margin-right: auto; }
+    .assistant-trust-points {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px 24px;
+      margin: 28px auto 0;
+      text-align: left;
+    }
+    .assistant-fullshot {
+      width: 100%;
+      max-width: 1100px;
+      margin: 52px auto 0;
+    }
+    .assistant-fullshot figure { margin: 0; }
+    .assistant-shot-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 36px;
+    }
+    .assistant-shot-grid figure { min-width: 0; }
+    .assistant-fullshot img {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(120, 150, 240, 0.22);
+      box-shadow: 0 40px 100px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(100, 130, 220, 0.06);
+    }
+    .assistant-fullshot figcaption {
+      margin-top: 16px;
+      font-size: 0.86rem;
+      color: var(--text-muted);
+      text-align: center;
+    }
+    .assistant-shot-note {
+      margin: 24px 0 0;
+      color: var(--text-muted);
+      font-size: 0.86rem;
+      text-align: center;
+    }
+    @media (max-width: 768px) {
+      .assistant-trust-points { grid-template-columns: 1fr; gap: 10px; max-width: 320px; }
+      .assistant-fullshot { width: min(100%, calc(100vw - 32px)); margin-top: 40px; }
+      .assistant-shot-grid { grid-template-columns: 1fr; gap: 20px; }
+      .assistant-fullshot img { border-radius: var(--radius-md); }
+    }
+
+  </style>
+
+  <style id="scrolly-styles">
+    /* ===================================================================
+       SCROLLYTELLING ? problem, reveal, guided tour, local-first visual.
+       Default state (no JS / reduced motion / mobile) is fully readable;
+       scroll-linked transforms only enhance on capable desktops.
+       =================================================================== */
+
+    .hero-eyebrow {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.24em;
+      color: rgba(150, 175, 240, 0.82);
+      margin-bottom: 22px;
+      text-transform: uppercase;
+    }
+    .hero-status {
+      margin-top: 22px;
+      font-size: 0.84rem;
+      letter-spacing: 0.04em;
+      color: var(--text-faint);
+    }
+    .section-eyebrow {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.22em;
+      color: rgba(150, 175, 240, 0.78);
+      margin-bottom: 18px;
+      text-transform: uppercase;
+    }
+
+    /* ---------- SECTION 2 ? PROBLEM (sticky converge) ---------- */
+    /* Section is taller than the viewport so the sticky child stays pinned while
+       the extra height scrolls past ? that scroll range drives the convergence. */
+    .problem-section { position: relative; min-height: 220vh; }
+    .problem-sticky {
+      position: sticky;
+      top: 0;
+      min-height: 100vh;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+    }
+    .problem-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: center;
+      width: 100%;
+    }
+    .problem-copy h2 {
+      font-family: var(--font-serif);
+      font-size: clamp(2rem, 4.2vw, 3.4rem);
+      line-height: 1.08;
+      letter-spacing: -0.02em;
+      margin-bottom: 22px;
+    }
+    .problem-copy p {
+      color: var(--text-muted);
+      font-size: 1.08rem;
+      line-height: 1.7;
+      max-width: 46ch;
+    }
+    .problem-cluster {
+      position: relative;
+      min-height: 60vh;
+      display: flex;
+      flex-wrap: wrap;
+      align-content: center;
+      justify-content: center;
+      gap: 14px;
+      --p: 1;                         /* converged by default (readable w/o JS) */
+      --scatter: calc(1 - var(--p));
+    }
+    .frag {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 13px 18px 13px 13px;
+      border-radius: 14px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-light);
+      backdrop-filter: var(--blur);
+      -webkit-backdrop-filter: var(--blur);
+      font-size: 0.92rem;
+      font-weight: 500;
+      color: rgba(235, 238, 248, 0.92);
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.34);
+      white-space: nowrap;
+      transform: translate(calc(var(--fx) * var(--scatter) * 2.4), calc(var(--fy) * var(--scatter) * 2.4)) rotate(calc(var(--fr) * var(--scatter)));
+      transition: transform 0.12s linear;
+    }
+    .frag i {
+      display: inline-grid;
+      place-items: center;
+      width: 26px; height: 26px;
+      border-radius: 8px;
+      font-style: normal;
+      font-weight: 700;
+      font-size: 0.8rem;
+      color: #cfe0ff;
+      background: rgba(80, 120, 242, 0.22);
+      border: 1px solid rgba(120, 150, 240, 0.35);
+    }
+
+    /* ---------- Sutra thread overlay (single continuous animated thread) ---------- */
+    .problem-cluster { z-index: 0; }
+    .sutra-thread-svg {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      z-index: 0; pointer-events: none; overflow: visible;
+    }
+    .sutra-thread-path {
+      fill: none;
+      stroke: url(#sutraThreadGradient);
+      stroke-width: 2.25;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      filter: drop-shadow(0 0 8px rgba(115, 155, 255, 0.35));
+    }
+    .problem-cluster .frag { position: relative; z-index: 1; }
+    /* fragments brighten + gain a node glow as the thread gathers them (--p: 0?1) */
+    .problem-cluster .frag::after {
+      content: ""; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none;
+      box-shadow: 0 0 0 1px rgba(120, 150, 255, calc(var(--p, 1) * 0.45)),
+                  0 0 22px rgba(96, 128, 242, calc(var(--p, 1) * 0.30));
+      opacity: calc(0.35 + var(--p, 1) * 0.65);
+      transition: opacity 0.2s ease;
+    }
+    /* Mobile: the sticky weave collapses to a simple readable vertical thread */
+    @media (max-width: 760px) {
+      .sutra-thread-svg { display: none; }
+      .problem-cluster { flex-direction: column; align-items: center; }
+      .problem-cluster::before {
+        content: ""; position: absolute; left: 50%; top: 6px; bottom: 6px; width: 2px;
+        transform: translateX(-50%);
+        background: linear-gradient(180deg, rgba(150,185,255,0.04), rgba(115,155,255,0.7) 16%, rgba(115,155,255,0.7) 84%, rgba(205,225,255,0.04));
+        border-radius: 2px; z-index: 0;
+      }
+      .problem-cluster .frag { z-index: 1; }
+      .problem-cluster .frag::after { opacity: 1; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .sutra-thread-path { transition: none; }
+    }
+
+    /* ---------- SECTION 3 ? SOLUTION REVEAL (sticky stage) ---------- */
+    .reveal-section { position: relative; min-height: 185vh; }
+    .reveal-sticky {
+      position: sticky;
+      top: 0;
+      min-height: 100vh;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 36px;
+      padding: 80px 0;
+      overflow: hidden;
+    }
+    .reveal-copy { text-align: center; max-width: 760px; }
+    .reveal-copy h2 {
+      font-family: var(--font-serif);
+      font-size: clamp(2rem, 4vw, 3.2rem);
+      line-height: 1.1;
+      margin-bottom: 18px;
+    }
+    .reveal-copy p { color: var(--text-muted); font-size: 1.1rem; line-height: 1.7; }
+    .reveal-stage { position: relative; width: min(92vw, 1080px); }
+    .reveal-frame {
+      position: relative;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      border: 1px solid var(--border-light);
+      box-shadow: 0 40px 120px rgba(0, 0, 0, 0.55);
+      /* scroll-linked reveal: clipped from bottom + slight scale, default fully shown */
+      --p: 1;
+      clip-path: inset(0 0 calc((1 - var(--p)) * 60%) 0 round var(--radius-lg));
+      transform: scale(calc(0.97 + var(--p) * 0.03));
+      transition: clip-path 0.12s linear, transform 0.12s linear;
+    }
+    .reveal-frame img { display: block; width: 100%; height: auto; }
+    .reveal-chip {
+      position: absolute;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(10, 14, 22, 0.72);
+      border: 1px solid rgba(130, 160, 240, 0.4);
+      backdrop-filter: var(--blur);
+      -webkit-backdrop-filter: var(--blur);
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #dce6ff;
+      opacity: 0;
+      transform: translateY(8px) scale(0.96);
+      transition: opacity 0.5s var(--ease-out), transform 0.5s var(--ease-out);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    }
+    .reveal-section.is-in .reveal-chip { opacity: 1; transform: translateY(0) scale(1); }
+    .chip-a { top: 9%; left: 4%; transition-delay: 0.15s; }
+    .chip-b { top: 22%; right: 5%; transition-delay: 0.35s; }
+    .chip-c { bottom: 26%; left: 6%; transition-delay: 0.55s; }
+    .chip-d { bottom: 10%; right: 8%; transition-delay: 0.75s; }
+    .chip-e { top: 46%; left: 42%; transition-delay: 0.95s; }
+
+    /* ---------- SECTION 4 ? GUIDED TOUR (sticky split) ---------- */
+    .tour-section { padding: 60px 0 40px; }
+    .tour-head { text-align: center; margin-bottom: 20px; }
+    .tour-head h2 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.9rem, 3.6vw, 3rem);
+      line-height: 1.1;
+    }
+    .tour {
+      display: grid;
+      grid-template-columns: minmax(16rem, 0.58fr) minmax(0, 1.62fr);
+      gap: 32px;
+      align-items: start;
+    }
+    .tour-step {
+      min-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      opacity: 1;                       /* readable by default (JS-off safe) */
+      transition: opacity 0.45s var(--ease-out);
+    }
+    /* Only dim inactive steps once the JS tour is driving them. */
+    .tour.is-tour-ready .tour-step { opacity: 0.38; }
+    .tour.is-tour-ready .tour-step.is-active { opacity: 1; }
+    .tour-index {
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 14px;
+    }
+    .tour-step h3 {
+      font-size: clamp(1.4rem, 2.4vw, 2rem);
+      line-height: 1.15;
+      margin-bottom: 14px;
+      letter-spacing: -0.01em;
+    }
+    .tour-step p { color: var(--text-muted); font-size: 1.05rem; line-height: 1.7; max-width: 42ch; }
+    .tour-step-media { display: none; }            /* shown only on mobile */
+    .tour-visual {
+      position: sticky;
+      top: 96px;
+      height: min(72vh, 600px);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      border: 1px solid var(--border-light);
+      background: rgba(8, 11, 18, 0.6);
+      box-shadow: 0 40px 120px rgba(0, 0, 0, 0.5);
+    }
+    .tour-frame {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transform: scale(1.015);
+      transition: opacity 0.6s var(--ease-out), transform 0.6s var(--ease-out);
+      display: grid;
+      place-items: center;
+      padding: 12px;
+    }
+    .tour-frame.is-active { opacity: 1; transform: scale(1); }
+    .tour-frame img { width: 100%; height: 100%; object-fit: contain; border-radius: 12px; }
+
+    /* Cram visual (no screenshot ? restrained CSS rendering of the real UI) */
+    .tour-cram-visual {
+      width: 100%;
+      max-width: 460px;
+      border-radius: 16px;
+      background: linear-gradient(160deg, rgba(20, 26, 40, 0.92), rgba(10, 14, 22, 0.92));
+      border: 1px solid var(--border-light);
+      padding: 22px;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+    }
+    .tour-cram-visual.big { max-width: 540px; }
+    .cram-head { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 0.95rem; color: #e7ecf8; margin-bottom: 16px; }
+    .cram-dot { width: 9px; height: 9px; border-radius: 50%; background: #f5a524; box-shadow: 0 0 10px rgba(245, 165, 36, 0.7); }
+    .cram-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .cram-list li {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 12px 14px;
+      border-radius: 11px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 0.92rem;
+    }
+    .cram-list li b { font-weight: 600; color: var(--text-faint); font-size: 0.82rem; }
+    .cram-list li.done { color: var(--text-faint); text-decoration: line-through; opacity: 0.7; }
+    .cram-list li.active { border-color: rgba(120, 150, 240, 0.5); background: rgba(80, 120, 242, 0.12); color: #fff; }
+
+    /* ---------- SECTION 6 ? local-first transfer visual ---------- */
+    .privacy-transfer {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 26px;
+      margin: 40px auto 44px;
+      flex-wrap: wrap;
+    }
+    .pv-card {
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-light);
+      background: var(--bg-surface);
+      backdrop-filter: var(--blur);
+      -webkit-backdrop-filter: var(--blur);
+      padding: 20px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+      text-align: left;
+    }
+    .pv-workspace { width: 260px; }
+    .pv-card-top { display: flex; gap: 6px; margin-bottom: 16px; }
+    .pv-dot { width: 9px; height: 9px; border-radius: 50%; background: rgba(255, 255, 255, 0.18); }
+    .pv-card-label { font-size: 0.8rem; color: var(--text-faint); letter-spacing: 0.03em; margin-top: 12px; }
+    .pv-card-rows { display: flex; flex-direction: column; gap: 9px; }
+    .pv-card-rows i { display: block; height: 9px; border-radius: 5px; background: rgba(130, 160, 240, 0.22); }
+    .pv-card-rows i:nth-child(2) { width: 80%; }
+    .pv-arrow { position: relative; width: 60px; height: 2px; background: linear-gradient(90deg, rgba(130,160,240,0.1), rgba(130,160,240,0.6)); }
+    .pv-arrow span { position: absolute; right: -2px; top: -4px; width: 10px; height: 10px; border-top: 2px solid rgba(130,160,240,0.7); border-right: 2px solid rgba(130,160,240,0.7); transform: rotate(45deg); }
+    .pv-file { width: 170px; text-align: center; padding: 26px 20px; }
+    .pv-file-ext {
+      display: inline-block;
+      font-family: var(--font-serif);
+      font-size: 1.5rem;
+      color: #cfe0ff;
+      padding: 8px 16px;
+      border-radius: 10px;
+      background: rgba(80, 120, 242, 0.16);
+      border: 1px solid rgba(120, 150, 240, 0.35);
+      margin-bottom: 12px;
+    }
+
+    /* ---------- TABLET ---------- */
+    @media (max-width: 960px) {
+      .problem-grid { grid-template-columns: 1fr; gap: 28px; }
+      .problem-cluster { min-height: auto; padding: 10px 0; }
+      .tour { grid-template-columns: 1fr; gap: 24px; }
+    }
+
+    /* ---------- MOBILE: unwind every pinned section into normal flow ---------- */
+    @media (max-width: 768px) {
+      .problem-section, .reveal-section { min-height: 0; }
+      .problem-sticky, .reveal-sticky { position: static; min-height: 0; height: auto; padding: 70px 0; display: block; }
+      .problem-cluster { --p: 1; }
+      .frag { transform: none !important; }
+      .reveal-sticky { text-align: center; }
+      .reveal-frame { --p: 1; clip-path: none; transform: none; margin-top: 26px; }
+      .reveal-chip { display: none; }   /* chips overlap on small screens ? copy carries the meaning */
+      .tour-visual { display: none; }
+      .tour-step { min-height: 0; opacity: 1; padding: 26px 0; }
+      .tour-step-media { display: block; width: 100%; margin-top: 18px; border-radius: 14px; border: 1px solid var(--border-light); }
+      .tour-cram-visual { margin-top: 18px; }
+      .privacy-transfer { gap: 14px; }
+      .pv-arrow { transform: rotate(90deg); }
+    }
+
+    /* ---------- REDUCED MOTION: freeze all scroll-linked motion, reveal everything ---------- */
+    @media (prefers-reduced-motion: reduce) {
+      /* Collapse the tall sticky scroll-ranges so there is no dead scroll space. */
+      .problem-section, .reveal-section { min-height: 0; }
+      .problem-sticky, .reveal-sticky { position: static; min-height: 0; height: auto; padding: 70px 0; }
+      .problem-cluster { --p: 1; }
+      .frag { transform: none !important; transition: none; }
+      .reveal-frame { --p: 1; clip-path: none; transform: none; transition: none; }
+      .reveal-chip { opacity: 1 !important; transform: none !important; transition: none; }
+      .tour-step { opacity: 1 !important; transition: none; }
+      .tour-frame { transition: none; }
+    }
+  </style>
+
+  <!-- Analytics removed for the public beta. The landing page makes no
+       third-party tracking requests. If opt-in analytics is ever added, it
+       must load nothing before the visitor explicitly consents. -->
+</head>
+<body class="no-parallax">
+
+  <canvas id="ambient-canvas"></canvas>
+  <div class="noise-overlay"></div>
+
+  <nav id="navbar">
+    <div class="nav-content">
+      <a href="#" class="brand" data-sutra-component="brand-mark" aria-label="Sutra home">
+        <img src="assets/brand/sutra/generated/sutra-icon-64.png" alt="" aria-hidden="true" class="brand-logo" width="36" height="36">
+        <span class="brand-text">Sutra</span>
+        <span class="brand-beta" style="margin-left:7px;font-size:0.6rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:2px 6px;border-radius:6px;border:1px solid var(--border-light);color:var(--text-muted);vertical-align:middle;">Beta</span>
+      </a>
+      <div class="nav-links" id="navLinks">
+        <a href="#story" class="nav-link">Story</a>
+        <a href="#workspace" class="nav-link">Workspace</a>
+        <a href="#privacy" class="nav-link">Privacy</a>
+        <a href="#start" class="nav-link">Start</a>
+      </div>
+      <button type="button" class="nav-toggle" id="navToggle" aria-label="Open navigation menu" aria-controls="navLinks" aria-expanded="false">
+        <span class="nav-toggle-bars" aria-hidden="true"><span></span></span>
+      </button>
+    </div>
+  </nav>
+
+  <style id="sutra-shot-styles">
+    /* Browser-chrome frame used for real product screenshots on the dark page. */
+    .shot-frame {
+      position: relative;
+      margin: 0;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--border-light);
+      background: rgba(8, 11, 18, 0.6);
+      box-shadow: 0 40px 110px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(100, 130, 220, 0.05);
+    }
+    .shot-bar {
+      height: 36px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 0 15px;
+      background: linear-gradient(180deg, rgba(22, 27, 40, 0.96), rgba(13, 17, 27, 0.96));
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .shot-bar i { width: 11px; height: 11px; border-radius: 50%; background: rgba(255, 255, 255, 0.16); }
+    .shot-bar i:nth-child(1) { background: rgba(255, 95, 86, 0.7); }
+    .shot-bar i:nth-child(2) { background: rgba(255, 189, 46, 0.7); }
+    .shot-bar i:nth-child(3) { background: rgba(39, 201, 63, 0.62); }
+    .shot-bar-title {
+      margin-left: 10px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: rgba(200, 212, 238, 0.62);
+    }
+    .shot-frame img { display: block; width: 100%; height: auto; }
+    .shot-caption {
+      margin: 16px 2px 0;
+      font-size: 0.86rem;
+      color: var(--text-muted);
+      text-align: center;
+    }
+    .assistant-shot { width: 100%; }
+
+    /* Responsive / mobile preview */
+    .responsive-section { padding: 100px 0; position: relative; }
+    .responsive-layout {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 72px;
+      align-items: center;
+    }
+    .responsive-copy h2 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.9rem, 3.4vw, 2.9rem);
+      line-height: 1.12;
+      letter-spacing: -0.01em;
+      margin-bottom: 18px;
+    }
+    .responsive-copy h2 span { color: var(--accent); }
+    .responsive-copy > p { color: var(--text-muted); font-size: 1.06rem; line-height: 1.75; max-width: 48ch; }
+    .responsive-points { list-style: none; padding-left: 0; margin-top: 26px; display: flex; flex-direction: column; gap: 12px; }
+    .responsive-visual { display: flex; justify-content: center; }
+    .phone-frame {
+      width: 296px;
+      max-width: 78vw;
+      padding: 12px;
+      border-radius: 46px;
+      background: linear-gradient(165deg, rgba(28, 33, 48, 0.95), rgba(10, 13, 22, 0.95));
+      border: 1px solid rgba(130, 160, 240, 0.16);
+      box-shadow: 0 50px 120px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    }
+    .phone-frame img {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: 34px;
+      border: 1px solid rgba(0, 0, 0, 0.4);
+    }
+    @media (max-width: 860px) {
+      .responsive-layout { grid-template-columns: 1fr; gap: 44px; text-align: center; }
+      .responsive-copy > p { margin-left: auto; margin-right: auto; }
+      .responsive-points { align-items: center; }
+      .trust-point { text-align: left; }
+    }
+  </style>
+
+  <main>
+    <section id="hero" class="hero container">
+      <span class="hero-eyebrow">PRIVATE ? LOCAL-FIRST ? STUDENT-BUILT</span>
+      <h1>The workspace <br class="hero-mobile-break" aria-hidden="true">for<br>
+        <span class="phrase-container">
+          <span id="rotating-phrase-wrapper"><span class="phrase active">intentional thought</span></span>
+        </span>
+      </h1>
+
+      <div class="hero-microcopy">A step change in academic productivity.</div>
+
+      <p>Sutra is the student OS: one private, local-first student workspace that brings school, projects, tasks, notes, and planning together. Not another collection of disconnected tools, so less energy goes into maintaining the system, and more into the work itself. Your data stays on your device.</p>
+
+      <div class="hero-actions">
+        <a href="Sutra.html" class="btn btn-primary btn-lg">Start your workspace</a>
+        <a href="#workspace" class="btn btn-secondary btn-lg">Explore Sutra</a>
+      </div>
+      <p class="hero-status">No account required ? Local-first by design</p>
+
+      <div class="hero-mockup-wrapper" id="heroScaleTarget">
+        <div class="hero-mockup hero-marquee" id="heroCarousel">
+          <!-- Sequence: Today ? Daily View ? Homework ? Rich Notes ? Testing Hub ?
+               Review ? Sutra Assistant ? Themes ? Deadline Radar ? Weekly View.
+               All shots are captured from the real app via scripts/capture-final.mjs. -->
+          <div class="carousel-track">
+            <div class="carousel-card"><span class="carousel-label">Today</span><img src="assets/screenshots/today.png" alt="Sutra Today dashboard ? daily thread, deadlines, and schedule in one view" class="carousel-slide"></div>
+            <div class="carousel-card"><span class="carousel-label">Daily View</span><img src="assets/screenshots/timeline-daily.png" alt="Timeline day view ? class periods and study blocks laid out by hour" class="carousel-slide"></div>
+            <div class="carousel-card"><span class="carousel-label">Homework</span><img src="assets/screenshots/homework.png" alt="Homework Organizer ? assignments grouped by class with due dates and priorities" class="carousel-slide"></div>
+            <div class="carousel-card"><span class="carousel-label">Rich Notes</span><img src="assets/screenshots/notes-editor.png" alt="Rich notes editor ? a structured calculus study sheet with formatting and tags" class="carousel-slide"></div>
+            <div class="carousel-card"><span class="carousel-label">Testing Hub</span><img src="assets/screenshots/testing-hub.png" alt="Testing Hub ? exams, review, and study progress in one dashboard" class="carousel-slide"></div>
+            <div class="carousel-card"><span class="carousel-label">Review</span><img src="assets/screenshots/testing-hub-review.png" alt="Spaced-repetition review ? study sets and cards due today" class="carousel-slide"></div>
+            <div class="carousel-card"><span class="carousel-label">Assistant</span><img src="assets/screenshots/assistant.png" alt="Sutra Assistant ? a workspace pulse and reviewable suggestions beside the Today view" class="carousel-slide"></div>
+            <div class="carousel-card"><span class="carousel-label">Assistant Workspace</span><img src="assets/screenshots/assistant-full.png" alt="Full-screen Sutra Assistant workspace with a focused study-planning conversation" class="carousel-slide"></div>
+            <div class="carousel-card"><span class="carousel-label">Themes</span><img src="assets/screenshots/themes-customization.png" alt="Workspace settings ? appearance, density, and theme controls with a live preview" class="carousel-slide"></div>
+            <div class="carousel-card"><span class="carousel-label">Deadline Radar</span><img src="assets/screenshots/deadline-radar.png" alt="Deadline Radar ? every upcoming deadline grouped by timeframe" class="carousel-slide"></div>
+            <div class="carousel-card"><span class="carousel-label">Weekly View</span><img src="assets/screenshots/timeline-weekly.png" alt="Timeline week view ? the full week of classes and work at a glance" class="carousel-slide"></div>
+            <!-- Duplicate set for seamless loop (aria-hidden so screen readers skip the copies) -->
+            <div class="carousel-card" aria-hidden="true"><span class="carousel-label">Today</span><img src="assets/screenshots/today.png" alt="" class="carousel-slide"></div>
+            <div class="carousel-card" aria-hidden="true"><span class="carousel-label">Daily View</span><img src="assets/screenshots/timeline-daily.png" alt="" class="carousel-slide"></div>
+            <div class="carousel-card" aria-hidden="true"><span class="carousel-label">Homework</span><img src="assets/screenshots/homework.png" alt="" class="carousel-slide"></div>
+            <div class="carousel-card" aria-hidden="true"><span class="carousel-label">Rich Notes</span><img src="assets/screenshots/notes-editor.png" alt="" class="carousel-slide"></div>
+            <div class="carousel-card" aria-hidden="true"><span class="carousel-label">Testing Hub</span><img src="assets/screenshots/testing-hub.png" alt="" class="carousel-slide"></div>
+            <div class="carousel-card" aria-hidden="true"><span class="carousel-label">Review</span><img src="assets/screenshots/testing-hub-review.png" alt="" class="carousel-slide"></div>
+            <div class="carousel-card" aria-hidden="true"><span class="carousel-label">Assistant</span><img src="assets/screenshots/assistant.png" alt="" class="carousel-slide"></div>
+            <div class="carousel-card" aria-hidden="true"><span class="carousel-label">Assistant Workspace</span><img src="assets/screenshots/assistant-full.png" alt="" class="carousel-slide"></div>
+            <div class="carousel-card" aria-hidden="true"><span class="carousel-label">Themes</span><img src="assets/screenshots/themes-customization.png" alt="" class="carousel-slide"></div>
+            <div class="carousel-card" aria-hidden="true"><span class="carousel-label">Deadline Radar</span><img src="assets/screenshots/deadline-radar.png" alt="" class="carousel-slide"></div>
+            <div class="carousel-card" aria-hidden="true"><span class="carousel-label">Weekly View</span><img src="assets/screenshots/timeline-weekly.png" alt="" class="carousel-slide"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SECTION 2 ? THE PROBLEM (sticky converge) ============ -->
+    <section id="story" class="problem-section" data-scrolly="problem" data-sutra-component="thread-story">
+      <div class="problem-sticky">
+        <div class="problem-grid container">
+          <div class="problem-copy">
+            <span class="section-eyebrow" data-thread-eyebrow>THE PROBLEM</span>
+            <h2 data-thread-heading>Schoolwork is scattered across too&nbsp;many&nbsp;places.</h2>
+            <p data-thread-body>Notes in one app. Assignments in another. Timeline blocks somewhere else. Testing resources, review cards, deadlines, and study plans spread across separate tools. Then a single thread draws them together ? into Sutra.</p>
+          </div>
+          <div class="problem-cluster" data-sutra-component="thread-stage" aria-hidden="true">
+            <svg class="sutra-thread-svg" viewBox="0 0 1200 760" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">
+              <defs>
+                <linearGradient id="sutraThreadGradient" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="rgba(150, 185, 255, 0.35)" />
+                  <stop offset="55%" stop-color="rgba(115, 155, 255, 0.95)" />
+                  <stop offset="100%" stop-color="rgba(205, 225, 255, 0.72)" />
+                </linearGradient>
+              </defs>
+              <path class="sutra-thread-path" data-sutra-component="thread-path" data-thread-path
+                d="M 110 150 C 360 50, 540 210, 600 380 C 656 540, 430 660, 290 590 C 150 520, 200 700, 410 700 C 670 700, 770 510, 720 360 C 680 235, 860 120, 1020 205 C 1130 262, 1112 440, 980 520" />
+            </svg>
+            <span class="frag" data-frag="0" data-sutra-component="thread-fragment" data-sutra-thread-node="notes" style="--fx:-38%; --fy:-30%; --fr:-7deg;"><i>N</i>Notes</span>
+            <span class="frag" data-frag="1" data-sutra-component="thread-fragment" data-sutra-thread-node="assignments" style="--fx:36%; --fy:-36%; --fr:6deg;"><i>A</i>Assignments</span>
+            <span class="frag" data-frag="2" data-sutra-component="thread-fragment" data-sutra-thread-node="timeline" style="--fx:-46%; --fy:2%; --fr:4deg;"><i>T</i>Timeline</span>
+            <span class="frag" data-frag="3" data-sutra-component="thread-fragment" data-sutra-thread-node="tasks" style="--fx:44%; --fy:-4%; --fr:-5deg;"><i>T</i>Tasks</span>
+            <span class="frag" data-frag="4" data-sutra-component="thread-fragment" data-sutra-thread-node="ap-study" style="--fx:-34%; --fy:34%; --fr:8deg;"><i>A</i>AP&nbsp;Study</span>
+            <span class="frag" data-frag="5" data-sutra-component="thread-fragment" data-sutra-thread-node="review" style="--fx:34%; --fy:32%; --fr:-8deg;"><i>R</i>Review</span>
+            <span class="frag" data-frag="6" data-sutra-component="thread-fragment" data-sutra-thread-node="focus" style="--fx:-6%; --fy:46%; --fr:3deg;"><i>F</i>Focus</span>
+            <span class="frag" data-frag="7" data-sutra-component="thread-fragment" data-sutra-thread-node="radar" style="--fx:6%; --fy:-48%; --fr:-3deg;"><i>D</i>Deadline&nbsp;Radar</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SECTION 3 ? SOLUTION REVEAL (sticky stage) ============ -->
+    <section class="reveal-section" data-scrolly="solution">
+      <div class="reveal-sticky">
+        <div class="reveal-copy container">
+          <span class="section-eyebrow">ONE WORKSPACE</span>
+          <h2>Everything works together in one coherent system.</h2>
+          <p>Most productivity tools optimize one part of the workflow. Sutra connects the whole system ? planning, notes, deadlines, and review, together. Your workspace never leaves your device.</p>
+        </div>
+        <div class="reveal-stage">
+          <div class="reveal-frame">
+            <img src="assets/screenshots/today.png" alt="The Sutra Today dashboard, bringing your Daily Thread, deadlines and schedule together" width="1600" height="1000" loading="lazy" decoding="async">
+            <span class="reveal-chip chip-a" aria-hidden="true">Daily Thread</span>
+            <span class="reveal-chip chip-b" aria-hidden="true">Deadline Radar</span>
+            <span class="reveal-chip chip-c" aria-hidden="true">Next Step</span>
+            <span class="reveal-chip chip-d" aria-hidden="true">Timeline</span>
+            <span class="reveal-chip chip-e" aria-hidden="true">Review due</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SECTION 4 ? GUIDED WORKSPACE TOUR (sticky split) ====== -->
+    <section id="workspace" class="tour-section">
+      <div class="tour-head container reveal">
+        <span class="section-eyebrow">THE WORKSPACE</span>
+        <h2>Built around the way students actually work.</h2>
+      </div>
+      <div class="tour container">
+        <div class="tour-narrative">
+          <article class="tour-step is-active" data-tour-step="0">
+            <span class="tour-index">01 ? Today</span>
+            <h3>Start with what matters now.</h3>
+            <p>Daily Thread, deadlines, schedule context, habits, and the next step come together in one focused view.</p>
+            <img class="tour-step-media" src="assets/screenshots/today.png" alt="Today dashboard" loading="lazy" decoding="async">
+          </article>
+          <article class="tour-step" data-tour-step="1">
+            <span class="tour-index">02 ? Notes</span>
+            <h3>Think without leaving the workspace.</h3>
+            <p>Capture structured notes, link ideas, and keep planning context close to the work itself.</p>
+            <img class="tour-step-media" src="assets/screenshots/notes-editor.png" alt="Rich notes editor" loading="lazy" decoding="async">
+          </article>
+          <article class="tour-step" data-tour-step="2">
+            <span class="tour-index">03 ? Timeline</span>
+            <h3>Turn intentions into time.</h3>
+            <p>Plan focused work blocks, see the shape of the day, and keep deadlines connected to an actual schedule.</p>
+            <img class="tour-step-media" src="assets/screenshots/timeline-daily.png" alt="Timeline daily view" loading="lazy" decoding="async">
+          </article>
+          <article class="tour-step" data-tour-step="3">
+            <span class="tour-index">04 ? Homework</span>
+            <h3>Keep assignments visible before they become emergencies.</h3>
+            <p>Track classes, due dates, priorities, and study work from the same system.</p>
+            <img class="tour-step-media" src="assets/screenshots/homework.png" alt="Homework planner" loading="lazy" decoding="async">
+          </article>
+          <article class="tour-step" data-tour-step="4">
+            <span class="tour-index">05 ? Testing Hub</span>
+            <h3>Prepare with structure.</h3>
+            <p>Keep exam resources, testing workflows, and progress signals organized in one place.</p>
+            <img class="tour-step-media" src="assets/screenshots/testing-hub.png" alt="Testing Hub" loading="lazy" decoding="async">
+          </article>
+          <article class="tour-step" data-tour-step="5">
+            <span class="tour-index">06 ? Review</span>
+            <h3>Review what needs attention.</h3>
+            <p>Surface due material, revisit weak areas, and make studying an intentional loop rather than a last-minute scramble.</p>
+            <img class="tour-step-media" src="assets/screenshots/testing-hub-review.png" alt="Review session" loading="lazy" decoding="async">
+          </article>
+          <article class="tour-step" data-tour-step="6">
+            <span class="tour-index">07 ? Cram</span>
+            <h3>When time is short, narrow the field.</h3>
+            <p>Cram mode helps turn a broad workload into a focused study sequence.</p>
+            <div class="tour-step-media tour-cram-visual" role="img" aria-label="Cram mode focused study sequence">
+              <div class="cram-head"><span class="cram-dot"></span> Cram ? AP Physics ? 90 min</div>
+              <ul class="cram-list">
+                <li class="done"><span>Kinematics ? key equations</span><b>15m</b></li>
+                <li class="active"><span>Forces &amp; Newton's laws</span><b>20m</b></li>
+                <li><span>Focus &amp; momentum</span><b>25m</b></li>
+                <li><span>Mixed free-response set</span><b>30m</b></li>
+              </ul>
+            </div>
+          </article>
+        </div>
+        <div class="tour-visual">
+          <div class="tour-frame is-active" data-tour-frame="0"><img src="assets/screenshots/today.png" alt="Today dashboard" loading="lazy" decoding="async"></div>
+          <div class="tour-frame" data-tour-frame="1"><img src="assets/screenshots/notes-editor.png" alt="Rich notes editor" loading="lazy" decoding="async"></div>
+          <div class="tour-frame" data-tour-frame="2"><img src="assets/screenshots/timeline-daily.png" alt="Timeline daily view" loading="lazy" decoding="async"></div>
+          <div class="tour-frame" data-tour-frame="3"><img src="assets/screenshots/homework.png" alt="Homework planner" loading="lazy" decoding="async"></div>
+          <div class="tour-frame" data-tour-frame="4"><img src="assets/screenshots/testing-hub.png" alt="Testing Hub" loading="lazy" decoding="async"></div>
+          <div class="tour-frame" data-tour-frame="5"><img src="assets/screenshots/testing-hub-review.png" alt="Review session" loading="lazy" decoding="async"></div>
+          <div class="tour-frame tour-frame-cram" data-tour-frame="6">
+            <div class="tour-cram-visual big" role="img" aria-label="Cram mode focused study sequence">
+              <div class="cram-head"><span class="cram-dot"></span> Cram ? AP Physics ? 90 min</div>
+              <ul class="cram-list">
+                <li class="done"><span>Kinematics ? key equations</span><b>15m</b></li>
+                <li class="active"><span>Forces &amp; Newton's laws</span><b>20m</b></li>
+                <li><span>Focus &amp; momentum</span><b>25m</b></li>
+                <li><span>Mixed free-response set</span><b>30m</b></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SECTION 4b ? ACADEMIC PLANNING ============ -->
+    <section id="academic-planning" class="academic-section">
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="section-eyebrow">ACADEMIC PLANNING</span>
+          <h2>Plan the semester, <span>not just the next task.</span></h2>
+          <p>Sutra connects your school schedule, assignments, grades, and long-term work inside the same local-first workspace.</p>
+        </div>
+
+        <div class="academic-grid">
+          <div class="academic-thread-h" aria-hidden="true"></div>
+          <div class="academic-thread-v" aria-hidden="true"></div>
+
+          <!-- School Schedule -->
+          <article class="academic-card reveal">
+            <span class="academic-card-num">01</span>
+            <h3>School Schedule</h3>
+            <p>Rotating A/B days, cycle schedules, bell schedules, holidays, and real study windows.</p>
+            <!-- CSS mini-visual: school schedule view.
+                 TODO: replace with real screenshot assets/screenshots/school-schedule.png once captured. -->
+            <div class="academic-mini" aria-hidden="true">
+              <div class="sched-row">
+                <span class="sched-period">A</span>
+                <span class="sched-label">Physics</span>
+                <span class="sched-block active"></span>
+              </div>
+              <div class="sched-row">
+                <span class="sched-period">B</span>
+                <span class="sched-label">Calc BC</span>
+                <span class="sched-block"></span>
+              </div>
+              <div class="sched-row">
+                <span class="sched-period">C</span>
+                <span class="sched-label">English</span>
+                <span class="sched-block"></span>
+              </div>
+              <div class="sched-row">
+                <span class="sched-period">D</span>
+                <span class="sched-label">CS / Study</span>
+                <span class="sched-block active"></span>
+              </div>
+            </div>
+          </article>
+
+          <!-- Grade Planner -->
+          <article class="academic-card reveal">
+            <span class="academic-card-num">02</span>
+            <h3>Grade Planner</h3>
+            <p>Forecast course grades, GPA, missing-work impact, and what score you need on the final.</p>
+            <!-- CSS mini-visual: grade forecast bars.
+                 TODO: replace with real screenshot assets/screenshots/grade-planner.png once captured. -->
+            <div class="academic-mini" aria-hidden="true">
+              <div class="grade-bar-row">
+                <span class="grade-bar-label">Physics</span>
+                <span class="grade-bar-track"><span class="grade-bar-fill" style="width:88%"></span></span>
+                <span class="grade-bar-val">A?</span>
+              </div>
+              <div class="grade-bar-row">
+                <span class="grade-bar-label">Calc BC</span>
+                <span class="grade-bar-track"><span class="grade-bar-fill" style="width:94%"></span></span>
+                <span class="grade-bar-val">A</span>
+              </div>
+              <div class="grade-bar-row">
+                <span class="grade-bar-label">English</span>
+                <span class="grade-bar-track"><span class="grade-bar-fill" style="width:78%"></span></span>
+                <span class="grade-bar-val">B+</span>
+              </div>
+              <div class="grade-bar-row">
+                <span class="grade-bar-label">History</span>
+                <span class="grade-bar-track"><span class="grade-bar-fill" style="width:83%"></span></span>
+                <span class="grade-bar-val">B+</span>
+              </div>
+            </div>
+          </article>
+
+          <!-- Semester Setup -->
+          <article class="academic-card reveal">
+            <span class="academic-card-num">03</span>
+            <h3>Semester Setup</h3>
+            <p>Import syllabus or calendar information, review the extracted items, then approve what enters the workspace.</p>
+            <!-- CSS mini-visual: import checklist.
+                 TODO: replace with real screenshot assets/screenshots/semester-setup.png once captured. -->
+            <div class="academic-mini" aria-hidden="true">
+              <div class="setup-item">
+                <span class="setup-check checked" aria-hidden="true">?</span>
+                <span>AP Physics ? 14 assignments</span>
+              </div>
+              <div class="setup-item">
+                <span class="setup-check checked" aria-hidden="true">?</span>
+                <span>Calc BC ? Exam dates &amp; topics</span>
+              </div>
+              <div class="setup-item">
+                <span class="setup-check" aria-hidden="true"></span>
+                <span>English ? 6 essays, 3 readings</span>
+              </div>
+              <div class="setup-item">
+                <span class="setup-check" aria-hidden="true"></span>
+                <span>Schedule ? Bell / A-B days</span>
+              </div>
+            </div>
+          </article>
+
+          <!-- Assignment Studio -->
+          <article class="academic-card reveal">
+            <span class="academic-card-num">04</span>
+            <h3>Assignment Studio</h3>
+            <p>Break major assignments into milestones, subtasks, rubric criteria, linked notes, and scheduled work blocks.</p>
+            <!-- CSS mini-visual: milestone breakdown.
+                 TODO: replace with real screenshot assets/screenshots/assignment-studio.png once captured. -->
+            <div class="academic-mini" aria-hidden="true">
+              <div class="studio-milestone">
+                <span class="studio-dot active"></span>
+                <span>
+                  <span class="studio-label">Research &amp; outline</span>
+                  <span class="studio-sub">Linked notes ? 2 hr block</span>
+                </span>
+              </div>
+              <div class="studio-milestone">
+                <span class="studio-dot"></span>
+                <span>
+                  <span class="studio-label">First draft</span>
+                  <span class="studio-sub">Rubric: thesis, evidence</span>
+                </span>
+              </div>
+              <div class="studio-milestone">
+                <span class="studio-dot"></span>
+                <span>
+                  <span class="studio-label">Revision pass</span>
+                  <span class="studio-sub">Due 3 days before deadline</span>
+                </span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SECTION 4c ? SUTRA ASSISTANT ============ -->
+    <section id="assistant" class="assistant-section">
+      <div class="container">
+        <div class="assistant-layout">
+
+          <!-- Copy column -->
+          <div class="assistant-copy reveal">
+            <div class="section-header" style="max-width:none;margin-bottom:0">
+              <span class="section-eyebrow">OPTIONAL ASSISTANT</span>
+              <h2>Contextual help, <span>without giving up control.</span></h2>
+              <p>Sutra Intelligence reads local workspace signals on your device. When you choose to ask for AI help, Sutra Assistant sends only the context you allow to the provider you select. Proposed changes stay reviewable until you approve them.</p>
+            </div>
+            <ul class="assistant-trust-points">
+              <li class="trust-point">
+                <span class="trust-dot" aria-hidden="true"></span>
+                <span>Local signals from your workspace</span>
+              </li>
+              <li class="trust-point">
+                <span class="trust-dot" aria-hidden="true"></span>
+                <span>You choose the provider and context scope</span>
+              </li>
+              <li class="trust-point">
+                <span class="trust-dot" aria-hidden="true"></span>
+                <span>Apply or decline every proposed change</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- The Assistant is shown in both its docked and full-workspace forms. -->
+          <div class="assistant-fullshot reveal">
+            <div class="assistant-shot-grid">
+              <figure>
+                <img src="assets/screenshots/assistant.png" alt="The Sutra Assistant docked beside Today, showing a short study-planning conversation." width="1600" height="1000" loading="lazy" decoding="async">
+                <figcaption>Quick help stays in the flow of your day.</figcaption>
+              </figure>
+              <figure>
+                <img src="assets/screenshots/assistant-full.png" alt="The full-screen Sutra Assistant workspace with a focused study-planning conversation." width="1600" height="1000" loading="lazy" decoding="async">
+                <figcaption>Open a calm, full-screen space when you want to think it through.</figcaption>
+              </figure>
+            </div>
+            <p class="assistant-shot-note">AI is optional ? Sutra works fully without it.</p>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SECTION 5 ? SUPPORTING FEATURE GRID ============ -->
+    <section id="features" class="section container">
+      <div class="section-header reveal">
+        <h2>More than a collection <span>of tabs.</span></h2>
+        <p>Every part of Sutra feeds the same calm, local-first workflow ? notes inform review, deadlines connect to planning, and nothing requires a separate app.</p>
+      </div>
+
+      <div class="bento-grid">
+        <div class="bento-item bento-large reveal">
+          <div class="bento-icon">N</div>
+          <div class="bento-content">
+            <h3>Rich Notes</h3>
+            <p>Nested pages, slash commands, embeds, tables, handwriting, and clean typography ? with live word counts and autosave.</p>
+          </div>
+        </div>
+        <div class="bento-item bento-small reveal">
+          <div class="bento-icon">T</div>
+          <div class="bento-content">
+            <h3>Tasks &amp; Streaks</h3>
+            <p>Commit priorities and keep momentum visible with built-in streak history.</p>
+          </div>
+        </div>
+        <div class="bento-item bento-small reveal">
+          <div class="bento-icon">R</div>
+          <div class="bento-content">
+            <h3>Deadline Radar</h3>
+            <p>Every upcoming deadline across classes, exams, and tasks, grouped by timeframe.</p>
+          </div>
+        </div>
+        <div class="bento-item bento-small reveal">
+          <div class="bento-icon">L</div>
+          <div class="bento-content">
+            <h3>Timeline Blocks</h3>
+            <p>Map real work sessions and routines, and keep deadlines tied to an actual schedule.</p>
+          </div>
+        </div>
+        <div class="bento-item bento-small reveal">
+          <div class="bento-icon">F</div>
+          <div class="bento-content">
+            <h3>Focus Tools</h3>
+            <p>A focus timer, focus mode, and study sessions that protect deep work.</p>
+          </div>
+        </div>
+        <div class="bento-item bento-large reveal">
+          <div class="bento-icon">W</div>
+          <div class="bento-content">
+            <h3>Sutra Modes</h3>
+            <p>Promote the views you need right now ? Student, AP Crunch, Writing, and more ? without losing the rest.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SECTION 5b ? RESPONSIVE / MOBILE PREVIEW ============ -->
+    <section id="responsive" class="responsive-section">
+      <div class="container responsive-layout">
+        <div class="responsive-copy reveal">
+          <span class="section-eyebrow">EVERY SCREEN</span>
+          <h2>The same workspace, <span>from laptop to phone.</span></h2>
+          <p>Sutra is a single local-first web app ? the same workspace runs in your phone's browser, with the Today view, deadlines, notes, and review laid out for a smaller screen. Each device keeps its own local copy; move a workspace between devices with an encrypted <code>.sutra</code> export, or turn on optional Google&nbsp;Drive sync.</p>
+          <ul class="responsive-points">
+            <li class="trust-point"><span class="trust-dot" aria-hidden="true"></span><span>Touch-friendly Today, tasks, and capture</span></li>
+            <li class="trust-point"><span class="trust-dot" aria-hidden="true"></span><span>Stored locally on each device ? no account required</span></li>
+            <li class="trust-point"><span class="trust-dot" aria-hidden="true"></span><span>Install to the home screen as a PWA</span></li>
+          </ul>
+        </div>
+        <div class="responsive-visual reveal">
+          <div class="phone-frame">
+            <img src="assets/screenshots/mobile-today.png" alt="Sutra running on a phone ? the Today view with a daily summary, quick actions, and the day's due work in a single-column mobile layout." width="390" height="844" loading="lazy" decoding="async">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SECTION 6 ? LOCAL-FIRST & .sutra BACKUP ============ -->
+    <section id="privacy" class="privacy-section">
+      <div class="container reveal">
+        <span class="privacy-eyebrow">YOUR WORKSPACE. YOUR CONTROL.</span>
+        <h2>Local-first means your data stays yours.</h2>
+        <p class="privacy-lede">Sutra stores your workspace locally in your browser by default ? no account required. Optional features such as encrypted Google Drive sync, remote AI requests, and feedback submissions can send the information you choose to external services, and Sutra shows you when that happens. When you want a backup or a portable copy, export a password-encrypted <code>.sutra</code> workspace file (older unencrypted <code>.sutra</code> and <code>.atelier</code> backups still import).</p>
+        <div class="privacy-transfer" aria-hidden="true">
+          <div class="pv-card pv-workspace">
+            <div class="pv-card-top"><span class="pv-dot"></span><span class="pv-dot"></span><span class="pv-dot"></span></div>
+            <div class="pv-card-label">Your workspace</div>
+            <div class="pv-card-rows"><i></i><i></i><i style="width:60%"></i></div>
+          </div>
+          <div class="pv-arrow"><span></span></div>
+          <div class="pv-card pv-file">
+            <div class="pv-file-ext">.sutra</div>
+            <div class="pv-card-label">Portable backup</div>
+          </div>
+        </div>
+        <div class="privacy-points">
+          <div class="privacy-point"><strong>Stored locally</strong><span>On your device, in your browser.</span></div>
+          <div class="privacy-point"><strong>No account required</strong><span>Nothing to sign up for.</span></div>
+          <div class="privacy-point"><strong>Encrypted <code>.sutra</code> backup</strong><span>Export a full password-protected workspace file anytime ? older unencrypted <code>.sutra</code> and <code>.atelier</code> files still import.</span></div>
+          <div class="privacy-point"><strong>Restore when you choose</strong><span>Bring it back on any device.</span></div>
+          <div class="privacy-point"><strong>Optional online features</strong><span>Remote AI and feedback are opt-in and clearly labeled before anything is sent.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SECTION 7 ? FOUNDER NOTE ============ -->
+    <section class="founder-note container">
+      <div class="founder-note-inner reveal">
+        <div class="founder-note-card">
+          <span class="founder-note-label">Why Sutra exists</span>
+          <h2 class="founder-note-title">Built by a <span>student</span>, for students.</h2>
+          <p class="founder-note-body">
+            I built Sutra because the tools I used never fit the full student workflow. Notes lived in one place, assignments in another, calendars somewhere else, and most productivity apps felt either too bloated or too generic. Sutra is the calm, private, <em>local-first</em> workspace that was missing ? built around how students actually work.
+          </p>
+          <div class="founder-note-signature">? Tanuj Ranjith</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SECTION 8 ? FINAL CTA ============ -->
+    <section id="start" class="cta-section">
+      <div class="container reveal">
+        <h2>Bring your academic life into focus.</h2>
+        <p class="cta-subline">Start with one private workspace for planning, writing, deadlines, and study.</p>
+        <div class="hero-actions" style="margin-top: 32px">
+          <a href="Sutra.html" class="btn btn-primary btn-lg">Start your workspace</a>
+          <a href="#hero" class="btn btn-secondary btn-lg">Return to the top</a>
+        </div>
+        <p class="cta-status">Public beta ? No account required ? Local-first by design</p>
+      </div>
+    </section>
+  </main>
+
+  <div id="imgModal" class="img-modal" role="dialog" aria-modal="true" aria-label="Image preview" aria-hidden="true" tabindex="-1">
+    <button class="img-modal-close" aria-label="Close">&times;</button>
+    <img class="img-modal-img" src="" alt="">
+  </div>
+
+  <footer>
+    <div class="container">
+      &copy; <span id="year"></span> Sutra by Tanuj Ranjith &mdash; A Local-First Instrument for Thought.
+      Licensed under <a href="LICENSE" style="color:inherit;text-decoration:underline;text-underline-offset:2px;">Apache 2.0</a>.
+    </div>
+  </footer>
+
+  <script>
+    // --- AMBIENT CANVAS BACKGROUND (Rebuilt) ---
+    const canvas = document.getElementById('ambient-canvas');
+    const ctx = canvas.getContext('2d');
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // Keep one ambient profile across all viewport sizes.
+    const reducedAmbientDensity = false;
+    const AMBIENT_STATIC = prefersReducedMotion || document.body.classList.contains('no-parallax');
+    const noiseOverlayEl = document.querySelector('.noise-overlay');
+
+    // Clear any stale inline display state from prior mobile-only toggles.
+    canvas.style.display = '';
+    if (noiseOverlayEl) noiseOverlayEl.style.display = '';
+
+    let width = 0;
+    let height = 0;
+    let dpr = 1;
+    let time = 0;
+    let lastTs = 0;
+    let streakTimer = null;
+    let ambientRafId = null;   // tracks the animation frame so it can pause when hidden
+    let ambientLoopStopped = false;
+    const pointerFineQuery = window.matchMedia('(pointer: fine)');
+    const pointer = { x: -9999, y: -9999, active: false };
+    const DOTS_PER_MEGAPIXEL = reducedAmbientDensity ? 95 : 130;
+    const MIN_DOTS = reducedAmbientDensity ? 190 : 280;
+    const MAX_DOTS = reducedAmbientDensity ? 980 : 1450;
+
+    function createDot() {
+      return {
+        x: Math.random(),
+        y: Math.random(),
+        vx: (Math.random() - 0.5) * 0.00008,
+        vy: (Math.random() - 0.5) * 0.00008,
+        size: Math.random() * 0.9 + 0.95,
+        opacity: Math.random() * 0.32 + 0.18
+      };
+    }
+
+    const dots = Array.from({ length: MIN_DOTS }, () => createDot());
+
+    const nodeCount = reducedAmbientDensity ? 28 : 36;
+    const nodes = Array.from({ length: nodeCount }, () => ({
+      x: Math.random(),
+      y: Math.random(),
+      vx: (Math.random() - 0.5) * 0.000045,
+      vy: (Math.random() - 0.5) * 0.000045,
+      size: Math.random() * 0.8 + 1.0,
+      sx: 0,
+      sy: 0
+    }));
+
+    const streaks = [];
+    const MAX_STREAKS = 2;
+    const STREAK_LINK_REACH = 260;
+    const STREAK_TAIL_SEGMENTS = 3.6;
+
+    function getCanvasHeight() {
+      return Math.max(
+        window.innerHeight,
+        document.documentElement.scrollHeight,
+        document.body.scrollHeight
+      );
+    }
+
+    function targetDotCount() {
+      const areaMegapixels = (width * height) / 1_000_000;
+      const preferred = Math.round(areaMegapixels * DOTS_PER_MEGAPIXEL);
+      return Math.max(MIN_DOTS, Math.min(MAX_DOTS, preferred));
+    }
+
+    function syncDotCount() {
+      const target = targetDotCount();
+      if (dots.length < target) {
+        for (let i = dots.length; i < target; i++) {
+          dots.push(createDot());
+        }
+      } else if (dots.length > target) {
+        dots.length = target;
+      }
+    }
+
+    function resize() {
+      width = window.innerWidth;
+      height = getCanvasHeight();
+      syncDotCount();
+      dpr = Math.min(window.devicePixelRatio || 1, reducedAmbientDensity ? 1.7 : 2);
+      canvas.width = Math.max(1, Math.floor(width * dpr));
+      canvas.height = Math.max(1, Math.floor(height * dpr));
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      render(0);
+    }
+
+    function wrap01(value) {
+      if (value < 0) return value + 1;
+      if (value > 1) return value - 1;
+      return value;
+    }
+
+    function updateEntities(dt) {
+      const dtMs = Math.min(32, dt || 16.67);
+      const scale = dtMs / 16.67;
+      const repelRadiusPx = 150;
+      const repelStrengthPx = 8.5;
+
+      dots.forEach((dot) => {
+        dot.x = wrap01(dot.x + dot.vx * scale);
+        dot.y = wrap01(dot.y + dot.vy * scale);
+
+        if (pointer.active && pointerFineQuery.matches) {
+          const px = dot.x * width;
+          const py = dot.y * height;
+          const dx = px - pointer.x;
+          const dy = py - pointer.y;
+          const dist = Math.hypot(dx, dy);
+
+          if (dist > 0.01 && dist < repelRadiusPx) {
+            const falloff = 1 - dist / repelRadiusPx;
+            const push = repelStrengthPx * falloff * falloff * scale;
+            dot.x = wrap01(dot.x + (dx / dist) * (push / width));
+            dot.y = wrap01(dot.y + (dy / dist) * (push / height));
+          }
+        }
+      });
+
+      nodes.forEach((node) => {
+        node.x = wrap01(node.x + node.vx * scale);
+        node.y = wrap01(node.y + node.vy * scale);
+        node.sx = node.x * width;
+        node.sy = node.y * height;
+      });
+    }
+
+    function drawGrid() {
+      const drift = (time * 2) % 120;
+      ctx.lineWidth = 1;
+
+      const drawLayer = (size, alpha) => {
+        const startX = -size + drift;
+        ctx.strokeStyle = `rgba(255,255,255,${alpha})`;
+        ctx.beginPath();
+        for (let x = startX; x < width + size; x += size) {
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, height);
+        }
+        for (let y = 0; y < height + size; y += size) {
+          ctx.moveTo(0, y);
+          ctx.lineTo(width, y);
+        }
+        ctx.stroke();
+      };
+
+      // Dim the grid noticeably ? it should be a quiet technical layer,
+      // not a dominant visual.
+      if (reducedAmbientDensity) {
+        drawLayer(40, 0.005);
+        drawLayer(80, 0.009);
+        drawLayer(140, 0.014);
+      } else {
+        drawLayer(30, 0.006);
+        drawLayer(60, 0.011);
+        drawLayer(120, 0.018);
+      }
+    }
+
+    function drawDots() {
+      dots.forEach((dot) => {
+        const x = dot.x * width;
+        const y = dot.y * height;
+        const twinkle = Math.sin(time * 3 + dot.x * 30 + dot.y * 20) * 0.08;
+        const alpha = Math.max(0.08, dot.opacity + twinkle);
+        const radius = Math.max(1, dot.size);
+
+        ctx.fillStyle = `rgba(210, 228, 255, ${alpha})`;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    function drawNodeNetwork() {
+      const connectionDist = 165;
+      const lineAlphaScale = reducedAmbientDensity ? 0.045 : 0.07;
+
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const dx = nodes[i].sx - nodes[j].sx;
+          const dy = nodes[i].sy - nodes[j].sy;
+          const dist = Math.hypot(dx, dy);
+          if (dist >= connectionDist) continue;
+          const alpha = (1 - dist / connectionDist) * lineAlphaScale;
+          ctx.strokeStyle = `rgba(152, 186, 255, ${alpha})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(nodes[i].sx, nodes[i].sy);
+          ctx.lineTo(nodes[j].sx, nodes[j].sy);
+          ctx.stroke();
+        }
+      }
+
+      nodes.forEach((node) => {
+        ctx.fillStyle = reducedAmbientDensity ? 'rgba(197, 220, 255, 0.13)' : 'rgba(197, 220, 255, 0.17)';
+        ctx.beginPath();
+        ctx.arc(node.sx, node.sy, node.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    function scheduleNextStreak() {
+      if (AMBIENT_STATIC || MAX_STREAKS < 1) return;
+      const delay = (reducedAmbientDensity ? 5200 : 3400) + Math.random() * (reducedAmbientDensity ? 5200 : 4200);
+      streakTimer = window.setTimeout(createStreak, delay);
+    }
+
+    function createStreak() {
+      if (streaks.length >= MAX_STREAKS || nodes.length < 6) {
+        scheduleNextStreak();
+        return;
+      }
+
+      const start = nodes[Math.floor(Math.random() * nodes.length)];
+      const path = [start];
+      let current = start;
+      const steps = 6 + Math.floor(Math.random() * 5); // 6..10
+
+      for (let i = 0; i < steps; i++) {
+        const candidates = nodes
+          .filter((n) => !path.includes(n))
+          .map((n) => {
+            const dx = n.sx - current.sx;
+            const dy = n.sy - current.sy;
+            return { node: n, dist: Math.hypot(dx, dy) };
+          })
+          .filter((item) => item.dist <= STREAK_LINK_REACH)
+          .sort((a, b) => a.dist - b.dist)
+          .slice(0, 6);
+
+        if (!candidates.length) break;
+        current = candidates[Math.floor(Math.random() * candidates.length)].node;
+        path.push(current);
+      }
+
+      if (path.length > 1) {
+        streaks.push({
+          path,
+          startedAt: performance.now(),
+          duration: 950 + Math.random() * 550
+        });
+      }
+
+      scheduleNextStreak();
+    }
+
+    function drawStreaks(now) {
+      if (!streaks.length) return;
+
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      for (let s = streaks.length - 1; s >= 0; s--) {
+        const streak = streaks[s];
+        const t = (now - streak.startedAt) / streak.duration;
+        if (t >= 1) {
+          streaks.splice(s, 1);
+          continue;
+        }
+
+        const path = streak.path;
+        const segCount = path.length - 1;
+        const head = t * (segCount + STREAK_TAIL_SEGMENTS);
+        const tail = head - STREAK_TAIL_SEGMENTS;
+
+        for (let i = 0; i < segCount; i++) {
+          const segStart = Math.max(0, Math.min(1, tail - i));
+          const segEnd = Math.max(0, Math.min(1, head - i));
+          if (segEnd <= segStart) continue;
+
+          const a = path[i];
+          const b = path[i + 1];
+          const x1 = a.sx + (b.sx - a.sx) * segStart;
+          const y1 = a.sy + (b.sy - a.sy) * segStart;
+          const x2 = a.sx + (b.sx - a.sx) * segEnd;
+          const y2 = a.sy + (b.sy - a.sy) * segEnd;
+
+          const envelope = Math.sin(t * Math.PI);
+          const intensity = (segEnd - segStart) * envelope * (reducedAmbientDensity ? 0.6 : 1);
+          if (intensity <= 0) continue;
+
+          const glow = ctx.createLinearGradient(x1, y1, x2, y2);
+          glow.addColorStop(0, `rgba(145, 193, 255, ${0.55 * intensity})`);
+          glow.addColorStop(1, `rgba(231, 245, 255, ${0.95 * intensity})`);
+
+          ctx.strokeStyle = glow;
+          ctx.lineWidth = 2.3;
+          ctx.shadowBlur = 9;
+          ctx.shadowColor = `rgba(185, 220, 255, ${0.7 * intensity})`;
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x2, y2);
+          ctx.stroke();
+
+          ctx.shadowBlur = 0;
+          ctx.strokeStyle = `rgba(255,255,255,${0.5 * intensity})`;
+          ctx.lineWidth = 0.9;
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x2, y2);
+          ctx.stroke();
+        }
+      }
+
+      ctx.restore();
+    }
+
+    function render(timestamp) {
+      const dt = timestamp && lastTs ? timestamp - lastTs : 16.67;
+      lastTs = timestamp || 0;
+      if (!AMBIENT_STATIC) time += 0.003;
+      const expectedHeight = getCanvasHeight();
+      if (expectedHeight !== height) {
+        resize();
+        return;
+      }
+
+      const bgGrad = ctx.createRadialGradient(
+        width * 0.5 + Math.sin(time * 0.45) * 40,
+        height * 0.35 + Math.cos(time * 0.35) * 25,
+        0,
+        width * 0.5,
+        height * 0.5,
+        width * 1.2
+      );
+      bgGrad.addColorStop(0, 'rgba(12, 18, 30, 1)');
+      bgGrad.addColorStop(1, 'rgba(2, 3, 6, 1)');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, width, height);
+
+      drawGrid();
+
+      if (!AMBIENT_STATIC) updateEntities(dt);
+      else updateEntities(0);
+
+      drawNodeNetwork();
+      drawDots();
+      drawStreaks(performance.now());
+
+      if (!AMBIENT_STATIC) {
+        ambientRafId = requestAnimationFrame(render);
+      }
+    }
+
+    window.addEventListener('resize', resize);
+    window.addEventListener('pointermove', (event) => {
+      if (!pointerFineQuery.matches) return;
+      pointer.x = event.pageX;
+      pointer.y = event.pageY;
+      pointer.active = true;
+    });
+    window.addEventListener('pointerleave', () => {
+      pointer.active = false;
+    });
+    window.addEventListener('blur', () => {
+      pointer.active = false;
+    });
+    resize();
+    if (!AMBIENT_STATIC && MAX_STREAKS > 0) scheduleNextStreak();
+    if (AMBIENT_STATIC) render(0);
+    else ambientRafId = requestAnimationFrame(render);
+
+    // Pause the ambient animation while the tab is hidden (saves CPU/battery and
+    // avoids a backlog of frames); resume cleanly when it returns. No-op when the
+    // canvas is already static (reduced motion / no-parallax).
+    document.addEventListener('visibilitychange', () => {
+      if (AMBIENT_STATIC) return;
+      if (document.hidden) {
+        if (ambientRafId !== null) { cancelAnimationFrame(ambientRafId); ambientRafId = null; }
+        ambientLoopStopped = true;
+      } else if (ambientLoopStopped) {
+        ambientLoopStopped = false;
+        lastTs = 0; // avoid a large dt jump on the first resumed frame
+        ambientRafId = requestAnimationFrame(render);
+      }
+    });
+
+    // --- SCROLL EFFECTS ---
+    // The page scrolls inside <body> (html overflow is hidden), so window.scrollY
+    // stays 0. Read the real scroller, and listen for scroll in the CAPTURE phase
+    // so events from the body scroller are observed regardless of which element scrolls.
+    const getScrollTop = () => (
+      window.scrollY || document.scrollingElement && document.scrollingElement.scrollTop ||
+      (document.body && document.body.scrollTop) || 0
+    );
+    const navbar = document.getElementById('navbar');
+    const handleNavScroll = () => {
+      navbar.classList.toggle('scrolled', getScrollTop() > 20);
+    };
+    window.addEventListener('scroll', handleNavScroll, { passive: true, capture: true });
+    handleNavScroll();
+
+    // Semantic reveal with subtle stagger
+    const reveals = document.querySelectorAll('.reveal');
+    if (prefersReducedMotion) {
+      reveals.forEach((el) => el.classList.add('visible'));
+    } else {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15, rootMargin: "0px 0px -48px 0px" });
+
+      reveals.forEach((el, index) => {
+        el.style.transitionDelay = `${Math.min(index * 70, 280)}ms`;
+        observer.observe(el);
+      });
+    }
+
+    // Hero depth motion on scroll (desktop + mobile)
+    const heroHeading = document.querySelector('.hero h1');
+    const heroMicrocopy = document.querySelector('.hero-microcopy');
+    const heroSummary = document.querySelector('.hero p');
+    const heroStatus = document.querySelector('.hero-status');
+    const heroMockup = document.querySelector('.hero-mockup-wrapper');
+    let motionFrame = 0;
+
+    const heroScale = document.getElementById('heroScaleTarget');
+    const isMobileViewport = () => window.matchMedia('(max-width: 768px)').matches;
+
+    const applyHeroScrollMotion = () => {
+      motionFrame = 0;
+      const viewport = window.innerHeight || 1;
+      const progress = Math.min(1, Math.max(0, getScrollTop() / (viewport * 0.9)));
+      const calm = prefersReducedMotion || isMobileViewport();
+
+      if (calm) {
+        [heroHeading, heroMicrocopy, heroSummary, heroStatus, heroMockup].forEach(el => { if (el) { el.style.transform = ''; el.style.opacity = ''; } });
+        if (heroScale) heroScale.style.transform = '';
+        return;
+      }
+
+      if (heroHeading) heroHeading.style.transform = `translate3d(0, ${(-26 * progress).toFixed(2)}px, 0)`;
+      if (heroMicrocopy) heroMicrocopy.style.transform = `translate3d(0, ${(-16 * progress).toFixed(2)}px, 0)`;
+      if (heroSummary) {
+        heroSummary.style.transform = `translate3d(0, ${(-18 * progress).toFixed(2)}px, 0)`;
+        heroSummary.style.opacity = `${(1 - (0.3 * progress)).toFixed(3)}`;
+      }
+      if (heroStatus) {
+        heroStatus.style.transform = `translate3d(0, ${(-12 * progress).toFixed(2)}px, 0)`;
+        heroStatus.style.opacity = `${(1 - (0.32 * progress)).toFixed(3)}`;
+      }
+      // Screenshot scales 0.96 -> 1 as the hero settles.
+      if (heroScale) heroScale.style.transform = `translate3d(0, ${(-30 * progress).toFixed(2)}px, 0) scale(${(0.96 + 0.04 * (1 - progress)).toFixed(4)})`;
+    };
+
+    const requestHeroMotion = () => {
+      if (motionFrame) return;
+      motionFrame = requestAnimationFrame(applyHeroScrollMotion);
+    };
+
+    window.addEventListener('scroll', requestHeroMotion, { passive: true, capture: true });
+    window.addEventListener('resize', requestHeroMotion);
+    requestHeroMotion();
+
+    // --- SCROLLYTELLING ENGINE (problem converge ? solution reveal ? guided tour) ---
+    // Scroll-linked progress is derived from getBoundingClientRect (viewport-relative,
+    // so it is correct regardless of which element scrolls). Everything degrades to a
+    // fully readable state if JS never runs, on mobile, or under reduced motion.
+    (function scrollytelling() {
+      // NOTE: the body keeps its hardcoded `no-parallax` class (it drives hero/nav
+      // layout + the JS-off .reveal fallback), so the NEW scrollytelling is gated on
+      // reduced motion only ? not on no-parallax ? otherwise it could never run.
+      const reduce = prefersReducedMotion;
+      const problemCluster = document.querySelector('.problem-cluster');
+      const problemSection = document.querySelector('.problem-section');
+      const revealFrame = document.querySelector('.reveal-frame');
+      const revealSection = document.querySelector('.reveal-section');
+      // Single continuous Sutra thread drawn via stroke-dashoffset as the section advances.
+      const threadPath = document.querySelector('[data-thread-path]');
+      let threadLen = 0;
+
+      function sectionProgress(section) {
+        const rect = section.getBoundingClientRect();
+        const vh = window.innerHeight || 1;
+        const range = rect.height - vh;
+        if (range <= 0) return rect.top <= 0 ? 1 : 0;
+        return Math.min(1, Math.max(0, -rect.top / range));
+      }
+
+      let frame = 0;
+      function update() {
+        frame = 0;
+        if (reduce || isMobileViewport()) return; // CSS already shows the readable default
+        if (problemCluster && problemSection) {
+          const pp = sectionProgress(problemSection);
+          problemCluster.style.setProperty('--p', Math.min(1, pp / 0.6).toFixed(3));
+          if (threadPath) {
+            if (!threadLen) {
+              try { threadLen = threadPath.getTotalLength(); threadPath.style.strokeDasharray = threadLen; }
+              catch (e) { threadLen = 0; }
+            }
+            if (threadLen) {
+              const tp = Math.min(1, pp / 0.5); // the thread draws a touch ahead of the cards settling
+              threadPath.style.strokeDashoffset = (threadLen * (1 - tp)).toFixed(1);
+            }
+          }
+        }
+        if (revealFrame && revealSection) {
+          revealFrame.style.setProperty('--p', Math.min(1, sectionProgress(revealSection) / 0.7).toFixed(3));
+        }
+      }
+      function request() { if (!frame) frame = requestAnimationFrame(update); }
+      window.addEventListener('scroll', request, { passive: true, capture: true });
+      window.addEventListener('resize', request);
+      request();
+
+      // Reveal annotation chips when the solution stage comes into view.
+      if (revealSection) {
+        if (reduce) {
+          revealSection.classList.add('is-in');
+        } else {
+          new IntersectionObserver((entries) => {
+            entries.forEach((e) => { if (e.isIntersecting) revealSection.classList.add('is-in'); });
+          }, { threshold: 0.4 }).observe(revealSection);
+        }
+      }
+
+      // Guided tour: activate the step crossing viewport centre and crossfade its
+      // screenshot. Runs on desktop (incl. reduced motion ? CSS removes the fade).
+      const steps = Array.from(document.querySelectorAll('.tour-step'));
+      const frames = Array.from(document.querySelectorAll('.tour-frame'));
+      function setActive(i) {
+        steps.forEach((s, idx) => s.classList.toggle('is-active', idx === i));
+        frames.forEach((f, idx) => {
+          const active = idx === i;
+          f.classList.toggle('is-active', active);
+          f.querySelectorAll('img.img-zoomable').forEach((img) => { img.tabIndex = active ? 0 : -1; });
+        });
+      }
+      const tourEl = document.querySelector('.tour');
+      if (steps.length) {
+        if (isMobileViewport()) {
+          steps.forEach((s) => s.classList.add('is-active'));
+        } else {
+          if (tourEl) tourEl.classList.add('is-tour-ready');
+          const io = new IntersectionObserver((entries) => {
+            entries.forEach((e) => {
+              if (e.isIntersecting) {
+                const i = steps.indexOf(e.target);
+                if (i >= 0) setActive(i);
+              }
+            });
+          }, { rootMargin: '-45% 0px -45% 0px', threshold: 0 });
+          steps.forEach((s) => io.observe(s));
+        }
+      }
+    })();
+
+    // Footer Year
+    var yearEl = document.getElementById('year');
+    if (yearEl) yearEl.textContent = new Date().getFullYear();
+
+    // --- MOBILE NAV TOGGLE ---
+    (function setupMobileNav() {
+      const toggle = document.getElementById('navToggle');
+      const links  = document.getElementById('navLinks');
+      const navEl  = document.getElementById('navbar');
+      if (!toggle || !links || !navEl) return;
+
+      const closeMenu = () => {
+        navEl.classList.remove('menu-open');
+        toggle.setAttribute('aria-expanded', 'false');
+        toggle.setAttribute('aria-label', 'Open navigation menu');
+      };
+      const openMenu = () => {
+        navEl.classList.add('menu-open');
+        toggle.setAttribute('aria-expanded', 'true');
+        toggle.setAttribute('aria-label', 'Close navigation menu');
+      };
+
+      toggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (navEl.classList.contains('menu-open')) closeMenu();
+        else openMenu();
+      });
+
+      // Tap a link ? close the panel
+      links.querySelectorAll('.nav-link').forEach(a => {
+        a.addEventListener('click', () => closeMenu());
+      });
+
+      // Tap outside the nav ? close
+      document.addEventListener('click', (e) => {
+        if (!navEl.classList.contains('menu-open')) return;
+        if (navEl.contains(e.target)) return;
+        closeMenu();
+      });
+
+      // Escape ? close
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && navEl.classList.contains('menu-open')) closeMenu();
+      });
+
+      // Resizing past mobile breakpoint resets state
+      const mq = window.matchMedia('(min-width: 769px)');
+      const onMq = () => { if (mq.matches) closeMenu(); };
+      if (mq.addEventListener) mq.addEventListener('change', onMq);
+      else if (mq.addListener) mq.addListener(onMq);
+    })();
+
+    // Rotating Phrase System
+    const phrases = [
+      "intentional thought",
+      "deep work",
+      "structured thinking",
+      "creative flow",
+      "clear thinking",
+      "meaningful progress",
+      "focused work",
+      "thoughtful planning",
+      "ideas that matter",
+      "work that compounds",
+      "thinking that scales",
+      "clarity under pressure",
+      "disciplined creativity",
+      "ideas in motion",
+      "plans that hold",
+      "work with direction",
+      "thoughts in structure",
+      "effort with intention",
+      "what matters",
+      "what you build",
+      "what you focus on",
+      "what you create",
+      "how you think",
+      "how you work",
+      "quiet ambition",
+      "sustained focus",
+      "long-term thinking",
+      "mental clarity",
+      "cognitive flow",
+      "unfinished ideas"
+    ];
+
+    const phraseWrapper = document.getElementById('rotating-phrase-wrapper');
+    const phraseElement = document.createElement('span');
+    phraseElement.className = 'phrase';
+    phraseWrapper.replaceChildren();
+    phraseWrapper.appendChild(phraseElement);
+
+    let currentPhraseIndex = 0;
+    let currentCharIndex = 0;
+    let isDeleting = false;
+    let typingSpeed = 100;
+    let deletingSpeed = 50;
+    let pauseAfterTyping = 2000;
+    let pauseAfterDeleting = 80;
+
+    function typeWriter() {
+      const currentPhrase = phrases[currentPhraseIndex];
+      
+      if (isDeleting) {
+        phraseElement.textContent = currentPhrase.substring(0, currentCharIndex - 1);
+        currentCharIndex--;
+      } else {
+        phraseElement.textContent = currentPhrase.substring(0, currentCharIndex + 1);
+        currentCharIndex++;
+      }
+
+      let timeoutSpeed = isDeleting ? deletingSpeed : typingSpeed;
+
+      if (!isDeleting && currentCharIndex === currentPhrase.length) {
+        timeoutSpeed = pauseAfterTyping;
+        isDeleting = true;
+      } else if (isDeleting && currentCharIndex === 0) {
+        // Keep line box stable between phrases to avoid layout/scrollbar flicker.
+        phraseElement.textContent = '\u00A0';
+        isDeleting = false;
+        currentPhraseIndex = (currentPhraseIndex + 1) % phrases.length;
+        timeoutSpeed = pauseAfterDeleting;
+      }
+
+      setTimeout(typeWriter, timeoutSpeed);
+    }
+
+    // Start typing effect
+    setTimeout(typeWriter, 500);
+
+
+    // Image expand modal
+    (function () {
+      const modal = document.getElementById('imgModal');
+      const modalImg = modal.querySelector('.img-modal-img');
+      const closeBtn = modal.querySelector('.img-modal-close');
+
+      let lastTrigger = null;
+
+      function openModal(src, alt, trigger) {
+        lastTrigger = trigger || document.activeElement;
+        modalImg.src = src;
+        modalImg.alt = alt || '';
+        modal.classList.add('open');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        closeBtn.focus();
+      }
+
+      function closeModal() {
+        modal.classList.remove('open');
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+        if (lastTrigger && typeof lastTrigger.focus === 'function') lastTrigger.focus();
+        lastTrigger = null;
+      }
+
+      // Wire up all zoomable images
+      document.querySelectorAll('.carousel-slide, .workflow-visual img, .assistant-fullshot img, .tour-frame img').forEach(function (img) {
+        img.classList.add('img-zoomable');
+        img.tabIndex = img.closest('.tour-frame') && !img.closest('.tour-frame').classList.contains('is-active') ? -1 : 0;
+        img.setAttribute('role', 'button');
+        img.setAttribute('aria-label', 'Open full-size image: ' + (img.alt || 'Sutra workspace'));
+        img.addEventListener('click', function (e) {
+          e.stopPropagation();
+          openModal(img.src, img.alt, img);
+        });
+        img.addEventListener('keydown', function (e) {
+          if (e.key !== 'Enter' && e.key !== ' ') return;
+          e.preventDefault();
+          openModal(img.src, img.alt, img);
+        });
+      });
+
+      closeBtn.addEventListener('click', closeModal);
+      modal.addEventListener('click', function (e) {
+        if (e.target === modal) closeModal();
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeModal();
+        if (e.key === 'Tab' && modal.classList.contains('open')) {
+          e.preventDefault();
+          closeBtn.focus();
+        }
+      });
+    })();
+
+    // --- PERSISTENT DESKTOP CTA ---
+    // A restrained floating "Start your session" that appears after the hero leaves
+    // the viewport and hides again once the final CTA is in view. Desktop only.
+    (function () {
+      const cta = document.getElementById('persistentCta');
+      if (!cta) return;
+      const hero = document.getElementById('hero');
+      const finalCta = document.getElementById('start');
+      let heroVisible = true;
+      let finalVisible = false;
+      const update = () => {
+        const show = !heroVisible && !finalVisible;
+        cta.classList.toggle('visible', show);
+      };
+      if ('IntersectionObserver' in window) {
+        if (hero) new IntersectionObserver((entries) => {
+          entries.forEach(e => { heroVisible = e.isIntersecting; });
+          update();
+        }, { threshold: 0.15 }).observe(hero);
+        if (finalCta) new IntersectionObserver((entries) => {
+          entries.forEach(e => { finalVisible = e.isIntersecting; });
+          update();
+        }, { threshold: 0.2 }).observe(finalCta);
+      }
+    })();
+
+  </script>
+  <a id="persistentCta" href="Sutra.html" class="persistent-cta" aria-label="Start your workspace">
+    <span>Start your workspace</span>
+  </a>
+  <style>
+    /* Anchored sections clear the fixed glass nav when jumped to. */
+    #hero, #story, #workspace, #academic-planning, #assistant, #features, #start, #privacy { scroll-margin-top: 92px; }
+
+    /* Local-first / privacy chapter ? calm, restrained, matches the dark identity. */
+    .privacy-section { padding: 120px 0; text-align: center; }
+    .privacy-eyebrow {
+      display: inline-block; margin-bottom: 18px;
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.22em;
+      color: rgba(160, 180, 225, 0.75);
+    }
+    .privacy-section h2 { font-size: clamp(1.9rem, 4vw, 3rem); margin: 0 auto 18px; max-width: 16ch; line-height: 1.1; }
+    .privacy-lede { max-width: 60ch; margin: 0 auto 44px; color: rgba(220, 226, 240, 0.72); font-size: 1.08rem; line-height: 1.6; }
+    .privacy-lede code, .cta-subline code { background: rgba(150, 170, 220, 0.16); padding: 1px 7px; border-radius: 6px; font-size: 0.92em; }
+    .privacy-points {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px; max-width: 880px; margin: 0 auto;
+    }
+    .privacy-point {
+      display: flex; flex-direction: column; gap: 6px;
+      padding: 22px 20px; text-align: left;
+      border-radius: 16px;
+      background: rgba(20, 26, 38, 0.5);
+      border: 1px solid rgba(150, 170, 220, 0.16);
+    }
+    .privacy-point strong { font-size: 1rem; color: #f4f6fb; }
+    .privacy-point span { font-size: 0.9rem; color: rgba(210, 218, 235, 0.62); line-height: 1.45; }
+    .privacy-point code { background: rgba(150, 170, 220, 0.16); padding: 0 5px; border-radius: 5px; }
+    .cta-subline { max-width: 46ch; margin: 14px auto 0; color: rgba(220, 226, 240, 0.7); font-size: 1.02rem; line-height: 1.5; }
+    .cta-status { margin-top: 22px; font-size: 0.85rem; letter-spacing: 0.04em; color: rgba(160, 180, 225, 0.6); }
+    @media (max-width: 768px) { .privacy-section { padding: 80px 0; } }
+
+    .persistent-cta {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      z-index: 80;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 13px 22px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      color: #f4f6fb;
+      text-decoration: none;
+      background: rgba(20, 26, 38, 0.62);
+      border: 1px solid rgba(150, 170, 220, 0.28);
+      backdrop-filter: blur(14px) saturate(140%);
+      -webkit-backdrop-filter: blur(14px) saturate(140%);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+      opacity: 0;
+      transform: translateY(14px) scale(0.96);
+      pointer-events: none;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+    .persistent-cta.visible {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: auto;
+    }
+    .persistent-cta:hover { border-color: rgba(150, 170, 220, 0.5); background: rgba(28, 36, 52, 0.7); }
+    .persistent-cta:focus-visible { outline: 2px solid #7aa2ff; outline-offset: 3px; }
+    @media (prefers-reduced-motion: reduce) {
+      .persistent-cta { transition: opacity 0.2s linear; }
+      .persistent-cta, .persistent-cta.visible { transform: none; }
+    }
+    /* Mobile: drop the floating CTA ? the in-page CTAs are reachable by scrolling. */
+    @media (max-width: 768px) { .persistent-cta { display: none; } }
+  </style>
+</body>
+</html>

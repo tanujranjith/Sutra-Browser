@@ -1,0 +1,121 @@
+name: Sync Sutra source
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'vendor/Sutra/**'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sutra-upstream-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: windows-2022
+    timeout-minutes: 90
+    outputs:
+      changed: ${{ steps.commit.outputs.changed }}
+      commit_sha: ${{ steps.commit.outputs.commit_sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Fetch, verify, and promote Sutra source
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_EVENT_NAME -eq 'push') {
+            ./scripts/sync-sutra-upstream.ps1 -ForceChecks
+          } else {
+            ./scripts/sync-sutra-upstream.ps1
+          }
+      - name: Commit Browser-owned vendor update
+        id: commit
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          if ($LASTEXITCODE -ne 0) { throw "git config failed" }
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if ($LASTEXITCODE -ne 0) { throw "git config failed" }
+          git add vendor/Sutra
+          if ($LASTEXITCODE -ne 0) { throw "git add failed" }
+          git diff --cached --quiet
+          $diffStatus = $LASTEXITCODE
+          if ($diffStatus -eq 0) {
+            $release = $env:GITHUB_EVENT_NAME -eq 'push'
+            "changed=$($release.ToString().ToLowerInvariant())" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+            $head = (& git rev-parse HEAD).Trim()
+            if ($LASTEXITCODE -ne 0) { throw "git rev-parse failed" }
+            "commit_sha=$head" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+            exit 0
+          }
+          if ($diffStatus -ne 1) { throw "git diff failed with $diffStatus" }
+          $pin = (Get-Content -Raw vendor/Sutra/UPSTREAM_COMMIT).Trim()
+          git commit -m "Sync Sutra source $pin"
+          if ($LASTEXITCODE -ne 0) { throw "git commit failed" }
+          git push
+          if ($LASTEXITCODE -ne 0) { throw "git push failed" }
+          "changed=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          $head = (& git rev-parse HEAD).Trim()
+          if ($LASTEXITCODE -ne 0) { throw "git rev-parse failed" }
+          "commit_sha=$head" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+  signed-release:
+    needs: sync
+    if: needs.sync.outputs.changed == 'true' && vars.SUTRA_AUTO_PUBLISH == 'true' && github.ref_name == github.event.repository.default_branch
+    runs-on: windows-2022
+    timeout-minutes: 90
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.sync.outputs.commit_sha }}
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup --yes --no-progress
+      - name: Build and sign x64 installer
+        shell: pwsh
+        env:
+          SUTRA_BROWSER_VERSION: 0.4.${{ github.run_number }}
+          SUTRA_SIGNING_CERT_BASE64: ${{ secrets.SUTRA_SIGNING_CERT_BASE64 }}
+          SUTRA_SIGNING_CERT_PASSWORD: ${{ secrets.SUTRA_SIGNING_CERT_PASSWORD }}
+        run: ./scripts/build-installer.ps1 -Configuration Release -RequireSigning
+      - name: Sign update manifest
+        shell: pwsh
+        env:
+          SUTRA_BROWSER_VERSION: 0.4.${{ github.run_number }}
+          SUTRA_SIGNING_CERT_BASE64: ${{ secrets.SUTRA_SIGNING_CERT_BASE64 }}
+          SUTRA_SIGNING_CERT_PASSWORD: ${{ secrets.SUTRA_SIGNING_CERT_PASSWORD }}
+          RELEASE_TAG: browser-v0.4.${{ github.run_number }}
+        run: ./scripts/create-update-manifest.ps1 -Version $env:SUTRA_BROWSER_VERSION -InstallerPath ./SutraBrowserSetup.exe -Tag $env:RELEASE_TAG
+      - name: Publish signed release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: browser-v0.4.${{ github.run_number }}
+          target_commitish: ${{ needs.sync.outputs.commit_sha }}
+          name: Sutra 0.4.${{ github.run_number }}
+          body: >-
+            Signed x64 installer containing the Browser-validated Sutra source pinned in this release.
+            Install signing and update-feed credentials are managed through repository secrets and variables.
+          files: |
+            SutraBrowserSetup.exe
+            update.json
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

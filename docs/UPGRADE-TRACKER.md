@@ -3,7 +3,8 @@
 This tracks the 88-item proposal and the additional UI/UX redesign. It is not a claim
 that all items have shipped. “Implemented” describes code with unit/build verification;
 native visual/interaction verification is still required for this batch. No production
-release, signing, or external publication has occurred.
+release or signing has been performed. See [CHANGELOG.md](CHANGELOG.md) for the
+changes since `ce4694a` and the latest general-sweep verification.
 
 Scope update: encrypted sync has been removed at the user's request. Its original
 roadmap slot (#84; #70 in the remaining-items list) is now **Kill switch**. Work on
@@ -98,19 +99,19 @@ History retention is opt-in, confirmed when enabled or shortened, and defaults t
 | 21 | Bookmark-bar ordering | Implemented for root bookmarks/folders |
 | 22 | Bookmark tree editing | Existing nested editing; bulk move/undo pending |
 | 23 | History calendar picker | Already present before this batch |
-| 24 | Unified local search | Workspace results open the matching saved set; exact note navigation still pending |
-| 25 | Typo-tolerant suggestions | Pending |
-| 26 | Search-engine editor | Existing aliases; richer editor pending |
+| 24 | Unified local search | Workspace results open the matching saved set; note results open the exact stored note; source filters skip unrelated repositories |
+| 25 | Typo-tolerant suggestions | Implemented: bounded one-edit/transposition matching, multi-term title/address matches, exact matches first, local history/bookmark fallback, regression tests |
+| 26 | Search-engine editor | Search-shortcut editor with staged add/update/remove, validated templates, local encoded URL preview; built-in provider selection retained |
 | 27 | Opt-in remote suggestions | Pending |
 | 28 | History retention rules | Opt-in age limit implemented; per-domain exceptions pending |
-| 29 | Bookmark maintenance | Pending |
+| 29 | Bookmark maintenance | Exact duplicate review within each folder, transactional recheck/final-copy protection, metadata-preserving undo; network link checking remains pending |
 | 30 | Expanded imports | Existing bookmark HTML/Chrome import; history/session adapters pending |
 | 31 | Offline archives | Text articles implemented; full-page/media archiving pending |
 | 32 | Offline-library management | Search, quotas, date, remove/undo implemented |
 | 33 | Persistent highlights | Pending |
 | 34 | Note organization/export | Markdown export added; tags/folders/backlinks pending |
 | 35 | Research collections | Pending |
-| 36 | Reader controls | Offline font controls added; online reader preferences pending |
+| 36 | Reader controls | Reversible bounded text reader, size/width/theme defaults, per-page size/theme controls; original DOM/form state/scroll preserved |
 | 37 | Read aloud | Pending |
 | 38 | Translation improvements | Pending |
 | 39 | QR sharing | Pending |
@@ -146,7 +147,7 @@ History retention is opt-in, confirmed when enabled or shortened, and defaults t
 | 69 | Local semantic search | Pending; new library search is lexical |
 | 70 | AI regression coverage | Streaming bounds/cancellation tests added; broader adversarial suite pending |
 | 71 | Searchable settings | Search/category UI implemented; deep links/reset pending |
-| 72 | Broader shortcuts | Existing customization; conflict UI and export/import pending |
+| 72 | Broader shortcuts | Custom shortcut conflicts, built-in reference, strict key validation, and staged reset implemented; export/import pending |
 | 73 | Accessibility | Labels, headings, overflow improved; screen-reader/native QA pending |
 | 74 | Touch/DPI | Responsive managers added; device/DPI verification pending |
 | 75 | Toolbar dragging | Pending |
@@ -177,7 +178,7 @@ History retention is opt-in, confirmed when enabled or shortened, and defaults t
   content or an AI action. Test shutdown races, profile coverage, and restart behavior.
 
 Use the native command palette (`Ctrl+Shift+P`) and run `kill-switch`, use the native
-`Ctrl+Alt+Shift+K` accelerator, or launch `Sutra.App.exe --kill-switch`. No confirmation
+`Ctrl+Alt+Shift+K` accelerator, or launch `Sutra.exe --kill-switch`. No confirmation
 dialog precedes the shutdown. Close older Sutra builds before first use: cross-process
 requests and writer fencing require the updated build in every running process.
 

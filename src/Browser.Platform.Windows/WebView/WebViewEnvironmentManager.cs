@@ -15,7 +15,11 @@ public sealed class WebViewEnvironmentManager(BrowserPaths paths)
         try
         {
             return _environment ??= await CoreWebView2Environment.CreateWithOptionsAsync(string.Empty, paths.WebViewProfilePath,
-                new CoreWebView2EnvironmentOptions { AdditionalBrowserArguments = "--disable-features=msEdgeSidebarV2" });
+                new CoreWebView2EnvironmentOptions
+                {
+                    AdditionalBrowserArguments = "--disable-features=msEdgeSidebarV2",
+                    AreBrowserExtensionsEnabled = true
+                });
         }
         finally { _gate.Release(); }
     }

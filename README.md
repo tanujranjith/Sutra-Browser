@@ -1,11 +1,27 @@
-# Sutra Browser
+# Sutra
 
-Sutra Browser is a focused Windows-native browser built with WinUI 3, Microsoft WebView2, C#, and SQLite. It is an unpackaged x64 desktop application and uses the installed Evergreen WebView2 Runtime.
+Sutra is a focused Windows-native browser built with WinUI 3, Microsoft WebView2, C#, and SQLite. It is an unpackaged x64 desktop application and uses the installed Evergreen WebView2 Runtime.
 
 This repository contains a working MVP, not a custom rendering engine or a Chromium fork.
 
+## Sutra desktop integration
+
+The app opens directly into the browser. The bundled Sutra workspace remains available from the section selector and warms in the background when appropriate. Browser capture can create Sutra sources, research Collections, homework, deadlines, Assistant drafts, and PDF annotations, or open a website beside Notes. The upstream Sutra repository is unchanged; its pinned copy is under `vendor/Sutra`, with desktop integration maintained outside that copy.
+
+The desktop design follows the approved mockups: a shared Sutra header, navy surfaces, purple selection states, vertical website tabs, a live page beside the real Notes editor, and right-hand homework/deadline capture. Screenshots, native interaction checks, and visual comparisons are documented in [design-qa.md](design-qa.md).
+
+Build the x64 development installer with `./scripts/build-installer.ps1 -Configuration Release`, then run the generated **`SutraBrowserSetup.exe`** in the repository root. Generated installers and browser profiles are excluded from Git. Production signing, the hourly upstream sync, verification results, and remaining native release checks are described in [Sutra desktop integration](docs/SUTRA-DESKTOP-INTEGRATION.md). See the [change log](docs/CHANGELOG.md) for changes since the previous commit and the latest verification results.
+
 ## What works
 
+The UI regression checks can be run with `node scripts/test-browser-dashboard.mjs`, `node scripts/test-newtab-layout.mjs`, and `npm run test:desktop:isolated`. The isolated command executes the existing desktop integration cases in fresh browser sessions, keeping their assertions and per-case traces intact. Native WinUI title-bar, pointer, and focus behavior still require an interactive Windows walkthrough before a release.
+
+For a constrained machine, the same desktop cases can use Chrome with a larger time allowance: set `$env:SUTRA_TEST_BROWSER = 'chrome'`, then run `npm run test:desktop:isolated -- --timeout=180000`. The latest sweep passed all eight cases this way after Edge sessions closed unexpectedly. This verifies the frontend and simulated bridge; native WebView2 acceptance remains separate.
+
+- A compact desktop header with a command launcher, a filterable tab sidebar with live counts, a collapsible capture section, and a Library/Downloads/Media dock. The command palette combines recent tabs and actions, supports `/` and `>` scopes, and tolerates one-character typos.
+- A local new-tab dashboard with bookmark shortcuts, open-tab resuming, light/dark/private layouts, and section customization. It uses no remote icons, fonts, thumbnails, or suggestions. Private dashboards receive no saved shortcuts or session records.
+- Labeled address suggestions distinguish open tabs, bookmarks, and history; selecting an open tab switches to it. Suggestions are debounced, bounded, deduplicated, and excluded from stale responses. Private suggestions never use history.
+- Custom video mini players open at 320×180 in the bottom-left of the current monitor's work area. A hover shortcut appears on page videos; the pop-out has custom auto-hiding controls, a move handle, resizing, and no page scrollbars.
 - WebView2 navigation with back, forward, reload/stop, home, new-window-to-tab routing, polished navigation error pages, external-protocol confirmation, page titles, cached tab favicons, audio state, process-failure isolation, fullscreen webpages, and local history.
 - Ctrl+L is intercepted before webpage handlers and focuses the native address bar without showing page-level shortcut hints. New-tab fallback rendering remains interactive (search/address input) even if local profile data is temporarily unavailable.
 - A unified address/search bar that recognizes URLs, domains, IP addresses, and localhost; Google, Bing, and DuckDuckGo are selectable, with `@g`, `@b`, and `@d` one-off search shortcuts plus locally configured URL-template aliases such as `yt lofi`. Suggestions come only from local bookmarks and history. Paste-and-go/search, clean-link copying, and opening a clean copy are built in.
@@ -62,14 +78,14 @@ From PowerShell in the repository root:
 Or run:
 
 ```text
-src\Browser.App\bin\Debug\net8.0-windows10.0.19041.0\win-x64\Sutra.App.exe
+src\Browser.App\bin\Debug\net8.0-windows10.0.19041.0\win-x64\Sutra.exe
 ```
 
 Browser data is stored under `%LOCALAPPDATA%\SutraBrowser.Sutra`. Delete that directory only when the application is closed and you intentionally want a completely fresh profile.
 
 Open a private window from the browser menu or with `Ctrl+Shift+N`. Private browsing does not make you anonymous to websites, your network, your employer/school, or an AI provider. Files you download and bookmarks you deliberately create remain after the private window closes; page notes, history, sessions, and other private-window activity do not.
 
-For testing or shortcuts, launching `Sutra.App.exe --private` opens directly into a private window.
+For testing or shortcuts, launching `Sutra.exe --private` opens directly into a private window.
 
 ## Sessions and notes
 
@@ -91,7 +107,7 @@ The Debug build is unpackaged and self-contained for x64. To create a release di
 .\.dotnet\dotnet.exe publish src\Browser.App\Browser.App.csproj -c Release -r win-x64 --self-contained true -o artifacts\publish\win-x64
 ```
 
-Code signing and an MSIX installer are intentionally deployment-specific. For store/enterprise distribution, add a packaging project and sign it with the publisher’s certificate; do not commit private signing keys.
+The per-user installer is built by `scripts/build-installer.ps1` and written to the repository root as `SutraBrowserSetup.exe`. Its required resources and Evergreen WebView2 Runtime are installed alongside the application. Add `-RequireSigning` with externally provisioned signing credentials for production; an unsigned development installation cannot use signed automatic updates. Do not commit private signing keys.
 
 ## Known limitations
 
@@ -103,7 +119,7 @@ These are deliberately identified instead of being represented as complete:
 - Downloads have search/status filters, process-local pause/resume/cancel, and optional SHA-256 comparison. Resume after restart, queues, and bandwidth control remain pending.
 - History supports text/date filtering with a calendar range picker, domain/entry deletion, and hour/day/week/all-time clearing.
 - Sutra Assistant comparison uses 2–8 explicitly selected tabs and explains that selected sleeping tabs will wake. Remote page questions and comparisons show the outgoing context before sending; live-provider verification is still required.
-- Permission prompts cover WebView2 permission kinds presented by the runtime. “Always allow” and “Block” persist; OS-level device permission may still independently deny access.
+- Permission prompts cover WebView2 permission kinds presented by the runtime. Allow/block apply to one request unless you explicitly check “Remember this decision.” Dismissal is never remembered; private choices remain temporary. OS-level device permission may still independently deny access.
 - Exact numeric navigation progress is not exposed by WebView2; the UI shows a native indeterminate loading bar.
 - Tab previews report each tab's WebView2 renderer working set. Chromium may place several tabs in one renderer process, so shared renderer memory is labelled as shared instead of being inaccurately divided between tabs.
 - CSS page zoom is used because the WinUI WebView2 WinRT projection does not expose the WPF `ZoomFactor` convenience property.
@@ -111,10 +127,10 @@ These are deliberately identified instead of being represented as complete:
 - Reader/translation/media controls are best-effort. Site-specific players, DRM, cross-origin frames, and pages that replace standard media controls may limit seeking or picture-in-picture.
 - Named-profile libraries are stored under `Libraries/<stable profile key>` inside the data root. Existing shared data remains in Default. Existing simple ASCII website profiles keep their identity; names previously collapsed by punctuation stripping may require a new website sign-in. Profile rename/delete/export and interactive migration checks remain pending.
 - Toolbar ordering uses explicit move-up/move-down controls rather than direct toolbar dragging, which avoids accidental address-bar loss.
-- The application update page is informational until a signed release feed and installer are configured. Evergreen WebView2 updates remain Microsoft-managed.
+- Signed installations can check the release feed, verify its RSA signature and the installer's hash/publisher, and stage an update for restart with rollback on installation failure. Unsigned development builds cannot use this channel. A real signed update and rollback still need native verification; Evergreen WebView2 updates remain Microsoft-managed.
 - Offline articles store inert extracted text with search and font controls. Full-page/media archives are not implemented. Private windows cannot save or remove articles.
-- Recovery retains up to ten distinct snapshots per normal window and one hundred per profile. Automatic restoration of every previous window and crash-loop recovery mode remain pending.
-- The current UI changes pass compilation and unit tests. Native visual, keyboard, screen-reader, and interaction verification is outstanding.
+- Recovery retains up to ten distinct snapshots per normal window and one hundred per profile. Normal windows restore sequentially within the adaptive memory budget; deferred windows keep their saved records. Repeated failed starts open a fresh recovery window. Multi-window clean-close/crash behavior still needs native verification.
+- The desktop design passes compilation, automated integration checks, and native visual/navigation/edit-persistence smoke checks in an isolated profile. Broader keyboard-only, screen-reader, multiple-DPI, and release-installation verification remains outstanding.
 
 ## Roadmap
 
@@ -122,12 +138,22 @@ These are deliberately identified instead of being represented as complete:
 2. Horizontal-strip window transfer, custom split-ratio persistence, and bulk bookmark operations.
 3. Restart-resumable downloads, queue management, and download scheduling.
 4. Full-page offline archiving, QR-code sharing, and site-adapter improvements for reader/media modes.
-5. Automated Windows UI smoke tests, accessibility verification, and signed MSIX packaging.
+5. Automated Windows UI smoke tests, accessibility verification, and signed installer/update acceptance.
 
 See [ARCHITECTURE.md](docs/ARCHITECTURE.md) and [SECURITY.md](docs/SECURITY.md) for design details.
 
-The complete 88-item backlog is tracked in [UPGRADE-TRACKER.md](docs/UPGRADE-TRACKER.md). Encrypted sync has been removed. The **Kill switch** is now implemented: open the command palette with `Ctrl+Shift+P` and run `kill-switch`, use the native `Ctrl+Alt+Shift+K` shortcut, or launch `Sutra.App.exe --kill-switch`. It immediately hides browsing, cancels transfers and assistant tasks, clears history and automatic recovery across local profiles, then exits. Saved workspaces, bookmarks, passwords, articles, and downloaded files remain. An interrupted cleanup is retried before startup opens tabs. Restart older Sutra builds before using the command; cross-process coordination requires the updated build. Native end-to-end verification is still pending.
+The complete 88-item backlog is tracked in [UPGRADE-TRACKER.md](docs/UPGRADE-TRACKER.md). Encrypted sync has been removed. The **Kill switch** is now implemented: open the command palette with `Ctrl+Shift+P` and run `kill-switch`, use the native `Ctrl+Alt+Shift+K` shortcut, or launch `Sutra.exe --kill-switch`. It immediately hides browsing, cancels transfers and assistant tasks, clears history and automatic recovery across local profiles, then exits. Saved workspaces, bookmarks, passwords, articles, and downloaded files remain. An interrupted cleanup is retried before startup opens tabs. Restart older Sutra builds before using the command; cross-process coordination requires the updated build. Native end-to-end verification is still pending.
 
 Repeated failed starts now open a fresh tab with access to selective session recovery. Tab cleanup previews which tabs will sleep or close and explains protected tabs.
 
 Run `./scripts/verify.ps1` for the development checks, or `./scripts/verify.ps1 -Configuration Release -Publish` for a self-contained x64 development package with a SHA-256 manifest. These commands do not sign or publish a release externally.
+
+## Everyday browsing tools
+
+Open `Ctrl+Shift+P` and search for Recently closed tabs, Search shortcuts, Keyboard shortcuts, Reader appearance, Page zoom, or Review duplicate bookmarks. These use the existing browser engine and local storage. No additional dependency is required.
+
+`Ctrl+F` opens live page search with native highlights, case/word options, and match counts; Enter / Shift+Enter navigate matches and Escape closes. Reader mode keeps the original page intact, extracts at most 250,000 characters of visible article text, and provides text-size and appearance controls. Return / Escape restores the original page without reloading it. Save default reader settings with Reader appearance in the palette.
+
+Recently Closed keeps at most 50 entries in memory, with selective reopening; background reopened tabs stay asleep. Download lists refresh every three seconds while selected and cancel their timer on page or window close. Library source filters avoid querying unrelated repositories; note results open the matching note directly. Duplicate bookmark review removes only exact copies within a folder, rechecks them transactionally, preserves a final copy, and offers undo.
+
+Run `npm run test:reader` for the production reader regression fixture. Native WinUI interaction and screen-reader verification are still required for this batch because the desktop automation helper is unavailable. See [BROWSING-IMPROVEMENTS.md](docs/BROWSING-IMPROVEMENTS.md) for the implementation list and validation results.

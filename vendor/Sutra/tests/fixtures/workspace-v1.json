@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "pages": [
+    {
+      "id": "legacy-page-1",
+      "title": "Legacy chemistry notes",
+      "content": "<p>Acids and bases</p>"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "legacy-task-1",
+      "title": "Finish lab conclusion",
+      "dueDate": "2026-06-16"
+    }
+  ],
+  "dayStates": {
+    "2026-06-10": "done"
+  },
+  "taskStreaks": {
+    "legacy-task-1": 3
+  },
+  "streakState": {
+    "current": 3
+  },
+  "pluginOwnedFutureField": {
+    "preserve": true
+  }
+}

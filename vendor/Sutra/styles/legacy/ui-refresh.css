@@ -1,0 +1,741 @@
+/* Extracted from Sutra.html inline <style data-sutra-inline-style-legacy="ui-refresh">.
+   Loaded by a <link> at the SAME cascade position in Sutra.html, so the
+   visual result is identical. Legacy block kept whole; split incrementally. */
+        .top-nav,
+        .tabs-shell,
+        .view-tabs {
+            overflow: visible !important;
+        }
+
+        /* Ensure overflow tab menu layers above the notes toolbar */
+        .top-nav {
+            z-index: 2460 !important;
+        }
+
+        /* Deadline Radar modal must sit above the tab bar */
+        .deadline-radar-modal {
+            position: fixed !important;
+            inset: 0 !important;
+            z-index: 3000 !important;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .deadline-radar-modal.active {
+            display: flex !important;
+        }
+
+        .toolbar-wrapper {
+            z-index: 2420 !important;
+        }
+
+        .view-tabs {
+            position: relative;
+            z-index: 2400;
+        }
+
+        .view-more {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            flex: 0 0 auto;
+        }
+
+        .view-more-toggle {
+            border: none;
+            background: transparent;
+            padding: 6px 12px;
+            border-radius: var(--radius-pill);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.09em;
+            line-height: 1;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .view-more-toggle i {
+            font-size: 10px;
+            transition: transform var(--transition-fast);
+        }
+
+        .view-more.open .view-more-toggle i { transform: rotate(180deg); }
+
+        .view-more.open .view-more-toggle,
+        .view-more.has-active-secondary .view-more-toggle {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+            box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.28), 0 4px 10px rgba(20,16,12,0.1);
+        }
+
+        .view-more-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            min-width: 170px;
+            display: none;
+            flex-direction: column;
+            gap: 4px;
+            padding: 6px;
+            border-radius: 12px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--surface-border);
+            box-shadow: 0 14px 28px rgba(0, 0, 0, 0.14);
+            z-index: 6200 !important;
+        }
+
+        .view-more.open .view-more-menu { display: flex; }
+        .view-more-item { width: 100%; text-align: left; justify-content: flex-start; }
+
+        #topAddTaskBtn {
+            background: var(--accent) !important;
+            color: #ffffff !important;
+            border: 1px solid transparent !important;
+            box-shadow: 0 8px 16px rgba(var(--accent-rgb), 0.24) !important;
+        }
+
+        #view-today.dashboard-today .today-grid {
+            grid-template-areas:
+                "due due habits"
+                "commit completed habits";
+        }
+
+        #view-today.dashboard-today .today-panel-due {
+            border: 1px solid rgba(var(--accent-rgb), 0.28);
+            box-shadow: 0 14px 26px rgba(var(--accent-rgb), 0.12);
+        }
+
+        .view-tab:focus-visible,
+        .view-more-toggle:focus-visible,
+        .theme-switcher-btn:focus-visible,
+        .storage-btn:focus-visible,
+        .neumo-btn:focus-visible,
+        .chatbot-btn:focus-visible {
+            outline: 2px solid rgba(var(--accent-rgb), 0.5) !important;
+            outline-offset: 2px;
+        }
+
+        .theme-switcher-btn {
+            top: 12px !important;
+            right: 20px !important;
+            bottom: auto !important;
+            z-index: 2500 !important;
+        }
+
+        .storage-options {
+            display: flex !important;
+            visibility: visible !important;
+            pointer-events: auto !important;
+            position: fixed !important;
+            top: auto !important;
+            right: 20px !important;
+            left: auto !important;
+            bottom: 20px !important;
+            width: max-content !important;
+            max-width: 52px !important;
+            min-height: 46px !important;
+            padding: 6px !important;
+            gap: 0 !important;
+            border-radius: 999px !important;
+            overflow: hidden !important;
+            z-index: 2420 !important;
+            flex-wrap: nowrap !important;
+            align-items: center !important;
+            justify-content: center !important;
+            cursor: pointer !important;
+            border: 1px solid color-mix(in srgb, var(--surface-border-strong) 72%, transparent) !important;
+            background: linear-gradient(
+                180deg,
+                color-mix(in srgb, var(--surface-bg-elevated) 92%, transparent),
+                color-mix(in srgb, var(--surface-bg) 84%, transparent)
+            ) !important;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22) !important;
+            transition: max-width 0.24s ease, border-radius 0.24s ease, padding 0.24s ease, box-shadow 0.24s ease !important;
+        }
+
+        .storage-options .storage-collapsed-icon {
+            width: 38px;
+            height: 34px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border-radius: 999px;
+            color: var(--text-primary);
+            background: rgba(35, 49, 79, 0.14);
+            box-shadow:
+                inset 0 0 0 1px rgba(255, 255, 255, 0.24),
+                0 2px 6px rgba(0, 0, 0, 0.22);
+            flex: 0 0 auto;
+            overflow: hidden;
+            transition: opacity 0.18s ease, transform 0.2s ease, width 0.2s ease !important;
+        }
+
+        .storage-options .storage-collapsed-icon > i {
+            font-size: 14px;
+            line-height: 1;
+            color: currentColor;
+        }
+
+        .storage-options > :not(.storage-collapsed-icon) {
+            opacity: 0 !important;
+            transform: translateX(10px) !important;
+            max-width: 0 !important;
+            overflow: hidden !important;
+            pointer-events: none !important;
+            transition: opacity 0.16s ease, transform 0.2s ease, max-width 0.22s ease !important;
+        }
+
+        .storage-options:hover {
+            max-width: min(760px, calc(100vw - 40px)) !important;
+            border-radius: 999px !important;
+            padding: 6px 8px !important;
+            gap: 6px !important;
+            cursor: default !important;
+        }
+
+        .storage-options:hover .storage-collapsed-icon {
+            opacity: 0 !important;
+            transform: translateX(-8px) scale(0.94) !important;
+            width: 0 !important;
+            min-width: 0 !important;
+            max-width: 0 !important;
+            min-height: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            border-width: 0 !important;
+            flex: 0 0 0 !important;
+            overflow: hidden !important;
+            pointer-events: none !important;
+        }
+
+        .storage-options:hover > :not(.storage-collapsed-icon) {
+            opacity: 1 !important;
+            transform: translateX(0) !important;
+            max-width: 340px !important;
+            pointer-events: auto !important;
+        }
+
+        .storage-options .btn-text { display: inline !important; white-space: nowrap !important; }
+        .storage-options .taskbar-save-status span { display: inline !important; white-space: nowrap !important; }
+        .storage-options .taskbar-divider { display: block !important; }
+
+        .storage-options .storage-btn,
+        .storage-options .taskbar-save-status {
+            min-height: 34px !important;
+            padding: 6px 9px !important;
+            white-space: nowrap !important;
+            flex: 0 0 auto !important;
+        }
+
+        .storage-options:not(:hover) > :not(.storage-collapsed-icon) {
+            width: 0 !important;
+            max-width: 0 !important;
+            min-width: 0 !important;
+            min-height: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            border-width: 0 !important;
+            flex: 0 0 0 !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            overflow: hidden !important;
+        }
+
+        .main-content {
+            padding-bottom: 0 !important;
+        }
+
+        .chatbot-btn {
+            right: 20px !important;
+            bottom: 92px !important;
+            z-index: 7600 !important;
+        }
+
+        .chatbot-panel {
+            right: 20px !important;
+            bottom: 164px !important;
+            z-index: 7600 !important;
+        }
+
+        .chatbot-info {
+            z-index: 7605 !important;
+        }
+
+        .view { padding-bottom: 8px !important; }
+        #view-notes .editor-container { padding-bottom: 8px !important; }
+
+        body.focus-mode .integrations-dock,
+        body.focus-mode .today-stats-strip,
+        body.focus-mode .today-panel-habits,
+        body.focus-mode .chatbot-btn,
+        body.focus-mode .chatbot-panel,
+        body.focus-mode .chatbot-info,
+        body.focus-mode .storage-options,
+        body.focus-mode .theme-switcher-btn,
+        body.focus-mode .top-nav,
+        body.focus-mode #sidebarToggle,
+        body.focus-mode .tabs-shell .view-tabs,
+        body.focus-mode .tabs-shell .view-tabs-toggle {
+            display: none !important;
+        }
+
+        body.focus-mode {
+            --top-nav-height: 0px;
+            --top-nav-height-mobile: 0px;
+        }
+
+        body.focus-mode .view {
+            padding-top: 12px !important;
+        }
+
+        body.focus-mode #view-notes .editor-container {
+            padding-top: 96px !important;
+        }
+
+        @media (max-width: 1024px) {
+            .view-more {
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .view-more-toggle {
+                width: 100%;
+                justify-content: space-between;
+                border-radius: 10px;
+            }
+
+            .view-more-menu {
+                position: static;
+                min-width: 0;
+                margin-top: 6px;
+                box-shadow: none;
+            }
+
+            .storage-options {
+                top: auto !important;
+                right: 10px !important;
+                left: auto !important;
+                bottom: calc(env(safe-area-inset-bottom, 0px) + 10px) !important;
+                max-width: calc(100vw - 20px) !important;
+                padding: 6px !important;
+                gap: 6px !important;
+                overflow-x: auto !important;
+                -webkit-overflow-scrolling: touch;
+                border-radius: 12px !important;
+                cursor: default !important;
+            }
+
+            .storage-options .storage-collapsed-icon {
+                display: inline-flex !important;
+            }
+
+            .storage-options > * {
+                opacity: 1 !important;
+                transform: none !important;
+                max-width: none !important;
+                pointer-events: auto !important;
+            }
+
+            .theme-switcher-btn {
+                top: calc(env(safe-area-inset-top, 0px) + 12px) !important;
+                right: calc(env(safe-area-inset-right, 0px) + 12px) !important;
+                left: auto !important;
+                bottom: auto !important;
+                display: inline-flex !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                pointer-events: auto !important;
+                margin: 0 !important;
+                transform: none !important;
+            }
+
+            .chatbot-btn {
+                right: 12px !important;
+                bottom: calc(env(safe-area-inset-bottom, 0px) + 156px) !important;
+            }
+
+            .chatbot-panel {
+                left: 10px !important;
+                right: 10px !important;
+                bottom: calc(env(safe-area-inset-bottom, 0px) + 146px) !important;
+            }
+
+            .view { padding-bottom: 8px !important; }
+            #view-notes .editor-container { padding-bottom: 8px !important; }
+        }
+
+        /* ------------------------------------------------------------------
+           Responsive Scaling Pass (tablet/mobile/small screens)
+        ------------------------------------------------------------------- */
+        html,
+        body {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden;
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+        }
+
+        .app-container,
+        .main-content,
+        .view,
+        .tabs-shell,
+        .toolbar-wrapper,
+        #view-today,
+        #view-timeline,
+        #view-notes,
+        #view-homework,
+        #view-collegeapp,
+        #view-life,
+        #view-business,
+        #view-settings {
+            min-width: 0 !important;
+            max-width: 100%;
+        }
+
+        #view-collegeapp .college-table-wrap,
+        #view-life .college-table-wrap,
+        #collegeappPage-sheets .college-table-wrap,
+        #view-notes .editor table {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        @media (max-width: 1280px) {
+            :root {
+                --sidebar-width: clamp(230px, 25vw, 280px);
+            }
+
+            .top-nav {
+                left: calc(var(--sidebar-width) + 10px) !important;
+                right: 10px !important;
+                width: auto !important;
+                max-width: none !important;
+                padding: 10px 12px !important;
+                gap: 8px !important;
+            }
+
+            .toolbar-wrapper {
+                left: calc(var(--sidebar-width) + 10px) !important;
+                right: 10px !important;
+                width: auto !important;
+                max-width: none !important;
+                /* `top` intentionally NOT !important — JS sets toolbar `top` inline with
+                   !important and needs to be able to override this. The earlier !important
+                   here caused the toolbar to slam to viewport top whenever --top-nav-height
+                   transiently became 0 (e.g., during fullscreen exit), since JS could not
+                   override the cascade. */
+                top: calc(var(--top-nav-height) + 12px);
+            }
+
+            .sidebar.collapsed ~ .main-content .top-nav,
+            body:has(.sidebar.collapsed) .top-nav,
+            .sidebar.collapsed ~ .main-content .toolbar-wrapper,
+            body:has(.sidebar.collapsed) .toolbar-wrapper {
+                /* At 1025–1280px the collapsed icon-rail is still in-layout (76px).
+                   Offset past it so the toolbar/top-nav don't overlap the sidebar. */
+                left: calc(var(--sidebar-collapsed-width, 76px) + 10px) !important;
+            }
+
+            .view {
+                padding: 10px 10px 96px !important;
+            }
+
+            #view-collegeapp .collegeapp-nav-grid,
+            #view-life .life-nav-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+            }
+
+            #view-homework .hw-header-actions {
+                grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            :root {
+                --sidebar-width: clamp(240px, 78vw, 340px);
+            }
+
+            .main-content {
+                margin-left: 0 !important;
+                width: 100% !important;
+            }
+
+            .top-nav,
+            .toolbar-wrapper {
+                left: 8px !important;
+                right: 8px !important;
+                width: auto !important;
+                max-width: none !important;
+            }
+
+            /* At ≤1024px the sidebar is an overlay (not in layout) — collapsed or not,
+               the toolbar/top-nav run full-width from the left edge. Override the
+               sidebar-collapsed offset that the 1280px block set. */
+            .sidebar.collapsed ~ .main-content .top-nav,
+            body:has(.sidebar.collapsed) .top-nav,
+            .sidebar.collapsed ~ .main-content .toolbar-wrapper,
+            body:has(.sidebar.collapsed) .toolbar-wrapper {
+                left: 8px !important;
+            }
+
+            .top-nav {
+                top: 6px !important;
+                padding: 9px 10px !important;
+            }
+
+            .tabs-shell {
+                min-width: 0;
+                width: 100%;
+                padding-right: 54px;
+            }
+
+            .view {
+                padding: 8px 8px calc(132px + env(safe-area-inset-bottom, 0px)) !important;
+            }
+
+            #view-today.dashboard-today,
+            #view-collegeapp,
+            #view-life,
+            #view-business,
+            #view-homework,
+            #view-settings {
+                padding-left: 8px !important;
+                padding-right: 8px !important;
+            }
+
+            #view-today.dashboard-today .today-dashboard-surface {
+                padding: 10px !important;
+                border-radius: 14px !important;
+            }
+
+            #view-today.dashboard-today .today-grid {
+                grid-template-columns: 1fr !important;
+                grid-template-areas:
+                    "due"
+                    "commit"
+                    "completed"
+                    "habits" !important;
+                gap: 10px !important;
+            }
+
+            #view-today.dashboard-today .today-stats-strip {
+                display: grid !important;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 6px !important;
+            }
+
+            #view-today.dashboard-today .today-stat-divider {
+                display: none !important;
+            }
+
+            #view-homework .hw-dashboard-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            }
+
+            #view-homework .hw-dashboard-body {
+                grid-template-columns: 1fr !important;
+            }
+
+            #view-collegeapp .collegeapp-summary-grid,
+            #view-life .life-summary-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            }
+            #view-business .business-dashboard-grid {
+                grid-template-columns: 1fr !important;
+            }
+
+            #view-collegeapp .collegeapp-nav-grid,
+            #view-life .life-nav-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            }
+
+            .collegeapp-header-actions,
+            .life-header-actions,
+            #view-homework .hw-header-actions {
+                width: 100%;
+                display: grid !important;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 8px !important;
+            }
+
+            .collegeapp-header-actions .neumo-btn,
+            .life-header-actions .neumo-btn,
+            #view-homework .hw-header-actions .hw-btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            #view-collegeapp .college-table,
+            #view-life .college-table {
+                min-width: 760px !important;
+            }
+
+            #collegeappPage-sheets .college-table {
+                min-width: 860px !important;
+            }
+
+            .chatbot-panel {
+                max-height: calc(100dvh - var(--top-nav-height-mobile, 64px) - 104px) !important;
+            }
+
+            .theme-panel {
+                max-height: calc(100dvh - var(--top-nav-height-mobile, 64px) - 16px) !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .top-nav {
+                margin: 6px !important;
+                padding: 8px 9px !important;
+                gap: 7px !important;
+            }
+
+            .brand-label {
+                font-size: 14px !important;
+            }
+
+            .view {
+                padding: 8px 8px calc(138px + env(safe-area-inset-bottom, 0px)) !important;
+            }
+
+            #view-today.dashboard-today .today-stats-strip {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            #view-collegeapp .collegeapp-summary-grid,
+            #view-life .life-summary-grid,
+            #view-collegeapp .collegeapp-nav-grid,
+            #view-life .life-nav-grid,
+            #view-business .business-overview-grid,
+            #view-homework .hw-dashboard-grid {
+                grid-template-columns: 1fr !important;
+            }
+
+            /* Header actions keep the 2-up grid from the 1024px rules on phones —
+               short labels fit two columns down to ~340px, and a single full-width
+               stack pushed the actual view content a full screen below the fold. */
+
+            #view-collegeapp .college-table,
+            #view-life .college-table {
+                min-width: 700px !important;
+            }
+
+            #collegeappPage-sheets .college-table {
+                min-width: 780px !important;
+            }
+
+            #view-timeline .timeline-year-grid {
+                grid-template-columns: 1fr !important;
+            }
+
+            #view-notes .editor-container {
+                padding: 80px 8px calc(134px + env(safe-area-inset-bottom, 0px)) !important;
+            }
+
+            #view-settings .settings-card {
+                padding: 12px !important;
+            }
+        }
+
+        @media (max-width: 560px) {
+            .top-nav,
+            .toolbar-wrapper {
+                left: 6px !important;
+                right: 6px !important;
+            }
+
+            .theme-switcher-btn {
+                top: calc(env(safe-area-inset-top, 0px) + 12px) !important;
+                right: calc(env(safe-area-inset-right, 0px) + 12px) !important;
+                left: auto !important;
+                bottom: auto !important;
+                display: inline-flex !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                pointer-events: auto !important;
+                margin: 0 !important;
+                transform: none !important;
+            }
+
+            #view-today.dashboard-today .today-stats-strip {
+                grid-template-columns: 1fr !important;
+            }
+
+            #view-today.dashboard-today .today-header-actions {
+                width: 100%;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+            }
+
+            #view-today.dashboard-today .today-header-actions > * {
+                width: 100%;
+            }
+
+            .storage-options {
+                left: 8px !important;
+                right: 8px !important;
+                width: auto !important;
+                max-width: calc(100vw - 16px) !important;
+                justify-content: center !important;
+                flex-wrap: wrap !important;
+            }
+
+            .storage-options .storage-btn {
+                flex: 1 1 calc(50% - 6px) !important;
+            }
+
+            .chatbot-btn {
+                bottom: calc(env(safe-area-inset-bottom, 0px) + 156px) !important;
+            }
+
+            .chatbot-panel {
+                left: 8px !important;
+                right: 8px !important;
+                bottom: calc(env(safe-area-inset-bottom, 0px) + 140px) !important;
+            }
+
+            .modal {
+                padding: 8px !important;
+            }
+
+            .modal-content {
+                padding: 14px !important;
+                border-radius: 14px !important;
+            }
+
+            .modal-footer .btn,
+            .modal-footer .neumo-btn {
+                flex: 1 1 100%;
+            }
+        }
+
+        @media (max-width: 420px) {
+            :root {
+                --sidebar-width: min(88vw, 320px);
+            }
+
+            .top-nav {
+                padding: 7px 8px !important;
+            }
+
+            .view {
+                padding: 6px 6px calc(142px + env(safe-area-inset-bottom, 0px)) !important;
+            }
+
+            #view-notes .editor {
+                font-size: 14px !important;
+                padding: 10px !important;
+            }
+
+            /* Today header actions stay 2-up below 420px — a full-width stack of
+               five buttons pushed the dashboard content a viewport below the fold. */
+        }

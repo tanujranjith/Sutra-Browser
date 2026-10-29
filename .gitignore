@@ -3,6 +3,17 @@
 **/bin/
 **/obj/
 artifacts/
+node_modules/
+output/
+playwright-report/
+test-results/
+SutraBrowserSetup.exe
+update.json
+.env
+.env.*
+!.env.example
+*.pfx
+*.p12
 _verify/
 .build-sidebar.err
 .build-sidebar.out

@@ -1,0 +1,383 @@
+/* Custom quotes: sidebar controls + accessible workspace-persisted manager. */
+
+.stay-hungry-quote[hidden] {
+    display: none !important;
+}
+
+.daily-lock-in-quote-actions {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 4px;
+    opacity: 0;
+    transform: translateY(2px);
+    transition: opacity 140ms ease, transform 140ms ease;
+}
+
+.stay-hungry-quote:hover .daily-lock-in-quote-actions,
+.stay-hungry-quote:focus-within .daily-lock-in-quote-actions,
+.daily-lock-in-quote--empty .daily-lock-in-quote-actions {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.daily-lock-in-quote-action {
+    min-height: 28px;
+    padding: 4px 9px;
+    border: 1px solid var(--surface-border);
+    border-radius: 999px;
+    background: var(--surface-bg);
+    color: var(--text-secondary);
+    font: 600 10px/1 var(--font-body, system-ui, sans-serif);
+    cursor: pointer;
+}
+
+.daily-lock-in-quote-action:hover {
+    border-color: var(--accent-strong);
+    color: var(--accent-strong);
+    background: var(--surface-bg-hover);
+}
+
+.daily-quotes-modal {
+    z-index: var(--z-modal);
+    background: color-mix(in srgb, var(--bg-primary, #0b1220) 45%, transparent);
+    backdrop-filter: blur(14px) saturate(1.08);
+    -webkit-backdrop-filter: blur(14px) saturate(1.08);
+}
+
+.daily-quotes-card {
+    width: min(960px, calc(100vw - 32px));
+    max-width: 960px;
+    max-height: min(90dvh, 900px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    color: var(--text-primary);
+    background: var(--bg-elevated, var(--surface-bg));
+}
+
+.daily-quotes-head {
+    flex: 0 0 auto;
+    padding: 20px 24px 14px;
+    border-bottom: 1px solid var(--surface-border);
+}
+
+.daily-quotes-head h2 {
+    margin: 0;
+    font-size: clamp(1.25rem, 2vw, 1.6rem);
+    letter-spacing: -0.025em;
+}
+
+.daily-quotes-head p {
+    margin: 4px 0 0;
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+.daily-quotes-head .cw-modal-close {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border: 1px solid transparent;
+    border-radius: 12px;
+}
+
+.daily-quotes-head .cw-modal-close:hover {
+    border-color: var(--surface-border);
+    background: var(--surface-bg-hover);
+}
+
+.daily-quotes-content {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    padding: 18px 24px max(24px, env(safe-area-inset-bottom));
+}
+
+.daily-quotes-intro,
+.daily-quotes-library {
+    grid-column: 1 / -1;
+}
+
+.daily-quotes-intro {
+    margin: 0;
+    padding: 11px 13px;
+    border: 1px solid color-mix(in srgb, var(--accent-strong) 24%, var(--surface-border));
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--accent-soft) 55%, transparent);
+    color: var(--text-secondary);
+    font-size: 12.5px;
+    line-height: 1.5;
+}
+
+.daily-quotes-panel {
+    min-width: 0;
+    padding: 16px;
+    border: 1px solid var(--surface-border);
+    border-radius: 16px;
+    background: var(--surface-bg);
+}
+
+.daily-quotes-section-title {
+    margin: 0 0 12px;
+    font-size: 14px;
+    font-weight: 750;
+    letter-spacing: -0.01em;
+}
+
+.daily-quotes-surface-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.daily-quotes-surface {
+    min-width: 0;
+    min-height: 66px;
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    padding: 10px;
+    border: 1px solid var(--surface-border);
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+.daily-quotes-surface:has(input:checked) {
+    border-color: color-mix(in srgb, var(--accent-strong) 50%, var(--surface-border));
+    background: color-mix(in srgb, var(--accent-soft) 48%, transparent);
+}
+
+.daily-quotes-surface input,
+.daily-quotes-category input {
+    accent-color: var(--accent-strong);
+    margin: 2px 0 0;
+}
+
+.daily-quotes-surface-copy {
+    min-width: 0;
+    display: grid;
+    gap: 3px;
+}
+
+.daily-quotes-surface-copy strong {
+    font-size: 12.5px;
+}
+
+.daily-quotes-surface-copy small {
+    color: var(--text-muted);
+    font-size: 10.5px;
+    line-height: 1.35;
+}
+
+.daily-quotes-field {
+    display: grid;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.daily-quotes-field-label {
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.daily-quotes-field-help {
+    margin: 3px 0 9px;
+    color: var(--text-muted);
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+.daily-quotes-categories {
+    min-width: 0;
+    margin: 14px 0 0;
+    padding: 0;
+    border: 0;
+}
+
+.daily-quotes-category-grid {
+    max-height: 150px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: 6px;
+    padding-right: 4px;
+}
+
+.daily-quotes-category {
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 9px;
+    border: 1px solid var(--surface-border);
+    border-radius: 999px;
+    color: var(--text-secondary);
+    background: var(--bg-elevated, transparent);
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.daily-quotes-category:has(input:checked) {
+    border-color: color-mix(in srgb, var(--accent-strong) 55%, var(--surface-border));
+    color: var(--accent-strong);
+    background: var(--accent-soft);
+}
+
+.daily-quotes-textarea {
+    min-height: 92px;
+    resize: vertical;
+    line-height: 1.45;
+}
+
+.daily-quotes-detail-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr);
+    gap: 10px;
+}
+
+.daily-quotes-error {
+    min-height: 18px;
+    margin: 8px 0 0;
+    color: var(--danger, #c54b54);
+    font-size: 11.5px;
+}
+
+.daily-quotes-editor-actions,
+.daily-quotes-item-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.daily-quotes-library-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.daily-quotes-count {
+    flex: 0 0 auto;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: var(--surface-bg-hover);
+    color: var(--text-muted);
+    font-size: 10.5px;
+    font-weight: 700;
+}
+
+.daily-quotes-list {
+    display: grid;
+    gap: 8px;
+}
+
+.daily-quotes-item {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 14px;
+    padding: 12px;
+    border: 1px solid var(--surface-border);
+    border-radius: 12px;
+    background: var(--bg-elevated, transparent);
+}
+
+.daily-quotes-item-copy {
+    min-width: 0;
+}
+
+.daily-quotes-item blockquote {
+    margin: 0;
+    color: var(--text-primary);
+    font: 600 13px/1.45 var(--font-heading, Georgia, serif);
+    overflow-wrap: anywhere;
+}
+
+.daily-quotes-item p {
+    margin: 5px 0 0;
+    color: var(--text-muted);
+    font-size: 10.5px;
+}
+
+.daily-quotes-delete {
+    color: var(--danger, #c54b54);
+}
+
+.daily-quotes-empty {
+    margin: 0;
+    padding: 18px;
+    border: 1px dashed var(--surface-border);
+    border-radius: 12px;
+    color: var(--text-muted);
+    font-size: 12px;
+    line-height: 1.5;
+    text-align: center;
+}
+
+.ctab-quote-manage {
+    margin-left: 6px;
+}
+
+@media (pointer: coarse) {
+    .daily-lock-in-quote-action,
+    .daily-quotes-category {
+        min-height: 44px;
+    }
+}
+
+@media (max-width: 720px) {
+    .daily-quotes-modal {
+        align-items: flex-end;
+        padding: 0;
+    }
+
+    .daily-quotes-card {
+        width: 100%;
+        max-width: none;
+        max-height: calc(100dvh - env(safe-area-inset-top));
+        border-radius: 22px 22px 0 0;
+        border-bottom: 0;
+    }
+
+    .daily-quotes-content {
+        grid-template-columns: minmax(0, 1fr);
+        padding: 14px 14px max(18px, env(safe-area-inset-bottom));
+    }
+
+    .daily-quotes-intro,
+    .daily-quotes-library {
+        grid-column: auto;
+    }
+
+    .daily-quotes-surface-grid,
+    .daily-quotes-detail-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .daily-quotes-item {
+        grid-template-columns: minmax(0, 1fr);
+        align-items: start;
+    }
+
+    .daily-quotes-item-actions .cc-btn {
+        flex: 1 1 120px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .daily-lock-in-quote-actions {
+        transition: none;
+    }
+}

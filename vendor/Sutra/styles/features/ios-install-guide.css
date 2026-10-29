@@ -1,0 +1,98 @@
+/* iOS Safari -> Share -> Add to Home Screen guidance. */
+.sutra-ios-install-guide {
+    position: fixed;
+    left: max(12px, var(--sutra-safe-left, 0px));
+    right: max(12px, var(--sutra-safe-right, 0px));
+    bottom: calc(var(--sutra-mobile-nav-height, 4.75rem) + var(--sutra-safe-bottom, env(safe-area-inset-bottom, 0px)) + 12px);
+    /* Optional installation advice must stay below drawers and dialogs. */
+    z-index: calc(var(--z-nav, 2400) + 1);
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    max-width: 620px;
+    margin: 0 auto;
+    padding: 14px 14px 14px 16px;
+    border: 1px solid var(--surface-border-strong, rgba(127, 127, 127, 0.32));
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--bg-elevated, #182238) 96%, transparent);
+    color: var(--text-primary, #f7f9ff);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
+    -webkit-backdrop-filter: blur(18px);
+    backdrop-filter: blur(18px);
+    transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.sutra-ios-install-guide[hidden] {
+    display: flex !important;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(8px);
+}
+
+body:is(.modal-open, .sutra-modal-lock, .onboarding-open, .mobile-more-open, .sidebar-open, .notif-panel-open) .sutra-ios-install-guide {
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.sutra-ios-install-guide-copy {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.sutra-ios-install-guide-title {
+    font-size: 0.9rem;
+    line-height: 1.25;
+}
+
+.sutra-ios-install-guide-text {
+    color: var(--text-secondary, #b8c2d8);
+    font-size: 0.78rem;
+    line-height: 1.45;
+}
+
+.sutra-ios-install-guide-actions {
+    flex: 0 0 auto;
+}
+
+.sutra-ios-install-guide-dismiss {
+    min-height: 44px;
+    padding: 8px 12px;
+    border: 1px solid var(--surface-border-strong, rgba(127, 127, 127, 0.32));
+    border-radius: 10px;
+    background: transparent;
+    color: var(--text-primary, #f7f9ff);
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.sutra-ios-install-guide-dismiss:focus-visible {
+    outline: 2px solid var(--accent-strong, var(--accent, #6fa7ff));
+    outline-offset: 2px;
+}
+
+@media (min-width: 641px) {
+    .sutra-ios-install-guide {
+        bottom: 20px;
+    }
+}
+
+@media (max-width: 380px) {
+    .sutra-ios-install-guide {
+        gap: 8px;
+        padding-left: 12px;
+    }
+
+    .sutra-ios-install-guide-text {
+        font-size: 0.74rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sutra-ios-install-guide {
+        transition: none;
+    }
+}

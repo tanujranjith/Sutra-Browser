@@ -1,0 +1,14 @@
+# robots.txt for Sutra
+# Primary canonical site: https://tanujranjith.github.io/Sutra/HomePage.html
+# Sutra is a private, local-first student workspace (student OS).
+#
+# Note: this app is a GitHub Pages PROJECT site served under /Sutra/.
+# Crawlers only honor robots.txt at the domain root
+# (https://tanujranjith.github.io/robots.txt), so this file is informational
+# for the project path. The sitemap is also submitted directly in Google
+# Search Console, which does not depend on robots.txt.
+
+User-agent: *
+Allow: /
+
+Sitemap: https://tanujranjith.github.io/Sutra/sitemap.xml

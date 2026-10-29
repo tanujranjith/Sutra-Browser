@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "id": "example.study-helper",
+  "name": "Study Helper",
+  "version": "1.0.0",
+  "description": "A clean SDK reference: adds a study-session note template, a Command Palette command, and a quick action. Declarative only — no runtime code, minimal permissions.",
+  "author": "NoteFlow Atelier",
+  "homepage": "",
+  "permissions": [
+    "ui.commands",
+    "ui.quickActions",
+    "notes.create"
+  ],
+  "contributions": {
+    "commands": [
+      {
+        "id": "new-study-note",
+        "label": "Study Helper: New study note",
+        "hint": "Create a focused study-session note",
+        "action": "newNote"
+      },
+      {
+        "id": "open-today",
+        "label": "Study Helper: Go to Today",
+        "hint": "Jump to the Today dashboard",
+        "action": "navigate:today"
+      }
+    ],
+    "sidebarItems": [],
+    "tabItems": [],
+    "quickActions": [
+      {
+        "id": "study-sprint",
+        "label": "Start a study sprint",
+        "action": "navigate:cramhub"
+      }
+    ],
+    "noteTemplates": [
+      {
+        "id": "study-session",
+        "name": "Study session",
+        "icon": "fa-graduation-cap",
+        "content": "<h1>Study session</h1><p><strong>Goal:</strong> </p><h2>Active recall</h2><ul><li>Question 1</li></ul><h2>Summary</h2><p></p><h2>Next steps</h2><ul><li></li></ul>"
+      }
+    ],
+    "settings": [],
+    "styles": ""
+  },
+  "runtime": {
+    "type": "none",
+    "code": ""
+  }
+}

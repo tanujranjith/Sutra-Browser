@@ -1,0 +1,27 @@
+{
+  "name": "sutra-editor-bundle",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Build source for assets/vendor/editor/sutra-editor.min.js (TipTap/ProseMirror vendored bundle). Not part of the app runtime — the app stays no-build.",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "dependencies": {
+    "@tiptap/core": "3.27.3",
+    "@tiptap/pm": "3.27.3",
+    "@tiptap/starter-kit": "3.27.3",
+    "@tiptap/extension-table": "3.27.3",
+    "@tiptap/extension-list": "3.27.3",
+    "@tiptap/extension-image": "3.27.3",
+    "@tiptap/extension-typography": "3.27.3",
+    "@tiptap/extension-text-style": "3.27.3",
+    "@tiptap/extension-highlight": "3.27.3",
+    "@tiptap/extension-text-align": "3.27.3",
+    "@tiptap/extension-subscript": "3.27.3",
+    "@tiptap/extension-superscript": "3.27.3",
+    "@tiptap/extensions": "3.27.3"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.1"
+  }
+}

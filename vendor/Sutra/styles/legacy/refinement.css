@@ -1,0 +1,60 @@
+/* Extracted from Sutra.html inline <style data-sutra-inline-style-legacy="refinement">.
+   Loaded by a <link> at the SAME cascade position in Sutra.html, so the
+   visual result is identical. Legacy block kept whole; split incrementally. */
+        @media (min-width: 1025px) {
+            .sidebar.collapsed {
+                display: flex !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+                transform: none !important;
+                pointer-events: auto !important;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            body:not(.sidebar-open) .sidebar {
+                transform: translateX(-108%) !important;
+                opacity: 0 !important;
+                pointer-events: none !important;
+                display: flex !important;
+            }
+
+            body.sidebar-open .sidebar {
+                transform: translateX(0) !important;
+                opacity: 1 !important;
+                pointer-events: auto !important;
+                display: flex !important;
+            }
+
+            #exportOptionsModal .modal-content {
+                width: calc(100vw - 18px) !important;
+                max-width: none !important;
+                max-height: calc(100dvh - 20px) !important;
+                overflow-y: auto !important;
+            }
+
+            #exportOptionsModal .modal-footer {
+                display: grid !important;
+                grid-template-columns: 1fr !important;
+                gap: 8px !important;
+            }
+
+            #exportOptionsModal .modal-footer .btn {
+                width: 100% !important;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .modal-content {
+                width: calc(100vw - 14px) !important;
+                max-width: none !important;
+            }
+
+            #view-homework .hw-dashboard-body {
+                gap: 10px !important;
+            }
+
+            #view-homework .hw-inline-add {
+                gap: 8px !important;
+            }
+        }

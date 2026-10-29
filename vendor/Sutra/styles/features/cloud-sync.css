@@ -1,0 +1,278 @@
+/* ==========================================================================
+   Sutra Sync — encrypted multi-device sync panel (Data & Backup area).
+   Follows the Sutra Cloud modal's visual language; every color rides the
+   existing theme variables so light/dark/custom themes all work.
+   ========================================================================== */
+
+#sutraSyncModal {
+    overscroll-behavior: contain;
+}
+
+.sutra-sync-modal {
+    max-width: 560px;
+    width: min(560px, calc(100vw - 32px));
+    max-height: min(900px, calc(100dvh - 32px)) !important;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    overflow: hidden !important;
+    /* Sync can sit over dense Notes content. An opaque, paint-contained sheet
+       prevents workspace text from showing through or ghosting while its
+       internal scroller moves, including on browsers with flaky backdrop
+       compositing. */
+    background: var(--bg-primary, #ffffff) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    isolation: isolate;
+    contain: paint;
+}
+
+/* Glass themes intentionally make generic dialogs translucent with a more
+   specific selector. Sync is the exception: dense workspace text must never
+   become part of this security/status surface. */
+#sutraSyncModal .sutra-sync-modal {
+    background: var(--bg-primary, #ffffff) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+}
+
+.sutra-sync-modal > .modal-body {
+    min-height: 0;
+    max-height: none;
+    margin-bottom: 0;
+    padding-right: 4px;
+    padding-bottom: 4px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+}
+
+.sutra-sync-status-card {
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    background: var(--bg-secondary, rgba(128, 128, 128, 0.06));
+    font-size: 0.92rem;
+    line-height: 1.5;
+}
+
+.sutra-sync-status-card .sync-state-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.sutra-sync-status-card .sync-state-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.82rem;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.3));
+}
+
+.sutra-sync-status-card .sync-state-pill.state-idle { color: var(--success-color, #2e9e5b); border-color: currentColor; }
+.sutra-sync-status-card .sync-state-pill.state-syncing { color: var(--accent-color, #4a7dff); border-color: currentColor; }
+.sutra-sync-status-card .sync-state-pill.state-offline,
+.sutra-sync-status-card .sync-state-pill.state-paused,
+.sutra-sync-status-card .sync-state-pill.state-locked { color: var(--warning-color, #b8860b); border-color: currentColor; }
+.sutra-sync-status-card .sync-state-pill.state-error,
+.sutra-sync-status-card .sync-state-pill.state-auth-expired,
+.sutra-sync-status-card .sync-state-pill.state-quota-exceeded,
+.sutra-sync-status-card .sync-state-pill.state-schema-mismatch,
+.sutra-sync-status-card .sync-state-pill.state-encryption-error,
+.sutra-sync-status-card .sync-state-pill.state-revoked,
+.sutra-sync-status-card .sync-state-pill.state-update-required { color: var(--danger-color, #c0392b); border-color: currentColor; }
+.sutra-sync-status-card .sync-state-pill.state-disabled { opacity: 0.75; }
+
+.sutra-sync-status-card .sync-guarantees {
+    margin: 8px 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 2px;
+    font-size: 0.85rem;
+    opacity: 0.92;
+}
+
+.sutra-sync-section { margin-top: 6px; }
+.sutra-sync-section h4 { margin: 0 0 8px; }
+
+.sutra-sync-hint {
+    font-size: 0.88rem;
+    opacity: 0.85;
+    line-height: 1.5;
+    margin: 6px 0;
+}
+
+.sutra-sync-warning {
+    font-size: 0.85rem;
+    color: var(--warning-color, #b8860b);
+    border: 1px solid currentColor;
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin: 10px 0;
+    line-height: 1.45;
+}
+
+.sutra-sync-label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin: 10px 0 4px;
+}
+
+.sutra-sync-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.35));
+    background: var(--bg-primary, transparent);
+    color: inherit;
+    font-size: 0.95rem;
+    min-height: 44px;
+}
+
+.sutra-sync-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.sutra-sync-actions .storage-btn.danger {
+    color: var(--danger-color, #c0392b);
+    border-color: currentColor;
+}
+
+.sutra-sync-error {
+    color: var(--danger-color, #c0392b);
+    font-size: 0.88rem;
+    margin-top: 10px;
+}
+
+.sutra-sync-panel {
+    margin-top: 12px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
+    border-radius: 10px;
+    padding: 10px 12px;
+}
+
+.sutra-sync-panel h5 { margin: 0 0 6px; font-size: 0.9rem; }
+
+.sutra-sync-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 6px;
+    font-size: 0.88rem;
+}
+
+.sutra-sync-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    background: var(--bg-secondary, rgba(128, 128, 128, 0.06));
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.sutra-sync-list li > span { min-width: 0; }
+
+.sutra-sync-list li .sync-item-meta { opacity: 0.75; font-size: 0.8rem; }
+.sutra-sync-list li.sync-item-revoked { opacity: 0.55; text-decoration: line-through; }
+.sutra-sync-list li.sync-item-empty { justify-content: center; opacity: 0.7; }
+
+.sutra-sync-list .sutra-sync-item-btn {
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.35));
+    background: transparent;
+    color: inherit;
+    border-radius: 6px;
+    padding: 3px 10px;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+.sutra-sync-list .sutra-sync-item-btn:hover { border-color: currentColor; }
+
+.sutra-sync-advanced { margin-top: 14px; }
+.sutra-sync-advanced summary {
+    cursor: pointer;
+    font-size: 0.88rem;
+    font-weight: 600;
+    opacity: 0.85;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+}
+
+.sutra-sync-link-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--accent-color, #4a7dff);
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: inherit;
+}
+
+@media (max-width: 640px) {
+    #sutraSyncModal {
+        align-items: flex-end;
+        padding: max(8px, env(safe-area-inset-top, 0px))
+            max(8px, env(safe-area-inset-right, 0px))
+            env(safe-area-inset-bottom, 0px)
+            max(8px, env(safe-area-inset-left, 0px));
+    }
+    .sutra-sync-modal {
+        width: 100%;
+        max-width: none;
+        max-height: calc(100dvh - max(8px, env(safe-area-inset-top, 0px))) !important;
+        display: grid;
+        /* responsive/mobile.css contributes the bottom-sheet drag-handle as
+           ::before. Give that pseudo-element its own row so it cannot consume
+           the header row and collapse the title over scrolled body content. */
+        grid-template-rows: auto auto minmax(0, 1fr);
+        overflow: hidden;
+        border-radius: 20px 20px 0 0;
+    }
+    .sutra-sync-modal .modal-header {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: inherit;
+    }
+    .sutra-sync-modal .modal-body {
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+        scroll-padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+        padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+        padding-right: 0;
+        scrollbar-gutter: auto;
+    }
+    .sutra-sync-input { font-size: 16px; }
+    .sutra-sync-actions { flex-direction: column; align-items: stretch; }
+    .sutra-sync-actions .storage-btn,
+    .sutra-sync-list .sutra-sync-item-btn,
+    .sutra-sync-link-btn {
+        min-height: 44px;
+    }
+    .sutra-sync-actions .storage-btn { width: 100%; justify-content: center; }
+    .sutra-sync-list li { align-items: stretch; flex-direction: column; }
+    .sutra-sync-list .sutra-sync-item-btn { width: 100%; }
+    .sutra-sync-status-card,
+    .sutra-sync-panel,
+    .sutra-sync-warning,
+    .sutra-sync-hint,
+    .sutra-sync-error { overflow-wrap: anywhere; }
+}

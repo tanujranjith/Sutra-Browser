@@ -1,0 +1,158 @@
+/* ==========================================================================
+   Notes toolbar — Docs/Word-style controls (Phase 2)
+   Styles the new toolbar fields (style/font/spacing selects, font-size
+   stepper, colour pickers) so they sit alongside the existing .toolbar-btn
+   set. Loaded before styles/responsive/mobile.css, which keeps the whole
+   .toolbar horizontally scrollable on small screens.
+   ========================================================================== */
+
+/* Shared field chrome (selects + inputs) */
+.toolbar .toolbar-field {
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 8px;
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.12));
+    border-radius: 8px;
+    background: var(--surface-bg, rgba(255, 255, 255, 0.04));
+    color: var(--text-primary, #f4f4f6);
+    font-size: 0.82rem;
+    font-family: inherit;
+    line-height: 1;
+    cursor: pointer;
+    flex: 0 0 auto;
+    -webkit-appearance: none;
+    appearance: none;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.toolbar .toolbar-field:hover {
+    background: var(--surface-bg-hover, rgba(255, 255, 255, 0.08));
+    border-color: var(--glass-border-strong, rgba(255, 255, 255, 0.2));
+}
+
+.toolbar .toolbar-field:focus-visible {
+    outline: 2px solid var(--accent, #5078f2);
+    outline-offset: 1px;
+}
+
+/* Native <select> caret (offline-safe inline SVG data URI) */
+.toolbar select.toolbar-field {
+    padding-right: 24px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%23999' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+}
+
+.toolbar .toolbar-style-select { min-width: 120px; }
+.toolbar .toolbar-font-select { min-width: 96px; }
+.toolbar .toolbar-spacing-select { min-width: 84px; }
+
+/* Font-size stepper: [-] [ 16 ] [+] */
+.toolbar .toolbar-size-stepper {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    flex: 0 0 auto;
+}
+.toolbar .toolbar-size-input {
+    width: 40px;
+    height: 32px;
+    text-align: center;
+    padding: 0 4px;
+    font-variant-numeric: tabular-nums;
+    cursor: text;
+}
+.toolbar .toolbar-size-btn {
+    width: 28px;
+    min-width: 28px;
+    padding: 0;
+}
+
+/* Colour + highlight fields: icon + swatch bar over a hidden native picker */
+.toolbar .toolbar-color-field {
+    position: relative;
+    padding: 0;
+    width: 34px;
+    min-width: 34px;
+    flex-direction: column;
+    gap: 2px;
+    height: 32px;
+    justify-content: center;
+    align-items: center;
+}
+.toolbar .toolbar-color-field i {
+    font-size: 0.78rem;
+    pointer-events: none;
+}
+.toolbar .toolbar-color-bar {
+    display: block;
+    width: 16px;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--accent, #5078f2);
+    pointer-events: none;
+}
+.toolbar .toolbar-color-field input[type="color"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    border: none;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+}
+
+/* ------------------------------------------------------------------------
+   Enhanced (nf-select) dropdowns inside the toolbar.
+   The global select-enhancer wraps our native <select>s in an .nf-select
+   widget and hides the native element — but the min-widths above live on the
+   native <select>, so the wrapper had no width and collapsed to 0px in the
+   flex row (only the caret showed, no "Normal text" / "Default font" label).
+   Restore per-control widths and match the 32px colour-field height so the
+   style / font / spacing dropdowns line up with the rest of the toolbar.
+   ------------------------------------------------------------------------ */
+.toolbar .nf-select {
+    flex: 0 0 auto;
+    align-self: center;
+    vertical-align: middle;
+}
+.toolbar .nf-select.nf-select--compact { min-width: 108px; }
+.toolbar .nf-select.nf-select--compact:has(.toolbar-style-select) { min-width: 130px; }
+.toolbar .nf-select.nf-select--compact:has(.toolbar-font-select) { min-width: 112px; }
+.toolbar .nf-select.nf-select--compact:has(.toolbar-spacing-select) { min-width: 96px; }
+
+.toolbar .nf-select.nf-select--compact .nf-select-trigger {
+    min-height: 32px;
+    height: 32px;
+    border-radius: 8px;
+    padding: 4px 26px 4px 10px;
+    font-size: 0.8rem;
+    background: var(--surface-bg, rgba(255, 255, 255, 0.04));
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.12));
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}
+.toolbar .nf-select.nf-select--compact:not(.is-disabled) .nf-select-trigger:hover {
+    transform: none;
+    background: var(--surface-bg-hover, rgba(255, 255, 255, 0.08));
+    border-color: var(--glass-border-strong, rgba(255, 255, 255, 0.2));
+    box-shadow: none;
+}
+
+/* Light theme readability for the select caret */
+:root[data-theme="light"] .toolbar select.toolbar-field,
+body[data-theme="light"] .toolbar select.toolbar-field {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%23555' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+}
+
+/* On very small screens keep the toolbar tight; the wrapper scrolls. */
+@media (max-width: 900px) {
+    .toolbar .toolbar-style-select { min-width: 104px; }
+    .toolbar .toolbar-font-select { min-width: 82px; }
+    .toolbar .toolbar-field { font-size: 0.78rem; }
+}

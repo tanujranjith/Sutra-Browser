@@ -1,0 +1,8 @@
+# Historical third-party audit transcripts are preserved byte-for-byte. Treat
+# them as immutable evidence rather than normal source-code diffs.
+/docs/archive/audits/2026-08-24/*.txt -diff
+
+# Reviewed vendor checksums are byte-sensitive; keep the repository LF bytes
+# intact on Windows instead of applying automatic CRLF conversion.
+assets/vendor/office/mammoth.browser.min.js -text
+assets/vendor/office/xlsx.full.min.js -text

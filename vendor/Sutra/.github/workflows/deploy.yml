@@ -1,0 +1,162 @@
+name: Deploy verified artifact to GitHub Pages
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: "20"
+
+jobs:
+  release-gate:
+    name: Build and check deploy artifact once
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run check:all
+      - run: npm run test:unit
+      - run: npm run build:deploy
+      - run: npm run check:deploy
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: deploy-candidate-${{ github.sha }}
+          path: .deploy/
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 7
+
+  browser-tests:
+    name: Verify deploy artifact (${{ matrix.id }})
+    needs: release-gate
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: chromium
+            project_args: --project=chromium
+            browser_install: chromium
+          - id: chrome
+            project_args: --project=chrome
+            browser_install: chrome
+          - id: firefox
+            project_args: --project=firefox
+            browser_install: firefox
+          - id: webkit
+            project_args: --project=webkit
+            browser_install: webkit
+          - id: responsive
+            project_args: --project=mobile-chromium --project=mobile-webkit --project=tablet --project=narrow-desktop
+            browser_install: chromium firefox webkit
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: deploy-candidate-${{ github.sha }}
+          path: .deploy
+      - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ${{ runner.temp }}/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ matrix.id }}
+      - run: npx playwright install --with-deps ${{ matrix.browser_install }}
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/ms-playwright
+      - name: Test the exact artifact that will be uploaded
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/ms-playwright
+          SUTRA_SERVE_ROOT: .deploy
+        run: npx playwright test --workers=1 ${{ matrix.project_args }}
+      - name: Upload failure diagnostics
+        if: ${{ failure() && !cancelled() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: deploy-gate-failure-${{ github.sha }}-${{ matrix.id }}
+          path: .tmp/playwright-results/
+          if-no-files-found: ignore
+          include-hidden-files: true
+          retention-days: 14
+
+  package-pages:
+    name: Package verified artifact for Pages
+    needs: [release-gate, browser-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: deploy-candidate-${{ github.sha }}
+          path: .deploy
+      - name: Upload the already-tested Pages artifact
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4.0.0
+        with:
+          path: .deploy
+
+  deploy:
+    name: Deploy without rebuilding
+    needs: package-pages
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
+
+  live-smoke:
+    name: Post-deploy live smoke
+    needs: deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ${{ runner.temp }}/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-chromium
+      - run: npx playwright install --with-deps chromium
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/ms-playwright
+      - name: Wait for deployment to propagate
+        env:
+          BASE: ${{ needs.deploy.outputs.page_url }}
+        run: |
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "$BASE" || true)
+            echo "attempt $i: $BASE -> $code"
+            if [ "$code" = "200" ]; then exit 0; fi
+            sleep 5
+          done
+          exit 1
+      - name: Live smoke check
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/ms-playwright
+          SUTRA_BASE_URL: ${{ needs.deploy.outputs.page_url }}
+        run: npm run check:live

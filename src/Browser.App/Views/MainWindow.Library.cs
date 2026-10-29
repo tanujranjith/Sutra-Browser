@@ -13,7 +13,7 @@ namespace Browser.App;
 public sealed partial class MainWindow
 {
     private OfflineArticleRepository OfflineArticles => _dataServices.GetRequiredService<OfflineArticleRepository>();
-    private sealed record LibraryResult(string Title, string Detail, string Kind, Func<Task> Open);
+    private sealed record LibraryResult(string Title, string Detail, string Kind, Func<Task> Open, int Rank);
 
     private async Task SaveOfflineArticleAsync()
     {
@@ -132,37 +132,40 @@ public sealed partial class MainWindow
         {
             var version = ++generation;
             var query = search.Text.Trim();
+            var source = filter.SelectedItem?.ToString() ?? "Everything";
+            bool Include(string kind) => source == "Everything" || source == kind;
             try
             {
                 await Task.Delay(180, _windowLifetimeCts.Token);
                 if (closed || version != generation) return;
                 var items = new List<LibraryResult>();
-                void Add(string title, string detail, string kind, Func<Task> action) => items.Add(new(title, detail, kind, action));
-                foreach (var tab in _vm.Tabs.Where(x => !IsNativePageTab(x)).ToArray())
+                void Add(string title, string detail, string kind, Func<Task> action, string? searchableText = null) =>
+                    items.Add(new(title, detail, kind, action, TextMatchRanking.Rank(title, searchableText ?? detail, query)));
+                if (Include("Tabs")) foreach (var tab in _vm.Tabs.Where(x => !IsNativePageTab(x)).ToArray())
                     if (TextMatchRanking.Rank(tab.Title, tab.Url, query) >= 0) Add(tab.Title, tab.Url, "Tabs", () => ActivateTabAsync(tab));
-                foreach (var bookmark in await _bookmarks.SearchAsync(query, _windowLifetimeCts.Token, 100))
+                if (Include("Bookmarks")) foreach (var bookmark in await _bookmarks.SearchAsync(query, _windowLifetimeCts.Token, 100))
                     Add(bookmark.Title, bookmark.Url, "Bookmarks", () => { NewTab(bookmark.Url); return Task.CompletedTask; });
-                if (!_isPrivate)
+                if (!_isPrivate && Include("History"))
                     foreach (var entry in await _history.SearchAsync(query, limit: 100, ct: _windowLifetimeCts.Token))
                         Add(entry.Title, entry.Url, "History", () => { NewTab(entry.Url); return Task.CompletedTask; });
-                foreach (var entry in (await _readingList.SearchAsync(query, _windowLifetimeCts.Token)).Take(100))
+                if (Include("Reading list")) foreach (var entry in (await _readingList.SearchAsync(query, _windowLifetimeCts.Token)).Take(100))
                     Add(entry.Title, entry.Url, "Reading list", () => { NewTab(entry.Url); return Task.CompletedTask; });
-                if (!_isPrivate)
+                if (!_isPrivate && Include("Notes"))
                     foreach (var note in await _pageNotes.SearchAsync(query, 100, _windowLifetimeCts.Token))
-                        Add(note.Note[..Math.Min(110, note.Note.Length)], note.Url, "Notes", ShowNotesManagerAsync);
-                foreach (var article in (await OfflineArticles.SearchAsync(query, _windowLifetimeCts.Token)).Take(100))
+                        Add(note.Note[..Math.Min(110, note.Note.Length)], note.Url, "Notes", () => OpenLibraryNoteAsync(note.Id), note.Note + " " + note.Quote + " " + note.Url);
+                if (Include("Offline")) foreach (var article in (await OfflineArticles.SearchAsync(query, _windowLifetimeCts.Token)).Take(100))
                     Add(article.Title, article.Url, "Offline", () => OpenOfflineArticleAsync(article.Id));
-                if (!_isPrivate)
+                if (!_isPrivate && Include("Workspaces"))
                     foreach (var workspace in (await _workspaces.ListAsync(_windowLifetimeCts.Token)).Where(x => TextMatchRanking.Rank(x.Name, "", query) >= 0).Take(100))
                         Add(workspace.Name, workspace.IsTemplate ? "Open template in a new window" : "Open workspace in a new window", "Workspaces", () => OpenWorkspaceAsync(workspace, false));
                 if (closed || version != generation) return;
-                var source = filter.SelectedItem?.ToString();
                 var found = items.Where(x => source == "Everything" || x.Kind == source)
-                    .OrderByDescending(x => TextMatchRanking.Rank(x.Title, x.Detail, query)).ThenBy(x => x.Title, StringComparer.OrdinalIgnoreCase).Take(200).ToList();
+                    .OrderByDescending(x => x.Rank).ThenBy(x => x.Title, StringComparer.OrdinalIgnoreCase).Take(200).ToList();
                 list.Items.Clear();
                 foreach (var item in found) list.Items.Add(new ListViewItem { Tag = item, Content = ManagerRow(item.Title, $"{item.Kind} · {item.Detail}") });
                 status.Text = $"{found.Count}{(found.Count == 200 ? "+" : "")} results · On this device";
                 empty.Visibility = found.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+                if (list.Items.Count > 0) list.SelectedIndex = 0;
             }
             catch (OperationCanceledException) { }
             catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Library search: {ex.GetType().Name}"); if (!closed && version == generation) status.Text = "Search unavailable. Try again."; }
@@ -181,5 +184,14 @@ public sealed partial class MainWindow
         ShowPage("Library", _isPrivate ? "Search saved items and this window's tabs. Normal browsing history is excluded." : "Everything you saved, visited, or left open. Search stays on your device.", body, () => { closed = true; generation++; });
         search.Loaded += (_, _) => search.Focus(FocusState.Keyboard);
         await Load();
+    }
+
+    private async Task OpenLibraryNoteAsync(long id)
+    {
+        if (_isPrivate) return;
+        var note = await _pageNotes.GetAsync(id, _windowLifetimeCts.Token);
+        if (_isWindowClosed) return;
+        if (note is null) { ShowStatus("This note was removed. Search again to refresh the results."); return; }
+        await ShowPageNoteDialogAsync(note);
     }
 }

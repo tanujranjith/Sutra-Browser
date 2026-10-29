@@ -1,0 +1,761 @@
+/* ============================================================
+ * Notes Editor v2 (TipTap/ProseMirror) — opt-in editing surface.
+ * The host carries the same .editor class as the classic editor,
+ * so existing typography (.editor h1, .editor ul, …) cascades to
+ * the ProseMirror content; this file only covers what's new.
+ * ========================================================== */
+
+.editor-v2-host {
+    /* The host delegates scroll/padding to the classic .editor styles. */
+    caret-color: var(--accent, #5078f2);
+}
+
+.editor-v2-host .ProseMirror {
+    outline: none;
+    min-height: 100%;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+/* Placeholder ("Start writing…") on the empty document */
+.editor-v2-host .ProseMirror p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    pointer-events: none;
+    color: var(--text-muted, #8a8a93);
+    opacity: 0.7;
+}
+
+/* --- Task lists (checklists) --- */
+.editor-v2-host ul[data-type="taskList"] {
+    list-style: none;
+    padding-left: 4px;
+    margin: 8px 0;
+}
+.editor-v2-host ul[data-type="taskList"] li[data-type="taskItem"] {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 2px 0;
+}
+.editor-v2-host ul[data-type="taskList"] li[data-type="taskItem"] > label {
+    flex: 0 0 auto;
+    margin-top: 3px;
+    user-select: none;
+}
+.editor-v2-host ul[data-type="taskList"] li[data-type="taskItem"] > div {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.editor-v2-host ul[data-type="taskList"] li[data-type="taskItem"] > div > p {
+    margin: 2px 0;
+}
+.editor-v2-host ul[data-type="taskList"] li[data-type="taskItem"] input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent, #5078f2);
+    cursor: pointer;
+}
+.editor-v2-host ul[data-type="taskList"] li[data-type="taskItem"][data-checked="true"] > div {
+    color: var(--text-muted, #8a8a93);
+    text-decoration: line-through;
+    text-decoration-color: color-mix(in srgb, currentColor 55%, transparent);
+}
+
+/* --- Tables (TipTap native) --- */
+.editor-v2-host .tableWrapper {
+    overflow-x: auto;
+    margin: 12px 0;
+}
+.editor-v2-host .ProseMirror table {
+    border-collapse: collapse;
+    table-layout: fixed;
+    width: 100%;
+    overflow: hidden;
+}
+.editor-v2-host .ProseMirror th,
+.editor-v2-host .ProseMirror td {
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.14));
+    padding: 6px 10px;
+    vertical-align: top;
+    position: relative;
+    min-width: 40px;
+}
+.editor-v2-host .ProseMirror th {
+    background: var(--surface-bg, rgba(255, 255, 255, 0.05));
+    font-weight: 600;
+    text-align: left;
+}
+.editor-v2-host .ProseMirror .selectedCell::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: color-mix(in srgb, var(--accent, #5078f2) 18%, transparent);
+    pointer-events: none;
+    z-index: 2;
+}
+.editor-v2-host .ProseMirror .column-resize-handle {
+    position: absolute;
+    right: -2px;
+    top: 0;
+    bottom: -2px;
+    width: 4px;
+    background: var(--accent, #5078f2);
+    cursor: col-resize;
+    z-index: 20;
+}
+.editor-v2-host .ProseMirror.resize-cursor {
+    cursor: col-resize;
+}
+
+/* --- Code blocks --- */
+.editor-v2-host .ProseMirror pre {
+    background: var(--surface-bg, rgba(255, 255, 255, 0.05));
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+    font-size: 0.9em;
+    overflow-x: auto;
+}
+
+/* --- Gap cursor (caret between/after atoms like tables and cards) --- */
+.editor-v2-host .ProseMirror-gapcursor {
+    display: none;
+    pointer-events: none;
+    position: relative;
+}
+.editor-v2-host .ProseMirror-gapcursor::after {
+    content: "";
+    display: block;
+    position: absolute;
+    top: -2px;
+    width: 20px;
+    border-top: 1px solid var(--text-primary, #fff);
+    animation: sutra-v2-blink 1.1s steps(2, start) infinite;
+}
+.editor-v2-host .ProseMirror-focused .ProseMirror-gapcursor {
+    display: block;
+}
+@keyframes sutra-v2-blink {
+    to { visibility: hidden; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .editor-v2-host .ProseMirror-gapcursor::after { animation: none; }
+}
+
+/* --- Structured Notes blocks and preserved media --- */
+.editor-v2-host[hidden] { display: none !important; }
+.editor-v2-host .editor-v2-structured-block { min-width: 0; margin: 1em 0; }
+.editor-v2-host .html-embed-anchor,
+.editor-v2-host .drawing-anchor {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    margin: 10px 0;
+    padding: 10px 14px;
+    border: 1px dashed var(--glass-border, rgba(255, 255, 255, 0.2));
+    border-radius: 10px;
+    background: var(--surface-bg, rgba(255, 255, 255, 0.04));
+    color: var(--text-secondary, #bbb);
+    font-size: 0.82rem;
+}
+
+/* Atom selection ring (preserved cards, images, horizontal rules) */
+.editor-v2-host .ProseMirror-selectednode {
+    outline: 2px solid var(--accent, #5078f2);
+    outline-offset: 2px;
+    border-radius: 6px;
+}
+
+/* Drag/drop cursor */
+.editor-v2-host .ProseMirror-dropcursor {
+    border-radius: 2px;
+}
+
+/* Settings badge for beta rows */
+.cc-badge {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    background: color-mix(in srgb, var(--accent, #5078f2) 22%, transparent);
+    color: var(--accent, #7aa0ff);
+    vertical-align: middle;
+}
+
+/* ============================================================
+ * V2 polish pass - scoped overrides for the actual TipTap DOM.
+ * ========================================================== */
+
+.editor-v2-host .ProseMirror {
+    overflow-wrap: anywhere;
+    word-break: normal;
+    line-height: 1.65;
+}
+
+.editor-v2-host .ProseMirror-focused {
+    outline: none;
+    /* The insertion caret is the editor's intentional focus affordance. The
+       shared form-control ring would outline the entire document surface. */
+    box-shadow: none;
+}
+
+.editor-v2-host .ProseMirror .is-editor-empty:first-child::before,
+.editor-v2-host .ProseMirror .is-empty::before {
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    pointer-events: none;
+    color: var(--text-muted, #8a8a93);
+    opacity: 0.55;
+    font-style: normal;
+}
+
+.editor-v2-host .ProseMirror li p.is-empty::before {
+    content: "List item";
+}
+
+.editor-v2-host .ProseMirror th p.is-empty::before,
+.editor-v2-host .ProseMirror td p.is-empty::before {
+    content: "Type";
+}
+
+.editor-v2-host .ProseMirror > *:first-child {
+    margin-top: 0;
+}
+
+.editor-v2-host .ProseMirror > *:last-child {
+    margin-bottom: 0;
+}
+
+.editor-v2-host .ProseMirror p {
+    margin: 0 0 0.72em;
+}
+
+.editor-v2-host .ProseMirror h1,
+.editor-v2-host .ProseMirror h2,
+.editor-v2-host .ProseMirror h3 {
+    color: var(--text-primary);
+    line-height: 1.18;
+    letter-spacing: 0;
+}
+
+.editor-v2-host .ProseMirror h1 {
+    font-size: 2rem;
+    font-weight: 750;
+    margin: 1.35em 0 0.42em;
+}
+
+.editor-v2-host .ProseMirror h2 {
+    font-size: 1.5rem;
+    font-weight: 720;
+    margin: 1.2em 0 0.38em;
+}
+
+.editor-v2-host .ProseMirror h3 {
+    font-size: 1.18rem;
+    font-weight: 700;
+    margin: 1.05em 0 0.34em;
+}
+
+.editor-v2-host .ProseMirror h1 + p,
+.editor-v2-host .ProseMirror h2 + p,
+.editor-v2-host .ProseMirror h3 + p {
+    margin-top: 0;
+}
+
+.editor-v2-host .ProseMirror ul:not([data-type="taskList"]),
+.editor-v2-host .ProseMirror ol {
+    margin: 0.55em 0 0.9em;
+    padding-left: 1.55em;
+}
+
+.editor-v2-host .ProseMirror ul:not([data-type="taskList"]) {
+    list-style-type: disc;
+}
+
+.editor-v2-host .ProseMirror ul:not([data-type="taskList"]) ul:not([data-type="taskList"]) {
+    list-style-type: circle;
+}
+
+.editor-v2-host .ProseMirror ul:not([data-type="taskList"]) ul:not([data-type="taskList"]) ul:not([data-type="taskList"]) {
+    list-style-type: square;
+}
+
+.editor-v2-host .ProseMirror ol {
+    list-style-type: decimal;
+}
+
+.editor-v2-host .ProseMirror ol ol {
+    list-style-type: lower-alpha;
+}
+
+.editor-v2-host .ProseMirror ol ol ol {
+    list-style-type: lower-roman;
+}
+
+.editor-v2-host .ProseMirror li {
+    margin: 0.22em 0;
+    padding-left: 0.18em;
+}
+
+.editor-v2-host .ProseMirror li::marker {
+    color: color-mix(in srgb, var(--text-secondary, #666) 84%, var(--accent, #5078f2) 16%);
+}
+
+.editor-v2-host .ProseMirror li > p {
+    margin: 0.14em 0;
+}
+
+.editor-v2-host .ProseMirror li > ul:not([data-type="taskList"]),
+.editor-v2-host .ProseMirror li > ol {
+    margin-top: 0.28em;
+    margin-bottom: 0.28em;
+}
+
+.editor-v2-host .ProseMirror ul[data-type="taskList"] {
+    list-style: none;
+    padding-left: 0;
+    margin: 0.55em 0 0.9em;
+}
+
+.editor-v2-host .ProseMirror ul[data-type="taskList"] > li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    margin: 0.34em 0;
+    padding-left: 0;
+    list-style: none;
+}
+
+.editor-v2-host .ProseMirror ul[data-type="taskList"] > li > label {
+    flex: 0 0 1.35rem;
+    width: 1.35rem;
+    min-height: 1.65em;
+    display: inline-flex;
+    align-items: flex-start;
+    justify-content: center;
+    margin: 0;
+    padding-top: 0.26em;
+    user-select: none;
+}
+
+.editor-v2-host .ProseMirror ul[data-type="taskList"] > li > label input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+    margin: 0;
+    accent-color: var(--accent, #5078f2);
+    cursor: pointer;
+}
+
+.editor-v2-host .ProseMirror ul[data-type="taskList"] > li > div {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.editor-v2-host .ProseMirror ul[data-type="taskList"] > li > div > p {
+    margin: 0.12em 0;
+}
+
+.editor-v2-host .ProseMirror ul[data-type="taskList"] > li[data-checked="true"] > div {
+    color: var(--text-muted, #8a8a93);
+}
+
+.editor-v2-host .ProseMirror ul[data-type="taskList"] > li[data-checked="true"] > div > p {
+    text-decoration: line-through;
+    text-decoration-thickness: 1px;
+    text-decoration-color: color-mix(in srgb, currentColor 55%, transparent);
+}
+
+.editor-v2-host .ProseMirror ul[data-type="taskList"] ul[data-type="taskList"] {
+    margin: 0.32em 0 0.2em;
+    padding-left: 0.9rem;
+    border-left: 1px solid color-mix(in srgb, var(--glass-border, rgba(0, 0, 0, 0.12)) 75%, transparent);
+}
+
+.editor-v2-host .ProseMirror blockquote {
+    margin: 1em 0;
+    padding: 0.62em 1em;
+    border-left: 3px solid var(--accent, #5078f2);
+    border-radius: 0 8px 8px 0;
+    background: color-mix(in srgb, var(--surface-bg, rgba(0, 0, 0, 0.04)) 78%, transparent);
+    color: var(--text-secondary, #666);
+}
+
+.editor-v2-host .ProseMirror blockquote > :last-child {
+    margin-bottom: 0;
+}
+
+.editor-v2-host .ProseMirror pre {
+    margin: 1em 0;
+    padding: 0.9em 1em;
+    border: 1px solid var(--glass-border, rgba(0, 0, 0, 0.12));
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--surface-bg, rgba(0, 0, 0, 0.04)) 86%, transparent);
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+    font-size: 0.92em;
+    line-height: 1.55;
+    overflow-x: auto;
+}
+
+.editor-v2-host .ProseMirror pre code {
+    display: block;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+}
+
+.editor-v2-host .ProseMirror hr {
+    height: 1px;
+    margin: 1.35em 0;
+    border: 0;
+    background: color-mix(in srgb, var(--glass-border, rgba(0, 0, 0, 0.12)) 86%, transparent);
+}
+
+.editor-v2-host .tableWrapper {
+    overflow-x: auto;
+    margin: 1em 0;
+    padding-bottom: 2px;
+}
+
+.editor-v2-host .ProseMirror table {
+    border-collapse: collapse;
+    table-layout: fixed;
+    width: 100%;
+    margin: 0;
+    overflow: hidden;
+}
+
+.editor-v2-host .ProseMirror th,
+.editor-v2-host .ProseMirror td {
+    border: 1px solid var(--glass-border, rgba(0, 0, 0, 0.14));
+    padding: 0.48em 0.65em;
+    vertical-align: top;
+    position: relative;
+    min-width: 40px;
+    background: transparent;
+}
+
+.editor-v2-host .ProseMirror th {
+    background: color-mix(in srgb, var(--surface-bg, rgba(0, 0, 0, 0.04)) 92%, var(--accent, #5078f2) 8%);
+    font-weight: 700;
+    text-align: left;
+}
+
+.editor-v2-host .ProseMirror table tr:hover td {
+    background: color-mix(in srgb, var(--surface-bg-hover, rgba(0, 0, 0, 0.06)) 58%, transparent);
+}
+
+.editor-v2-host .ProseMirror th > :last-child,
+.editor-v2-host .ProseMirror td > :last-child {
+    margin-bottom: 0;
+}
+
+.editor-v2-host .ProseMirror .selectedCell::after {
+    background: color-mix(in srgb, var(--accent, #5078f2) 20%, transparent);
+}
+
+.editor-v2-host .ProseMirror .column-resize-handle {
+    opacity: 0.78;
+}
+
+.editor-v2-host .ProseMirror.resize-cursor,
+.editor-v2-host .ProseMirror.resize-cursor * {
+    cursor: col-resize !important;
+}
+
+.editor-v2-host .html-embed-anchor,
+.editor-v2-host .drawing-anchor {
+    display: flex !important;
+    align-items: center;
+    gap: 10px;
+    min-height: 46px;
+    margin: 1em 0;
+    padding: 0.72em 0.9em;
+    border: 1px dashed color-mix(in srgb, var(--glass-border, rgba(0, 0, 0, 0.18)) 88%, var(--accent, #5078f2) 12%);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--surface-bg, rgba(0, 0, 0, 0.04)) 86%, transparent);
+    color: var(--text-secondary, #666);
+    font-size: 0.86rem;
+    line-height: 1.35;
+    cursor: default;
+}
+
+
+.editor-v2-host .media-wrapper,
+.editor-v2-host .atelier-page-break,
+.editor-v2-host div[contenteditable="false"]:not(.html-embed-anchor):not(.drawing-anchor) {
+    margin: 1em 0;
+}
+
+.editor-v2-host img.ProseMirror-selectednode {
+    border-radius: 8px;
+}
+
+#view-notes .toolbar-btn[data-notes-v2-state][aria-pressed="true"] {
+    background: color-mix(in srgb, var(--accent-soft, rgba(80, 120, 242, 0.14)) 82%, var(--surface-bg-active, rgba(0, 0, 0, 0.08)) 18%);
+    border-color: color-mix(in srgb, var(--accent, #5078f2) 46%, transparent);
+    color: var(--text-primary);
+}
+
+@media (max-width: 768px) {
+    #view-notes .editor-v2-host .ProseMirror {
+        line-height: 1.58;
+    }
+
+    #view-notes .editor-v2-host .ProseMirror h1 {
+        font-size: 1.65rem;
+    }
+
+    #view-notes .editor-v2-host .ProseMirror h2 {
+        font-size: 1.32rem;
+    }
+
+    #view-notes .editor-v2-host .ProseMirror h3 {
+        font-size: 1.08rem;
+    }
+
+    #view-notes .editor-v2-host .ProseMirror ul:not([data-type="taskList"]),
+    #view-notes .editor-v2-host .ProseMirror ol {
+        padding-left: 1.35em;
+    }
+
+    #view-notes .editor-v2-host .ProseMirror ul[data-type="taskList"] > li {
+        gap: 0.55rem;
+    }
+
+    #view-notes .editor-v2-host .tableWrapper {
+        margin-left: -2px;
+        margin-right: -2px;
+    }
+}
+
+@media (max-width: 640px) {
+    #view-notes .editor-v2-host .ProseMirror table {
+        display: table;
+        min-width: 520px;
+    }
+}
+
+/* ==========================================================================
+   Contextual editing UX (Phase 3): bubble menu, slash menu, drag handle.
+   Body-appended, position:fixed floating layers.
+   ========================================================================== */
+.editor-v2-bubble {
+    display: none;
+    gap: 2px;
+    align-items: center;
+    padding: 4px;
+    border-radius: 10px;
+    background: var(--bg-elevated, #22242c);
+    border: 1px solid var(--surface-border, rgba(255, 255, 255, 0.12));
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.25);
+    z-index: 9000;
+}
+
+.editor-v2-mini-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--text-primary, #f2f2f5);
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: background 0.12s ease;
+}
+.editor-v2-mini-btn:hover { background: var(--surface-bg-hover, rgba(255, 255, 255, 0.1)); }
+.editor-v2-mini-btn.active { background: var(--accent, #5078f2); color: #fff; }
+
+.editor-v2-slash-menu {
+    display: none;
+    min-width: 220px;
+    max-height: 320px;
+    overflow-y: auto;
+    padding: 6px;
+    border-radius: 12px;
+    background: var(--bg-elevated, #22242c);
+    border: 1px solid var(--surface-border, rgba(255, 255, 255, 0.12));
+    box-shadow: 0 16px 44px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.25);
+    z-index: 9200;
+}
+.editor-v2-slash-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 10px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-primary, #f2f2f5);
+    font-size: 0.86rem;
+    text-align: left;
+    cursor: pointer;
+}
+.editor-v2-slash-item i {
+    width: 16px;
+    text-align: center;
+    color: var(--text-secondary, #b7b7c2);
+    flex: 0 0 auto;
+}
+.editor-v2-slash-item:hover,
+.editor-v2-slash-item.active {
+    background: var(--accent-soft, rgba(80, 120, 242, 0.18));
+}
+.editor-v2-slash-item.active i { color: var(--accent, #7aa0ff); }
+
+.editor-v2-drag-handle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 24px;
+    border-radius: 6px;
+    color: var(--text-muted, #8a8a97);
+    background: transparent;
+    cursor: grab;
+    z-index: 8800;
+    opacity: 0.55;
+    transition: opacity 0.12s ease, background 0.12s ease;
+}
+.editor-v2-drag-handle:hover {
+    opacity: 1;
+    background: var(--surface-bg-hover, rgba(255, 255, 255, 0.08));
+}
+.editor-v2-drag-handle:active { cursor: grabbing; }
+
+.editor-v2-drop-indicator {
+    height: 2px;
+    background: var(--accent, #5078f2);
+    border-radius: 2px;
+    z-index: 8900;
+    pointer-events: none;
+    box-shadow: 0 0 0 1px rgba(80, 120, 242, 0.3);
+}
+
+/* The drag handle only reads on wide screens; hide the whole affordance on
+   touch/small layouts (JS also guards, this is the visual backstop). */
+@media (max-width: 767px) {
+    .editor-v2-drag-handle { display: none !important; }
+}
+
+/* ==========================================================================
+   Docs-grade tables & images (Phase 4)
+   ========================================================================== */
+
+/* Floating table structure menu (shares .editor-v2-mini-btn chrome). */
+.editor-v2-table-menu {
+    display: none;
+    gap: 2px;
+    align-items: center;
+    flex-wrap: wrap;
+    max-width: 360px;
+    padding: 4px;
+    border-radius: 10px;
+    background: var(--bg-elevated, #22242c);
+    border: 1px solid var(--surface-border, rgba(255, 255, 255, 0.12));
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.25);
+    z-index: 9100;
+}
+.editor-v2-table-menu .editor-v2-mini-btn { gap: 1px; }
+.editor-v2-table-menu .editor-v2-mini-btn i { font-size: 0.62rem; }
+
+/* Cell selection + resize affordances. */
+.editor-v2-host .ProseMirror .selectedCell { position: relative; }
+.editor-v2-host .ProseMirror .selectedCell::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--accent-soft, rgba(80, 120, 242, 0.2));
+    pointer-events: none;
+    z-index: 2;
+}
+.editor-v2-host .ProseMirror .column-resize-handle {
+    position: absolute;
+    right: -1px;
+    top: 0;
+    bottom: -2px;
+    width: 3px;
+    background: var(--accent, #5078f2);
+    pointer-events: none;
+}
+.editor-v2-host .ProseMirror .tableWrapper { overflow-x: auto; }
+.editor-v2-host .ProseMirror.resize-cursor { cursor: col-resize; }
+
+/* Resizable / alignable images. */
+.editor-v2-host .sutra-img-wrap {
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+    line-height: 0;
+}
+.editor-v2-host .sutra-img-wrap img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 8px;
+}
+.editor-v2-host .sutra-img-wrap[data-align="center"] {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+.editor-v2-host .sutra-img-wrap[data-align="left"] { float: left; margin: 0 14px 8px 0; }
+.editor-v2-host .sutra-img-wrap[data-align="right"] { float: right; margin: 0 0 8px 14px; }
+.editor-v2-host .sutra-img-wrap.is-selected img {
+    outline: 2px solid var(--accent, #5078f2);
+    outline-offset: 1px;
+}
+.editor-v2-host .sutra-img-resize {
+    position: absolute;
+    right: -5px;
+    bottom: -5px;
+    width: 14px;
+    height: 14px;
+    background: var(--accent, #5078f2);
+    border: 2px solid #fff;
+    border-radius: 3px;
+    cursor: nwse-resize;
+    opacity: 0;
+    transition: opacity 0.12s ease;
+    z-index: 3;
+}
+.editor-v2-host .sutra-img-wrap:hover .sutra-img-resize,
+.editor-v2-host .sutra-img-wrap.is-selected .sutra-img-resize { opacity: 1; }
+
+/* ==========================================================================
+   Pages mode (Phase 5): the .notes-pane-primary is the physical page card
+   (816px, 96px padding). The v2 host shares the .editor class, which the
+   legacy page-mode rule paints grey + pads — neutralise that so the host is
+   a clean content area filling the page card.
+   ========================================================================== */
+body.notes-pages-mode #view-notes .editor-v2-host {
+    background: transparent;
+    padding: 0;
+    min-height: 0;
+    box-shadow: none;
+}
+body.notes-pages-mode #view-notes .editor-v2-host .ProseMirror {
+    /* The outer page card owns the physical page minimum. Filling the host
+       avoids adding a second 1,056px minimum below title, tags, and padding. */
+    min-height: 100%;
+}
+/* Page-break atoms extend to the page-card edges (same trick the classic
+   editor uses via --notes-page-pad-x). */
+body.notes-pages-mode #view-notes .editor-v2-host .atelier-page-break {
+    margin-left: calc(-1 * var(--notes-page-pad-x, 96px));
+    margin-right: calc(-1 * var(--notes-page-pad-x, 96px));
+}

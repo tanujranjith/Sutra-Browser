@@ -4,6 +4,16 @@ namespace Browser.Data.Repositories;
 
 public sealed class BookmarkRepository(BrowserDatabase database)
 {
+    public async Task<Bookmark?> FindByUrlAsync(string url, CancellationToken ct = default)
+    {
+        await using var connection = database.OpenConnection(); await connection.OpenAsync(ct);
+        await using var command = connection.CreateCommand();
+        command.CommandText = "SELECT id,folder_id,title,url,sort_order,created_at FROM bookmarks WHERE url=$url ORDER BY id LIMIT 1";
+        command.Parameters.AddWithValue("$url", url);
+        await using var reader = await command.ExecuteReaderAsync(ct);
+        return await reader.ReadAsync(ct) ? new(reader.GetInt64(0), reader.IsDBNull(1) ? null : reader.GetInt64(1), reader.GetString(2), reader.GetString(3), reader.GetInt32(4), DateTimeOffset.Parse(reader.GetString(5))) : null;
+    }
+
     public async Task<long> AddAsync(string title, string url, long? folderId = null, CancellationToken ct = default)
     {
         if (!Uri.TryCreate(url, UriKind.Absolute, out _)) throw new ArgumentException("Bookmark URL must be absolute.", nameof(url));
@@ -101,6 +111,48 @@ public sealed class BookmarkRepository(BrowserDatabase database)
     { await ExecuteAsync("UPDATE bookmarks SET title=$title,url=$url,folder_id=$folder,sort_order=$sort WHERE id=$id", id, title, url, folderId, sortOrder, ct); }
     public async Task DeleteAsync(long id, CancellationToken ct = default)
     { await ExecuteAsync("DELETE FROM bookmarks WHERE id=$id", id, "", "", null, 0, ct); }
+
+    public async Task<IReadOnlyList<Bookmark>> DeleteReviewedDuplicatesAsync(IEnumerable<Bookmark> reviewed, CancellationToken ct = default)
+    {
+        var removed = new List<Bookmark>();
+        await using var connection = database.OpenConnection(); await connection.OpenAsync(ct);
+        using var transaction = connection.BeginTransaction(deferred: false);
+        foreach (var item in reviewed.DistinctBy(item => item.Id).Take(200))
+        {
+            await using var command = connection.CreateCommand(); command.Transaction = transaction;
+            // Recheck both the reviewed identity and a surviving copy in the same
+            // transaction. A changed bookmark or final remaining copy is kept.
+            command.CommandText = """
+                DELETE FROM bookmarks WHERE id=$id AND title=$title AND url=$url
+                AND folder_id IS $folder AND sort_order=$order AND created_at=$created
+                AND EXISTS(SELECT 1 FROM bookmarks other WHERE other.id<>$id AND other.url=$url AND other.folder_id IS $folder)
+                """;
+            command.Parameters.AddWithValue("$id", item.Id); command.Parameters.AddWithValue("$title", item.Title);
+            command.Parameters.AddWithValue("$url", item.Url); command.Parameters.AddWithValue("$folder", (object?)item.FolderId ?? DBNull.Value);
+            command.Parameters.AddWithValue("$order", item.SortOrder); command.Parameters.AddWithValue("$created", item.CreatedAt.ToString("O"));
+            if (await command.ExecuteNonQueryAsync(ct) == 1) removed.Add(item);
+        }
+        await transaction.CommitAsync(ct); return removed;
+    }
+
+    public async Task<int> RestoreRemovedAsync(IEnumerable<Bookmark> removed, CancellationToken ct = default)
+    {
+        await using var connection = database.OpenConnection(); await connection.OpenAsync(ct);
+        using var transaction = connection.BeginTransaction(deferred: false); var restored = 0;
+        foreach (var item in removed.DistinctBy(item => item.Id).Take(200))
+        {
+            await using var command = connection.CreateCommand(); command.Transaction = transaction;
+            command.CommandText = """
+                INSERT OR IGNORE INTO bookmarks(id,folder_id,title,url,sort_order,created_at)
+                VALUES($id,(SELECT id FROM bookmark_folders WHERE id=$folder),$title,$url,$order,$created)
+                """;
+            command.Parameters.AddWithValue("$id", item.Id); command.Parameters.AddWithValue("$folder", (object?)item.FolderId ?? DBNull.Value);
+            command.Parameters.AddWithValue("$title", item.Title); command.Parameters.AddWithValue("$url", item.Url);
+            command.Parameters.AddWithValue("$order", item.SortOrder); command.Parameters.AddWithValue("$created", item.CreatedAt.ToString("O"));
+            restored += await command.ExecuteNonQueryAsync(ct);
+        }
+        await transaction.CommitAsync(ct); return restored;
+    }
 
     public async Task DeleteAllAsync(CancellationToken ct = default)
     {

@@ -1,12 +1,12 @@
 :root {
   color-scheme: dark;
-  --canvas: #0b0d0f;
+  --canvas: #081322;
   --text: #f4f4f2;
   --muted: rgba(244, 244, 242, 0.68);
   --quiet: rgba(244, 244, 242, 0.46);
   --line: rgba(244, 244, 242, 0.2);
-  --accent: #f47a22;
-  --dock: rgba(17, 19, 22, 0.78);
+  --accent: #6252f5;
+  --dock: rgba(13, 27, 46, 0.88);
   --ease: cubic-bezier(0.22, 0.61, 0.21, 1);
   font-family: "Segoe UI Variable", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
 }
@@ -128,8 +128,8 @@ button { color: inherit; }
 }
 
 .command-dock:focus-within {
-  border-color: rgba(244, 122, 34, 0.75);
-  box-shadow: 0 18px 54px rgba(0, 0, 0, 0.38), 0 0 0 4px rgba(244, 122, 34, 0.1);
+  border-color: rgba(98, 82, 245, 0.75);
+  box-shadow: 0 18px 54px rgba(0, 0, 0, 0.38), 0 0 0 4px rgba(98, 82, 245, 0.1);
   transform: translateY(-2px);
 }
 

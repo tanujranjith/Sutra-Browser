@@ -1,0 +1,299 @@
+# Sutra Full Audit
+**Scope:** Full read-only review of the Sutra repository (zipped snapshot of tanujranjith/Sutra), architecture docs, source layout, tests, security/privacy surface, styles, scripts, and live landing + app shell at https://tanujranjith.github.io/Sutra/. No files were modified.
+---
+## Executive Summary
+Sutra is an unusually ambitious **local-first, static, no-build student “operating system”**: notes, homework, AP prep, college apps, spaced repetition, calendar/timeline, focus, life/work trackers, optional BYOK assistant, encrypted backups, and optional cloud sync—all without a required account or Sutra-operated backend.
+The **product vision and privacy engineering are excellent**. Documentation culture, deterministic engines, migration discipline, credential isolation, CSP, and an extensive Playwright + unit test matrix are production-minded in ways many student projects never reach.
+The **codebase is dominated by structural debt**: a single global-scope src/core/app.js of ~**85,000 lines / ~4.85 MB**, plus multi-hundred-KB HTML and ~1 MB core CSS. Feature modules exist and some concerns have been extracted, but the gravitational center remains a monolith that will punish every future maintainer.
+| Area | Score (1–10) | Notes |
+|------|--------------|--------|
+| Engineering / Codebase | **5.5** | Strong peripheral systems; catastrophic core size |
+| Architecture | **4.5** | Intentional static/global design, strained past comfort |
+| Reliability | **7.5** | Migrations, recovery, tests around persistence/sync |
+| Maintainability | **3.5** | app.js alone is a career-limiting surface |
+| UI | **7.5** | Polished landing + setup; dense product UI |
+| UX | **7** | Coherent student loop; complexity risk from feature breadth |
+| Performance | **5.5** | Large payloads; offline-capable but heavy |
+| Testing | **8** | High volume + contracts on hard paths |
+| Security / Privacy Engineering | **8.5** | Philosophy matched by concrete controls |
+| Overall Product Coherence | **7.5** | Clear identity; depth vs calm tension |
+**Overall:** A serious, privacy-respecting student product with **elite intent and documentation**, and a **prototype-scale core implementation** that has outgrown its original architecture.
+---
+## What Is GOOD
+### 1. Local-first privacy philosophy (and implementation)
+- No required account, no Sutra backend, no telemetry by design.
+- Workspace in browser storage; optional network features explicit and failure-tolerant.
+- Credentials in sessionStorage by default; optional AES-GCM vault (credential-vault.js); **never** exported.
+- Exporters redact secret-shaped fields; backup passwords and OAuth material stay out of backups.
+- CSP, Referrer-Policy: no-referrer, Permissions-Policy, COOP/CORP, HSTS in vercel.json.
+- Evidence: docs/privacy-security/PRIVACY_AND_LOCAL_FIRST.md, DATA_AND_BACKUPS.md, vault modules, CSP in deploy config, unit tests on crypto/privacy contracts.
+- **Preserve** as the product scales.
+### 2. Documentation and agent/contributor discipline
+- AGENTS.md as real source-of-truth (principles, load order, non-negotiables).
+- Architecture map, sync protocol, persistence inventory JSON, feature docs, privacy docs, release audits.
+- Explicit “source-of-truth order” and “do not silently choose when sources conflict.”
+- This is rare and high-leverage. **Preserve and keep current.**
+### 3. Testing investment (especially hard paths)
+- Large tests/unit set: sync-engine/merge/crypto/store/transport, workspace DB/migrations, assistant safety, locked-note/duress, storage hygiene, etc.
+- Broad Playwright e2e: persistence, encrypted backups, modal a11y, mobile nav, cloud sync, notes editor, onboarding, recovery mode.
+- Many **contract** tests (navigation, privacy, startup health, focus timer unification).
+- npm run check:all / verify chain dozens of Node probes (CSP, migrations, SW, DOM integrity, guardrails).
+- Quantity is high; more importantly, **risk-aligned** areas are covered. **Preserve.**
+### 4. Persistence, migrations, recovery posture
+- Versioned migrations (migrations.js) with unknown-field survival.
+- Safe storage wrapper, recovery mode, startup health, revocation wipe, storage hygiene.
+- Encrypted .sutra backups as first-class portable artifact.
+- Entity registry for cross-feature type:id addressing without a second source of truth.
+- **Preserve** the invariants; they match the product promise.
+### 5. Sync design (when enabled)
+- Dedicated src/sync/*: crypto, diff, merge, projection, protocol, store, transport.
+- Schema/isolation SQL under supabase/.
+- Substantial docs and release readiness notes for cloud sync.
+- Browser-side encryption before optional upload. **Preserve** the security model; treat merge complexity carefully.
+### 6. Product framing and progressive disclosure
+- Clear student daily loop (capture → due → next step → notes → schedule → review → backup).
+- Modes, starter packs, calm defaults, depth on demand.
+- Setup wizard UX (from live screenshots) is clear, step-oriented, and on-brand.
+- Landing page messaging is coherent and premium-feeling.
+### 7. Safety / runtime guardrails
+- Error reporter + unhandled nets, feature guard, DOM safety, issue prompt, startup health contracts.
+- Service worker + PWA manifest with share target.
+- Many scripts exist specifically to prevent regressions in shell, encoding, responsive, brand, etc.
+---
+## What Is MID
+### 1. Global-scope feature attachment model
+- Classic scripts attach to window / shared namespace rather than ESM modules.
+- **Rationale is valid** (open Sutra.html from disk, no bundler).
+- **Weakness:** name-collision risk, unclear dependency graphs, harder static analysis.
+- **Consequence:** contributors must read AGENTS.md and load order carefully; mistakes are easy.
+- Severity: Medium. Incremental extraction is already underway—continue it without forcing a full rewrite overnight.
+### 2. Feature surface breadth vs. mental model
+- Academic, study, assistant, workspace (PDF/sheets/slides/canvas), life, business, custom tabs, notifications, etc.
+- Product goal (“one workspace”) is coherent, but **discoverability and density** will keep pressuring UX.
+- Modes and progressive disclosure help; still mid-risk of “Swiss Army knife” fatigue.
+- Severity: Medium–High product risk as users grow.
+### 3. CSS organization and size
+- Cascade-layered folders (base/, themes/, features/, views/, responsive/, legacy/) show intentional structure.
+- styles/base/styles.css ~1 MB; multiple large theme/view sheets; mobile loaded late by design.
+- **Weakness:** cascade order is fragile; legacy externalization is good but residual bulk remains.
+- Severity: Medium (performance + design-system consistency).
+### 4. Assistant / intelligence complexity
+- Large flow-assistant.js (~532 KB), memory, safety, action system, capability registry, diagnostics.
+- BYOK + local paths are philosophically aligned.
+- **Weakness:** high surface area for prompt injection / unsafe actions if safety gates regress; complexity concentrated in few files.
+- Severity: Medium (mitigated by assistant-safety tests and consent model).
+### 5. Dual history (NoteFlow Atelier rebrand + Classic)
+- Compatibility story is documented and treated carefully.
+- **Weakness:** residual naming, dual mental models, long-term dead code risk.
+- Severity: Low–Medium.
+### 6. HTML shell size
+- Sutra.html ~649 KB; markup + script includes for a no-build app.
+- Acceptable for static delivery; still a maintainability and parse-cost cost.
+- Severity: Medium.
+---
+## What Is BAD
+### 1. src/core/app.js monolith (~85k lines / 4.85 MB) — **Critical**
+- Owns data model, persistence/hydration, notes editor, most view wiring, many ranking/engines, starter packs controller, etc.
+- ~227 top-level functions sampled; section comments exist but do not make the file reviewable.
+- **Impact:** near-impossible thorough review, high regression risk, slow IDE/navigation, global namespace pressure, onboarding cost for any new engineer measured in weeks, not days.
+- **Systemic**, not localized.
+- Severity: **Critical** for maintainability and long-term velocity.
+### 2. Architecture that no longer matches scale — **High**
+- Static global core was a smart bet early; at current size it is a structural liability.
+- Feature modules reduce pressure but cannot fully escape in-closure coupling (docs explicitly note engines that must stay in app.js for helper access).
+- **Impact:** extraction is expensive; every new feature is tempted to add more to the core.
+- Severity: **High**.
+### 3. Performance payload risk — **Medium–High**
+- Multi-MB JS + large CSS + large HTML before the user does anything useful.
+- Offline/PWA helps after first load; first paint and low-end mobile will suffer.
+- Severity: **Medium–High** (user-facing on constrained devices).
+### 4. Collaboration and ownership model implicit in the monolith — **High**
+- One file is effectively owned by “whoever last touched it.”
+- Code review of real changes becomes theatrical.
+- Severity: **High** as soon as more than one sustained contributor appears.
+### 5. Residual TODOs / incomplete markers inside the core — **Low–Medium**
+- Dozens of TODO/FIXME-class markers in app.js.
+- Not unique, but amplified by file size.
+- Severity: **Low–Medium**.
+---
+## Architecture Assessment
+**Actual architecture:**
+- Static site entry: HomePage.html / Sutra.html / redirect index.html.
+- Safety layer scripts first (safe-storage, error reporter, migrations, …).
+- Global-scope core runtime (app.js).
+- Feature scripts attach capabilities (academic, assistant, workspace, study, …).
+- Domain pure-ish modules (planner, homework store, learning engine, …).
+- Sync subsystem relatively isolated under src/sync/.
+- Persistence helpers, UI enhancers, generated manifests, SW, PWA.
+- Optional Supabase schema for cloud path; browser remains source of truth by default.
+**What scaled well:** privacy boundaries, migrations, entity registry idea, sync protocol separation, documentation, CI check scripts, test harness.
+**What is straining:** the core runtime file size and global coupling; CSS bulk; number of first-class product surfaces competing for attention; any desire for multi-contributor parallel work on the same behaviors.
+---
+## Code Quality Assessment
+- **Naming / docs:** Strong at product and architecture layer; core file internal structure relies on section banners more than modules.
+- **Duplication:** Reduced by domain engines and registry; still risk of parallel “deadline,” “task,” and ranking paths across views.
+- **Abstractions:** Domain modules and sync packages are better; UI and app wiring remain sprawling.
+- **Complexity:** Cyclomatic and cognitive load in the core is extreme by industry standards for a single file.
+- **Technical debt:** Structural (monolith), not merely stylistic.
+- **Readability:** High at the edges; low in the center.
+---
+## Reliability / Data Integrity Assessment
+**Strengths:** migrations with unknown-field preservation; encrypted portable backups; recovery mode; startup health; hygiene/wipe paths; round-trip and persistence tests; sync merge tests.
+**Risks residual:** any bug in serialization or migration order; race conditions between views writing the same workspace; IndexedDB quota edge cases on large media/backgrounds; sync merge edge cases under concurrent multi-device use (mitigated by tests but inherently hard).
+Overall reliability posture is **stronger than typical indie productivity apps**, especially given local-first constraints.
+---
+## Testing Assessment
+- **Quantity:** High.
+- **Quality:** Above average—contract tests and risk-focused e2e matter more than coverage percentages.
+- **Gaps (expected):** full visual regression matrix, exhaustive editor edge cases, long-running performance soak, multi-device sync chaos testing in CI.
+- **Confidence:** High for persistence, privacy redaction, basic flows, sync crypto/merge; lower for every interaction path through the 85k-line core.
+---
+## Performance Assessment
+**Likely bottlenecks:**
+1. Parse/compile of multi-MB JS on first load (especially mobile).
+2. Large CSS cascade and theme switching cost.
+3. Notes editor + canvas/PDF/sheets features under heavy documents.
+4. Full-workspace hydrate into memory.
+5. Sync projection/merge on large workspaces.
+Mitigations present (SW, static hosting, progressive features) but **payload weight is the dominant concern**.
+---
+## Security & Privacy Assessment
+**Matches the marketing claims unusually well:**
+- Local-first default.
+- Secrets out of exports.
+- Credential vault separation.
+- CSP with explicit connect-src allowlist for AI providers and cloud.
+- Locked notes / duress paths tested.
+- No telemetry stance documented and architecturally plausible for core paths.
+**Residual risks:**
+- BYOK assistant still sends user content to third parties when used (disclosed, but user error remains).
+- Plugin / customization surface (if enabled) expands attack surface—needs ongoing sandbox discipline.
+- Global JS surface area increases chance of XSS-class bugs if DOM safety regressions occur (guardrails exist; must stay enforced).
+- Cloud sync trust model depends on correct client-side encryption and account isolation SQL—docs and tests exist; treat as ongoing high-stakes code.
+Overall: **strong privacy engineering for the product class**.
+---
+## UI Audit
+**Strong:**
+- Landing page: clear hierarchy, premium dark aesthetic, coherent brand.
+- Setup wizard: structured steps, calm cards, explicit local-first messaging.
+- Intentional theme system (sutra-pro, glass, macos-inspired, signature presets).
+- Microinteractions and redesign sheets show sustained attention.
+**Weak:**
+- Product UI density will fight the “calm” claim as features accumulate.
+- Multiple redesign layers (legacy + redesign CSS) risk visual inconsistency over time.
+- Icon fallback systems and FA pseudo-content handling suggest historical icon debt.
+---
+## UX Audit
+**Strong mental model:** one private student workspace; Today as command center; deterministic Next Step; connected data (homework ↔ timeline ↔ notes ↔ review).
+**Friction risks:**
+- First-time users may still feel overwhelmed by depth after skipping setup.
+- Advanced systems (Assignment Studio, Testing Hub, business workspace, custom tabs, assistant actions) can feel like separate products unless deeply cross-linked.
+- Mobile workflows exist (mobile-nav, responsive CSS, e2e) but constrained screens will expose density issues faster.
+- Destructive actions appear to have recovery thinking; still require continuous UX scrutiny.
+**Product coherence:** High for the idea; medium-high for the full feature inventory.
+---
+## Mobile / Responsive Audit
+- Dedicated styles/responsive/mobile.css (~86 KB), late-loaded by design.
+- Mobile nav module, mobile contract tests, bottom clearance contracts.
+- Live experience not fully exercised beyond setup modal in this audit session; code shows intentional effort, not afterthought.
+- Expect: usable core flows; advanced editor/canvas/PDF experiences will remain desktop-first.
+---
+## Consistency Audit
+| Layer | Consistency |
+|-------|-------------|
+| Product language (student literal labels) | Strong |
+| Privacy posture | Strong |
+| Architecture (global core vs extracted modules) | Mixed—transition state |
+| Visual redesign vs legacy CSS | Mixed |
+| Test contracts vs ad-hoc tests | Improving, uneven |
+| Naming (Sutra / Atelier residual) | Improving |
+| State writes through workspace coordinator vs direct | Needs ongoing discipline |
+---
+## Technical Debt Map
+| Category | Debt level |
+|----------|------------|
+| Core runtime monolith (app.js) | **Structural** |
+| CSS bulk / cascade order fragility | **Significant** |
+| HTML shell size | **Significant** |
+| Global namespace coupling | **Significant** |
+| Feature breadth vs IA | **Moderate–Significant** |
+| Rebrand residual | **Moderate** |
+| TODOs inside core | **Moderate** |
+| Sync merge complexity | **Moderate** (inherent) |
+| Docs vs code drift risk | **Low–Moderate** (process helps) |
+---
+## Highest-Leverage Improvements
+(Analysis only—do not implement in this task.)
+1. **Carve app.js into ownership-bounded modules without breaking file://**
+- Problem: 85k-line core.
+- Direction: continue extraction of pure engines/normalizers; introduce explicit namespaces or sequential classic-script files with a thin orchestrator; keep no-build constraint until a deliberate optional build path exists.
+- Impact: unlocks maintainability.
+- Scope: **Architectural**.
+2. **Payload diet for first load**
+- Problem: multi-MB parse cost.
+- Direction: split rarely used feature scripts; defer assistant/PDF/office; critical CSS path.
+- Impact: mobile and first-run experience.
+- Scope: **Large**.
+3. **Formalize workspace write paths**
+- Problem: risk of divergent writers.
+- Direction: enforce coordinator + registry for all mutating features; contract tests for write APIs.
+- Impact: data integrity as features grow.
+- Scope: **Medium–Large**.
+4. **IA / Mode discipline**
+- Problem: feature sprawl vs calm.
+- Direction: harden mode gating; reduce top-level surfaces; keep advanced tools one intentional hop away.
+- Impact: UX coherence.
+- Scope: **Medium**.
+5. **Design-system consolidation**
+- Problem: legacy + redesign CSS layers.
+- Direction: tokens-first, retire legacy overrides gradually with visual contracts.
+- Impact: consistency and CSS weight.
+- Scope: **Large**.
+6. **Keep privacy/sync tests as release gates**
+- Problem: high-stakes surfaces.
+- Direction: maintain/expand crypto, export redaction, locked-note, sync isolation tests.
+- Impact: trust.
+- Scope: **Small–Medium** ongoing.
+---
+## Things I Would NOT Change
+- Local-first default and “no Sutra backend / no telemetry” stance.
+- Credential vault + export redaction model.
+- Migration registry and unknown-field survival.
+- Entity registry direction.
+- AGENTS.md + architecture docs as operational doctrine.
+- Deterministic ranking/planning engines (AI suggests; core computes).
+- Password-encrypted .sutra portable backup as the primary portability story.
+- Optional-by-default cloud sync with client-side encryption.
+- The student daily-loop framing and Today-as-home.
+Tempting rewrites of the entire product into a modern SPA framework would destroy the “open the HTML file” value proposition and should be resisted unless accompanied by a deliberate dual-delivery strategy.
+---
+## Final Verdict
+**How healthy is the codebase?**
+Healthy at the **edges and principles**; **unhealthy at the core** due to size and coupling. Peripheral systems (sync, vault, migrations, tests, docs) look more mature than the main runtime file.
+**Is the architecture still appropriate?**
+For a small personal tool, yes. For a multi-year, multi-contributor product at current feature breadth, **no—not without aggressive modularization**.
+**What becomes painful as Sutra grows?**
+- Parallel development on core behaviors
+- Review of security-sensitive changes
+- Onboarding new maintainers
+- Performance on low-end devices
+- Keeping calm UX while adding student-requested features
+**Cohesive product?**
+Yes at the vision layer. The implementation still carries “many powerful tools under one roof” tension.
+**Production-grade parts:** privacy/security controls, migration/backup story, sync subsystem design, test/CI culture, documentation.
+**Prototype-grade parts:** the monolithic core runtime and the cumulative CSS/HTML bulk.
+**Largest risks:**
+1) Inability to safely change app.js
+2) First-load performance
+3) Feature sprawl eroding calm UX
+4) Any regression in secret handling or backup integrity (high impact if it happens)
+**If another experienced engineer inherited this tomorrow:**
+- **Most concern:** opening app.js and realizing the true center of gravity.
+- **Most impressed:** privacy architecture, test matrix around hard paths, and the seriousness of the product thesis for a student-built local-first workspace.
+---
+**GOOD:** Privacy-by-architecture, docs/tests discipline, migrations/backups, sync design, student product vision.
+**MID:** Global script model, CSS bulk, feature breadth management, assistant complexity.
+**BAD:** ~85k-line app.js monolith and the maintainability/performance consequences.
+**Biggest strength:** Credible local-first privacy + deterministic student workflows with unusually strong documentation and testing for the category.
+**Biggest weakness:** Core runtime size and coupling.
+**Most important next investment:** Modularize the core without abandoning the static, no-required-build delivery model—then diet first-load payload.

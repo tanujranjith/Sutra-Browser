@@ -92,14 +92,15 @@ public sealed partial class MainWindow
         {
             var tab = FindTab(id);
             if (tab is null || IsNativePageTab(tab)) { _splitTabIds.Remove(id); continue; }
-            if (!_webViews.ContainsKey(id)) await CreateWebViewAsync(tab);
+            if (!_webViews.ContainsKey(id)) await CreateOrGetTabWebViewAsync(tab);
         }
         if (_splitTabIds.Count < 2) _splitTabIds.Clear();
     }
 
     private void RenderBrowserSurface()
     {
-        foreach (var web in _webViews.Values) DetachWebView(web);
+        foreach (var pair in _webViews)
+            if (!_videoMiniPlayers.ContainsKey(pair.Key)) DetachWebView(pair.Value);
         _browserHost.Children.Clear();
         _browserHost.RowDefinitions.Clear();
         _browserHost.ColumnDefinitions.Clear();
@@ -108,7 +109,7 @@ public sealed partial class MainWindow
 
         if (!IsSplitViewActive)
         {
-            if (_vm.SelectedTab is not null && _webViews.TryGetValue(_vm.SelectedTab.Id, out var selectedWeb))
+            if (_vm.SelectedTab is not null && !_videoMiniPlayers.ContainsKey(_vm.SelectedTab.Id) && _webViews.TryGetValue(_vm.SelectedTab.Id, out var selectedWeb))
                 _browserHost.Children.Add(selectedWeb);
             return;
         }
@@ -136,7 +137,7 @@ public sealed partial class MainWindow
         for (var index = 0; index < count; index++)
         {
             var tab = FindTab(_splitTabIds[index]);
-            if (tab is null || !_webViews.TryGetValue(tab.Id, out var web)) continue;
+            if (tab is null || _videoMiniPlayers.ContainsKey(tab.Id) || !_webViews.TryGetValue(tab.Id, out var web)) continue;
             var pane = BuildSplitPane(tab, web);
             var cell = layout.Cells[index];
             Grid.SetColumn(pane, cell.Column * 2);

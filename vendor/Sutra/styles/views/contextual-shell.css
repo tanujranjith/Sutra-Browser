@@ -1,0 +1,988 @@
+/* Contextual workspace shell -------------------------------------------------
+   Global navigation is stable. Notes owns the page tree; major workspaces use
+   the full canvas. This late layer intentionally refines existing components
+   without introducing a second router or data model. */
+
+:root {
+  --sutra-global-nav-height: 72px;
+  --sutra-nav-side-reserve: clamp(210px, 16vw, 286px);
+  --sutra-workspace-gutter: clamp(18px, 2.4vw, 38px);
+  --sutra-content-max: 1760px;
+  --sutra-shell-shadow: 0 10px 34px color-mix(in srgb, #101827 8%, transparent);
+}
+
+/* Themes can be scoped to the current page on body. Rebind the semantic
+   aliases here so they resolve against that body-scoped palette. */
+body {
+  --sutra-color-canvas: var(--bg-primary, #fff);
+  --sutra-color-surface: var(--bg-secondary, #f6f6f7);
+  --sutra-color-elevated: var(--bg-elevated, var(--sutra-color-surface));
+  --sutra-color-text: var(--text-primary, #242424);
+  --sutra-color-text-muted: var(--text-secondary, #686868);
+  --sutra-color-border: var(--surface-border, var(--border, rgba(30, 30, 30, 0.18)));
+  --sutra-color-accent: var(--accent-strong, var(--accent, #526ff4));
+  --sutra-color-success: var(--success, #27864f);
+  --sutra-color-danger: var(--danger, #bb3535);
+}
+
+.app-container {
+  box-sizing: border-box;
+  height: 100dvh;
+  padding-top: var(--sutra-global-nav-height);
+  background: var(--sutra-color-canvas);
+}
+
+.top-nav {
+  position: fixed !important;
+  top: 0 !important;
+  right: 0 !important;
+  bottom: auto !important;
+  left: 0 !important;
+  width: 100% !important;
+  z-index: var(--z-nav) !important;
+  height: var(--sutra-global-nav-height);
+  min-height: var(--sutra-global-nav-height);
+  margin: 0 !important;
+  padding: 0 clamp(18px, 2vw, 32px) !important;
+  gap: clamp(18px, 2.2vw, 34px);
+  border: 0 !important;
+  border-bottom: 1px solid var(--sutra-color-border) !important;
+  border-radius: 0 !important;
+  background: color-mix(in srgb, var(--sutra-color-canvas) 92%, transparent) !important;
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--sutra-color-border) 55%, transparent),
+              0 10px 28px color-mix(in srgb, #0d1628 5%, transparent) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
+  backdrop-filter: blur(20px) saturate(150%) !important;
+}
+
+body .app-container > .main-content > .top-nav {
+  right: 0 !important;
+  left: 0 !important;
+}
+
+body .app-container > .sidebar ~ .main-content > .top-nav {
+  right: 0 !important;
+  left: 0 !important;
+}
+
+body[data-context-sidebar="none"] #sidebarToggle {
+  display: none !important;
+}
+
+.global-app-brand {
+  position: absolute;
+  top: 50%;
+  left: clamp(18px, 2vw, 32px);
+  z-index: 2;
+  min-width: 126px;
+  min-height: var(--sutra-target-min);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--sutra-color-text);
+  cursor: pointer;
+  flex: 0 0 auto;
+  transform: translateY(-50%);
+}
+
+.global-app-brand .app-title-mark {
+  display: block;
+  flex: 0 0 30px;
+  border-radius: 9px;
+  box-shadow: 0 5px 14px color-mix(in srgb, var(--sutra-color-accent) 18%, transparent);
+}
+
+.global-app-brand .app-title-wordmark {
+  font-family: var(--font-heading);
+  font-size: 1.3rem;
+  font-weight: 720;
+  letter-spacing: -0.025em;
+}
+
+.top-nav .nav-left,
+.top-nav .tabs-shell,
+.top-nav .view-tabs {
+  min-width: 0;
+}
+
+.top-nav .nav-left {
+  display: flex;
+  align-items: center;
+  flex: 1 1 100%;
+  width: 100%;
+  height: 100%;
+}
+
+.top-nav .tabs-shell {
+  width: 100%;
+}
+
+.top-nav .view-tabs {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: none !important;
+  padding: 0 var(--sutra-nav-side-reserve);
+  gap: 3px;
+  overflow: visible !important;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.top-nav .nav-utility-group {
+  position: absolute;
+  top: 50%;
+  right: clamp(18px, 2vw, 32px);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  max-width: calc(var(--sutra-nav-side-reserve) - clamp(18px, 2vw, 32px));
+  transform: translateY(-50%);
+}
+
+.top-nav .view-tab {
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: var(--sutra-radius-pill);
+  color: var(--sutra-color-text-muted);
+  font-size: 0.78rem;
+  font-weight: 620;
+  line-height: 1;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.top-nav .view-tab i { font-size: 0.78rem; }
+
+.top-nav .view-tab:hover:not(.active) {
+  background: color-mix(in srgb, var(--sutra-color-accent) 7%, transparent);
+}
+
+.top-nav .view-tab.active {
+  border-color: color-mix(in srgb, var(--sutra-color-accent) 14%, transparent);
+  background: color-mix(in srgb, var(--sutra-color-accent) 10%, var(--sutra-color-surface));
+  color: var(--sutra-color-text);
+  box-shadow: none;
+}
+
+.top-nav .tabs-shell .tab-clock-embed {
+  margin-left: 0;
+  min-height: 36px;
+  padding: 2px 10px;
+  border-color: var(--sutra-color-border);
+  background: color-mix(in srgb, var(--sutra-color-surface) 82%, transparent);
+  box-shadow: none;
+}
+
+.top-nav .tabs-shell .toolbar-time-widget {
+  min-width: 66px;
+  font-size: 0.78rem;
+}
+
+.top-nav .view-tab-theme,
+.top-nav .notif-bell-btn {
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  border: 1px solid transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+.top-nav .view-tab-theme:hover,
+.top-nav .notif-bell-btn:hover {
+  border-color: var(--sutra-color-border);
+  background: var(--sutra-color-surface);
+}
+
+.top-nav .integrations-dock {
+  border-radius: var(--sutra-radius-pill);
+  box-shadow: none;
+}
+
+/* Settings owns an internal category rail, but it still belongs inside the
+   global workspace shell. The older settings-anchored mode turned the shared
+   header back into a margined, relative element, creating a blank band above
+   Settings alone. Keep the stable app bar and give the control center the
+   complete contextual canvas instead. */
+body.settings-anchored-mode .top-nav {
+  position: fixed !important;
+  top: 0 !important;
+  right: 0 !important;
+  bottom: auto !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: var(--sutra-global-nav-height) !important;
+  min-height: var(--sutra-global-nav-height) !important;
+  margin: 0 !important;
+  padding: 0 clamp(18px, 2vw, 32px) !important;
+  background: color-mix(in srgb, var(--sutra-color-canvas) 92%, transparent) !important;
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--sutra-color-border) 55%, transparent),
+              0 10px 28px color-mix(in srgb, #0d1628 5%, transparent) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
+  backdrop-filter: blur(20px) saturate(150%) !important;
+}
+
+/* Create keeps the global navigation visually connected to the document.
+   The page becomes the desktop scroll surface so note content can pass beneath
+   the fixed bar, while the bar remains readable through a theme-aware frost. */
+@media (min-width: 1025px) {
+  body[data-view="notes"] .top-nav {
+    /* Preserve the blur while letting more of the scrolling document show
+       through the Create tab bar. */
+    background: color-mix(in srgb, var(--sutra-color-canvas) 46%, transparent) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(155%) !important;
+    backdrop-filter: blur(18px) saturate(155%) !important;
+  }
+
+  body[data-view="notes"]:not(.notes-split-active) #view-notes {
+    overflow: visible !important;
+    height: auto !important;
+    min-height: 0 !important;
+    /* Reserve the fixed tab bar plus formatting toolbar at rest. The document
+       can still pass beneath both layers once the user scrolls. */
+    padding-top: calc(var(--sutra-global-nav-height) + 72px) !important;
+  }
+
+  body[data-view="notes"]:not(.notes-split-active) .main-content {
+    /* The app shell normally reserves a solid row for the fixed nav. In
+       Create, make that reserved row scrollable canvas instead: note text
+       starts below the nav at rest, then moves behind it while scrolling. */
+    height: 100dvh;
+    margin-top: calc(-1 * var(--sutra-global-nav-height));
+    padding-top: 0;
+    scroll-padding-top: calc(var(--sutra-global-nav-height) + 88px) !important;
+  }
+
+  /* The Create toolbar is an editor control surface, not document content.
+     Keep it fixed below the global tabs so it remains reachable at every
+     scroll position. Split view has independent panes and retains its sticky
+     behavior instead. Page-mode editors hide this wrapper with their own
+     display rules, which this deliberately does not override. */
+  body[data-view="notes"]:not(.notes-split-active) #view-notes .toolbar-wrapper {
+    position: fixed !important;
+    top: var(--sutra-global-nav-height) !important;
+  }
+
+  /* The legacy toolbar synchronizer still reserves up to 90px inside the
+     editor container, while this shell already reserves the fixed nav and
+     toolbar on #view-notes. Cancel that second reservation so a fresh page at
+     scrollTop 0 starts at the same title position as an existing page whose
+     saved scroll position happens to hide the duplicate gap. Pages mode keeps
+     its document-card spacing; split view has its own pane layout. */
+  body[data-view="notes"]:not(.notes-split-active):not(.notes-pages-mode) #view-notes #notesEditorContainer {
+    margin-top: -90px !important;
+  }
+
+  /* HTML Pages hide the legacy formatting toolbar and own their preview
+     scrolling. Do not retain the ordinary Create toolbar reservation or the
+     page will stop short of the available viewport. */
+  body.html-page-active[data-view="notes"] #view-notes {
+    height: 100% !important;
+    overflow: hidden !important;
+    padding-top: var(--sutra-global-nav-height) !important;
+    padding-bottom: 0 !important;
+  }
+  body.html-page-active[data-view="notes"]:not(.notes-split-active):not(.notes-pages-mode) #view-notes #notesEditorContainer {
+    margin-top: 0 !important;
+    padding: 0 !important;
+  }
+}
+
+/* Tablet Notes keeps the app bar in the shell and the document below it. The
+   shared sticky toolbar lives inside that already-offset content column, so a
+   navigation-height sticky inset would reserve the header twice and let the
+   editor title slide underneath the toolbar. Desktop has its own single-scroll
+   treatment above; phones remove the global bar entirely. */
+@media (min-width: 641px) and (max-width: 1024px) {
+  body[data-view="notes"]:not(.notes-split-active) #view-notes .toolbar-wrapper {
+    top: 0 !important;
+  }
+}
+
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  body[data-view="notes"] .top-nav {
+    background: var(--sutra-color-canvas) !important;
+  }
+}
+
+@media (forced-colors: active) {
+  body[data-view="notes"] .top-nav {
+    background: Canvas !important;
+    border-bottom-color: CanvasText !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+}
+
+body.settings-anchored-mode .main-content {
+  scroll-padding-top: var(--sutra-global-nav-height) !important;
+}
+
+body.settings-anchored-mode #view-settings.view-settings {
+  flex: 1 1 auto;
+  width: 100%;
+  height: calc(100dvh - var(--sutra-global-nav-height));
+  min-height: 0;
+}
+
+body.settings-anchored-mode #view-settings .cc-page {
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  margin: 0;
+  padding-inline: var(--sutra-workspace-gutter);
+}
+
+@media (min-width: 1025px) and (max-height: 720px) {
+  body.settings-anchored-mode #view-settings.view-settings {
+    display: block;
+    height: auto;
+    min-height: calc(100dvh - var(--sutra-global-nav-height));
+    overflow: visible;
+  }
+
+  body.settings-anchored-mode #view-settings .cc-page {
+    height: auto;
+    min-height: calc(100dvh - var(--sutra-global-nav-height));
+  }
+}
+
+.sidebar {
+  height: 100%;
+  min-height: 0;
+  z-index: calc(var(--z-nav) - 10) !important;
+  border-right: 1px solid var(--sutra-color-border) !important;
+  background: color-mix(in srgb, var(--sutra-color-surface) 90%, var(--sutra-color-canvas)) !important;
+  box-shadow: 10px 0 30px color-mix(in srgb, #121a2a 4%, transparent) !important;
+}
+
+.sidebar::before { opacity: 0.34 !important; }
+
+.sidebar-header {
+  min-height: 68px;
+  padding: 14px 16px !important;
+  border-bottom: 1px solid var(--sutra-color-border) !important;
+  background: transparent !important;
+}
+
+.sidebar-context-heading {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+
+.sidebar-context-icon {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 34px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--sutra-color-accent) 11%, var(--sutra-color-canvas));
+  color: var(--sutra-color-accent);
+}
+
+.sidebar-context-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sidebar-context-copy strong {
+  color: var(--sutra-color-text);
+  font-size: 0.94rem;
+  line-height: 1.1;
+}
+
+.sidebar-context-copy span {
+  color: var(--sutra-color-text-muted);
+  font-size: 0.7rem;
+}
+
+.sidebar-spaces-row { padding: 10px 12px 8px; }
+.sidebar .spaces-current {
+  min-height: 42px;
+  border: 1px solid var(--sutra-color-border);
+  border-radius: var(--sutra-radius-md);
+  background: color-mix(in srgb, var(--sutra-color-canvas) 82%, transparent);
+  box-shadow: none;
+}
+.sidebar .sidebar-search-toggle { width: 40px; height: 40px; }
+.sidebar-search-feedback { padding-inline: 14px; font-size: 0.68rem; }
+.sidebar-shortcuts { padding: 10px 12px 8px !important; }
+.sidebar-shortcuts-header { margin-bottom: 7px; }
+.sidebar-shortcuts-header > span,
+.sidebar-tags-filter-title {
+  color: var(--sutra-color-text-muted);
+  font-size: 0.67rem;
+  font-weight: 750;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+.sidebar .focus-timer,
+.sidebar #sutraCountdownSidebar,
+.sidebar .stay-hungry-quote { display: none !important; }
+.sidebar .pages-list {
+  flex: 1 1 auto;
+  padding: 6px 10px 12px !important;
+}
+.sidebar .page-item {
+  min-height: 38px;
+  margin: 1px 0;
+  padding-block: 6px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+}
+.sidebar .page-tree-guides {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.sidebar .page-tree-guide-line {
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  width: 1px;
+  border-radius: 999px;
+  background: var(--sutra-color-border);
+  opacity: 0.72;
+}
+.sidebar.collapsed .page-tree-guides { display: none; }
+.sidebar .page-item:hover {
+  border-color: color-mix(in srgb, var(--sutra-color-border) 76%, transparent);
+  background: color-mix(in srgb, var(--sutra-color-accent) 6%, transparent);
+}
+.sidebar .page-item.active,
+.sidebar .page-item.selected {
+  border-color: color-mix(in srgb, var(--sutra-color-accent) 14%, transparent);
+  background: color-mix(in srgb, var(--sutra-color-accent) 11%, var(--sutra-color-canvas));
+  box-shadow: none;
+}
+.sidebar .sidebar-new-page {
+  padding: 10px 12px 14px !important;
+  border-top: 1px solid var(--sutra-color-border);
+}
+.sidebar .new-page-btn,
+.sidebar .quick-new-page-btn {
+  min-height: 42px;
+  border-radius: 10px;
+  box-shadow: none;
+}
+
+.sidebar-toggle-btn {
+  top: calc(var(--sutra-global-nav-height) + 18px) !important;
+  z-index: calc(var(--z-nav) + 2) !important;
+  border-color: var(--sutra-color-border) !important;
+  background: var(--sutra-color-elevated) !important;
+  box-shadow: 0 6px 18px color-mix(in srgb, #101827 12%, transparent) !important;
+}
+
+.main-content {
+  height: 100%;
+  min-height: 0;
+  padding-bottom: 0;
+  background: var(--sutra-color-canvas) !important;
+}
+
+body.has-full-workspace .main-content { flex: 1 1 100%; }
+
+.view {
+  min-width: 0;
+  scrollbar-gutter: stable;
+}
+
+/* Notes ------------------------------------------------------------------ */
+#view-notes {
+  height: 100%;
+  min-height: 0;
+  background: var(--sutra-color-canvas);
+}
+
+#view-notes .toolbar-wrapper {
+  position: sticky !important;
+  /* The global tab bar is fixed above the Create scroll surface. Keeping the
+     toolbar at zero put it directly underneath that bar once note content was
+     allowed to scroll behind it, which made the toolbar look as though it had
+     disappeared. Pin it immediately below the global navigation instead. */
+  top: var(--sutra-global-nav-height) !important;
+  z-index: var(--z-sticky) !important;
+  min-height: 62px;
+  padding: 8px 10px;
+  border: 0 !important;
+  border-bottom: 1px solid var(--sutra-color-border) !important;
+  background: color-mix(in srgb, var(--sutra-color-canvas) 94%, transparent) !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+
+#view-notes .toolbar {
+  gap: 5px;
+  padding: 0 8px;
+}
+
+#view-notes .toolbar-btn,
+#view-notes .toolbar-field,
+#view-notes .toolbar-size-stepper {
+  min-height: 36px;
+  border-radius: 8px;
+}
+
+#view-notes .toolbar-btn { min-width: 36px; }
+#view-notes .toolbar-separator { height: 24px; margin-inline: 2px; }
+#view-notes .word-count-display {
+  margin-left: auto;
+  padding: 6px 9px;
+  border: 1px solid var(--sutra-color-border);
+  border-radius: 8px;
+  color: var(--sutra-color-text-muted);
+  background: var(--sutra-color-surface);
+  white-space: nowrap;
+}
+
+.notes-toolbar-overflow { position: relative; flex: 0 0 auto; }
+.notes-toolbar-overflow > summary { list-style: none; }
+.notes-toolbar-overflow > summary::-webkit-details-marker { display: none; }
+.notes-toolbar-overflow[open] > summary {
+  background: color-mix(in srgb, var(--sutra-color-accent) 10%, var(--sutra-color-surface));
+  color: var(--sutra-color-accent);
+}
+.notes-toolbar-overflow-menu {
+  position: fixed;
+  z-index: var(--z-dropdown);
+  width: 236px;
+  display: grid;
+  gap: 3px;
+  padding: 7px;
+  border: 1px solid var(--sutra-color-border);
+  border-radius: var(--sutra-radius-md);
+  background: var(--sutra-color-elevated);
+  box-shadow: 0 18px 48px color-mix(in srgb, #09111f 22%, transparent);
+}
+.notes-toolbar-overflow-menu[hidden] { display: none !important; }
+.notes-overflow-item {
+  width: 100% !important;
+  min-height: 40px !important;
+  display: flex !important;
+  justify-content: flex-start !important;
+  gap: 10px !important;
+  padding: 7px 10px !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+.notes-overflow-item:hover { background: var(--sutra-color-surface) !important; }
+.notes-overflow-label {
+  color: var(--sutra-color-text);
+  font-size: 0.78rem;
+  font-weight: 590;
+  white-space: nowrap;
+}
+.notes-overflow-zoom {
+  display: grid !important;
+  grid-template-columns: 1fr auto auto auto;
+  align-items: center;
+  gap: 3px;
+  width: 100%;
+  padding: 5px 7px;
+  border-top: 1px solid var(--sutra-color-border);
+}
+
+#view-notes > .view-flow-row {
+  margin: 0 !important;
+  padding: 10px var(--sutra-workspace-gutter) 4px !important;
+  background: var(--sutra-color-canvas);
+}
+
+#view-notes .editor-container {
+  width: 100%;
+  min-height: 0;
+  padding: clamp(22px, 3vw, 44px) clamp(24px, 5vw, 76px) 80px !important;
+}
+
+#view-notes .notes-pane-primary {
+  width: min(100%, 1120px);
+  margin-inline: auto;
+  padding-inline: clamp(18px, 3vw, 44px);
+}
+
+#view-notes .breadcrumbs {
+  margin-bottom: 14px;
+  color: var(--sutra-color-text-muted);
+  font-size: 0.74rem;
+}
+
+#view-notes .page-title-input {
+  min-height: 58px;
+  margin-bottom: 12px;
+  color: var(--sutra-color-text);
+  font-family: var(--font-heading);
+  font-size: clamp(2rem, 3.2vw, 3.15rem) !important;
+  font-weight: 740;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+}
+
+#view-notes .tags-container { margin-bottom: 20px; }
+#view-notes .editor,
+#view-notes .editor-v2-host {
+  max-width: 920px;
+  margin-inline: 0;
+  color: var(--sutra-color-text);
+  font-size: 1.02rem;
+  line-height: 1.72;
+}
+
+/* Timeline --------------------------------------------------------------- */
+#view-timeline.timeline-redesign {
+  height: 100%;
+  min-height: 0;
+  padding: 22px var(--sutra-workspace-gutter) 28px;
+}
+
+#view-timeline .sutra-calendar-shell {
+  width: min(100%, var(--sutra-content-max));
+  min-height: 100%;
+  margin-inline: auto;
+  grid-template-rows: auto minmax(560px, 1fr) auto;
+  gap: 14px;
+}
+
+#view-timeline .timeline-hero-header.sutra-calendar-toolbar {
+  position: relative;
+  min-height: 58px;
+  padding: 0;
+  background: transparent;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+#view-timeline #timelineHeading {
+  font-size: clamp(1.55rem, 2.2vw, 2rem);
+  font-weight: 720;
+  letter-spacing: -0.025em;
+}
+
+#view-timeline .timeline-hero-controls { gap: 8px; }
+#view-timeline .timeline-today-btn,
+#view-timeline .timeline-step-btn,
+#view-timeline .timeline-date-input,
+#view-timeline .timeline-mode-tab,
+#view-timeline .timeline-primary-add,
+#view-timeline .timeline-more-btn { min-height: 42px; }
+#view-timeline .timeline-today-btn { padding-inline: 16px; }
+#view-timeline .timeline-date-stepper,
+#view-timeline .timeline-mode-switcher {
+  border: 1px solid var(--sutra-color-border);
+  border-radius: 11px;
+  background: var(--sutra-color-surface);
+}
+#view-timeline .timeline-date-stepper { padding: 2px; }
+#view-timeline .timeline-date-input {
+  width: 150px;
+  border: 0;
+  background: transparent;
+}
+#view-timeline .timeline-mode-switcher { padding: 3px; }
+#view-timeline .timeline-mode-tab { padding-inline: 14px; border-radius: 8px; }
+#view-timeline .timeline-mode-tab.active {
+  background: var(--sutra-color-elevated);
+  box-shadow: 0 3px 10px color-mix(in srgb, #111827 8%, transparent);
+}
+#view-timeline .timeline-primary-add {
+  padding-inline: 17px;
+  border-radius: 11px;
+  background: var(--sutra-color-accent);
+  color: var(--button-text, #fff);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--sutra-color-accent) 22%, transparent);
+}
+#view-timeline .sutra-calendar-body {
+  min-height: 560px;
+  border-radius: var(--sutra-radius-lg);
+  background: var(--sutra-color-elevated);
+  box-shadow: var(--sutra-shell-shadow);
+}
+#view-timeline .sutra-calendar-time-view,
+#view-timeline .sutra-calendar-month { height: min(76vh, 920px); min-height: 560px; }
+#view-timeline .sutra-calendar-time-grid {
+  grid-template-columns: 62px repeat(var(--sutra-calendar-day-count), minmax(132px, 1fr));
+  min-width: calc(62px + var(--sutra-calendar-day-count) * 132px);
+}
+#view-timeline .sutra-calendar-time-header { min-height: 56px; }
+#view-timeline .timeline-hour-row {
+  height: 48px;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0 23px,
+    color-mix(in srgb, var(--sutra-color-border) 55%, transparent) 23px 24px
+  );
+}
+#view-timeline .sutra-calendar-event {
+  padding: 6px 8px;
+  border-radius: 7px;
+}
+#view-timeline .current-block-compact {
+  border: 1px solid var(--sutra-color-border);
+  background: var(--sutra-color-surface);
+}
+
+/* Homework --------------------------------------------------------------- */
+#view-homework { height: 100%; background: var(--sutra-color-canvas); }
+#view-homework .hw-workspace-shell {
+  width: min(100%, var(--sutra-content-max));
+  max-width: none;
+  padding: 28px var(--sutra-workspace-gutter) 52px;
+}
+#view-homework .hw-page-header {
+  align-items: center;
+  margin-bottom: 20px;
+}
+#view-homework .hw-page-heading h2 {
+  font-size: clamp(1.75rem, 2.4vw, 2.2rem);
+  font-weight: 740;
+}
+#view-homework .hw-page-heading p { margin-top: 7px; font-size: 0.9rem; }
+#view-homework .hw-search-field { width: clamp(190px, 18vw, 290px); }
+#view-homework .hw-toolbar-btn,
+#view-homework .hw-search-field,
+#view-homework .hw-sort-control { min-height: 42px; border-radius: 11px; }
+#view-homework .hw-toolbar-primary {
+  padding-inline: 17px;
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--sutra-color-accent) 18%, transparent);
+}
+#view-homework .hw-summary-grid { gap: 14px; margin-bottom: 20px; }
+#view-homework .hw-summary-card {
+  min-height: 106px;
+  border-radius: var(--sutra-radius-lg);
+  background: var(--sutra-color-elevated);
+  box-shadow: 0 8px 22px color-mix(in srgb, #101827 5%, transparent);
+}
+#view-homework .hw-list-tabs {
+  min-height: 44px;
+  padding: 4px;
+  border: 1px solid var(--sutra-color-border);
+  border-radius: 12px;
+  background: var(--sutra-color-surface);
+}
+#view-homework .hw-list-tabs button { min-height: 36px; background: transparent; }
+#view-homework .hw-list-tabs button.is-active {
+  border-color: transparent;
+  background: var(--sutra-color-elevated);
+  box-shadow: 0 3px 10px color-mix(in srgb, #101827 7%, transparent);
+}
+#view-homework .hw-assignments-panel,
+#view-homework .hw-side-panel,
+#view-homework .hw-table {
+  border-radius: var(--sutra-radius-lg);
+  background: var(--sutra-color-elevated);
+  box-shadow: 0 8px 24px color-mix(in srgb, #101827 5%, transparent);
+}
+
+/* Today ------------------------------------------------------------------ */
+#view-today.today-redesign {
+  padding: 28px var(--sutra-workspace-gutter) 64px;
+  background: var(--sutra-color-canvas);
+}
+#view-today .today-cc-layout,
+#view-today .today-hero-header,
+#view-today > .view-flow-row {
+  width: min(100%, var(--sutra-content-max));
+  margin-inline: auto;
+}
+/* The school-schedule prompt is a focused setup action, not dashboard
+   content. Keep it readable on an otherwise deliberately wide workspace. */
+#view-today #sutraSchoolDayStrip {
+  width: min(100%, 1320px);
+  margin-inline: auto;
+  min-height: 0 !important;
+  height: auto !important;
+  padding-block: 8px;
+}
+#view-today #sutraSchoolDayStrip .ssched-strip-row {
+  min-height: 42px;
+  align-content: center;
+}
+#view-today .today-hero-header {
+  align-items: center;
+  margin-bottom: 22px;
+}
+#view-today .today-hero-date h2,
+#view-today #todayLabel {
+  font-size: clamp(2rem, 3vw, 2.75rem);
+  font-weight: 740;
+  letter-spacing: -0.035em;
+}
+#view-today .today-header-actions { gap: 8px; }
+#view-today .today-hero-primary,
+#view-today .today-hero-ghost { min-height: 42px; border-radius: 11px; }
+#view-today .today-dashboard-toolbar { display: none !important; }
+#view-today .today-cc-layout { gap: 18px; }
+#view-today .today-hero-row { gap: 18px; }
+#view-today .glass-card,
+#view-today .today-attention-card {
+  border-radius: var(--sutra-radius-lg);
+  border-color: var(--sutra-color-border);
+  box-shadow: 0 8px 26px color-mix(in srgb, #101827 5%, transparent);
+}
+#view-today .today-attention-grid { gap: 16px; }
+#view-today .today-section-title { letter-spacing: -0.01em; }
+
+/* Today overflow actions must inherit the current preset's surfaces. The
+   legacy redesign authored a light backdrop, which leaked into dark/custom
+   themes because its dark override only matched one theme attribute. */
+#view-today.today-redesign .today-hero-menu {
+  background: color-mix(in srgb, var(--sutra-color-elevated) 94%, transparent);
+  border-color: var(--sutra-color-border);
+  box-shadow: 0 18px 40px color-mix(in srgb, var(--sutra-color-text) 18%, transparent);
+}
+#view-today.today-redesign .today-hero-menu-item:hover {
+  background: color-mix(in srgb, var(--sutra-color-text) 6%, transparent);
+}
+#view-today.today-redesign .today-hero-menu-toggle {
+  border-top-color: color-mix(in srgb, var(--sutra-color-border) 82%, transparent);
+}
+
+/* Keep transient feedback clear of the desktop's lower floating controls. */
+@media (min-width: 601px) {
+  .toast,
+  #notifToastContainer {
+    bottom: clamp(84px, 10dvh, 120px);
+  }
+}
+
+/* Responsive ------------------------------------------------------------- */
+@media (max-width: 1440px) and (min-width: 981px) {
+  :root { --sutra-nav-side-reserve: 182px; }
+  .top-nav .view-tabs {
+    position: static;
+    flex: 0 1 calc(100% - var(--sutra-nav-side-reserve) - var(--sutra-nav-side-reserve));
+    width: calc(100% - var(--sutra-nav-side-reserve) - var(--sutra-nav-side-reserve));
+    max-width: calc(100% - var(--sutra-nav-side-reserve) - var(--sutra-nav-side-reserve)) !important;
+    margin-inline: auto;
+    padding-inline: 0;
+  }
+  .top-nav .view-more,
+  .top-nav .view-more-toggle { width: auto; }
+  .top-nav .view-more-toggle { justify-content: center; }
+  .top-nav .integrations-dock { display: none !important; }
+}
+
+@media (max-width: 1220px) {
+  :root { --sutra-nav-side-reserve: 240px; }
+  .top-nav { gap: 12px; padding-inline: 16px !important; }
+  .global-app-brand { min-width: 42px; }
+  .global-app-brand .app-title-wordmark { display: none; }
+  .top-nav .view-tab { padding-inline: 10px; }
+  .top-nav .tabs-shell.tabs-shell-overflowing .view-more-current { display: none; }
+  .top-nav .integrations-dock { display: none !important; }
+  #view-homework .hw-page-header { align-items: flex-start; }
+  #view-homework .hw-page-actions { max-width: 760px; }
+}
+
+@media (max-width: 980px) {
+  :root {
+    --sutra-global-nav-height: 66px;
+    --sutra-nav-side-reserve: 72px;
+  }
+  .top-nav .tabs-shell .tab-clock-embed { display: none !important; }
+  .top-nav .view-tab { min-height: 36px; padding-inline: 9px; font-size: 0.74rem; }
+  #view-timeline .timeline-hero-header.sutra-calendar-toolbar { align-items: flex-start; }
+  #view-timeline .timeline-hero-controls { justify-content: flex-start; }
+  #view-homework .hw-page-header { flex-direction: column; }
+  #view-homework .hw-page-actions { width: 100%; justify-content: flex-start; }
+  #view-homework .hw-search-field { flex: 1 1 220px; }
+  #view-today .today-hero-header { align-items: flex-start; }
+}
+
+@media (max-width: 768px) {
+  .app-container { padding-top: var(--sutra-global-nav-height); }
+  #view-notes .editor-container { padding-inline: 20px !important; }
+  #view-notes .notes-pane-primary { padding-inline: 0; }
+  #view-notes .page-title-input { font-size: clamp(1.8rem, 8vw, 2.4rem) !important; }
+  #view-timeline.timeline-redesign,
+  #view-homework .hw-workspace-shell,
+  #view-today.today-redesign { padding-inline: 16px; }
+  #view-timeline .sutra-calendar-shell { grid-template-rows: auto minmax(420px, 68dvh) auto; }
+  #view-timeline .sutra-calendar-time-view,
+  #view-timeline .sutra-calendar-month { min-height: 420px; height: 68dvh; }
+  #view-timeline .sutra-calendar-time-grid {
+    grid-template-columns: 52px repeat(var(--sutra-calendar-day-count), minmax(96px, 1fr));
+    min-width: calc(52px + var(--sutra-calendar-day-count) * 96px);
+  }
+}
+
+@media (max-width: 700px) and (min-width: 641px) {
+  .top-nav .view-tabs { gap: 1px; }
+  .top-nav .view-tab { padding-inline: 7px; font-size: 0.7rem; }
+  .top-nav .view-more-toggle { padding-inline: 7px; }
+  .top-nav .nav-utility-group { right: 0; }
+}
+
+/* Every overlay drawer, including tablet widths, must clear its scrim. */
+@media (max-width: 1024px) {
+  .sidebar { z-index: 4900 !important; }
+}
+
+@media (max-width: 640px) {
+  :root { --sutra-global-nav-height: 0px; }
+  .app-container { height: 100dvh; padding-top: 0; }
+  .top-nav { display: none !important; }
+  .sidebar { height: 100dvh; }
+  .sidebar-header { min-height: 62px; padding-right: 58px !important; }
+  .sidebar-toggle-btn { top: 12px !important; }
+  #view-notes .toolbar-wrapper { min-height: 56px; padding-inline: 4px; }
+  #view-notes .toolbar { padding-inline: 4px; }
+  .notes-toolbar-overflow-menu { width: min(260px, calc(100vw - 20px)); }
+  #view-timeline .timeline-hour-row {
+    height: 64px;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0 31px,
+      color-mix(in srgb, var(--sutra-color-border) 55%, transparent) 31px 32px
+    );
+  }
+  #view-homework .hw-page-actions { display: grid; grid-template-columns: 1fr 1fr; }
+  #view-homework .hw-search-field,
+  #view-homework .hw-sort-control { width: 100%; }
+  #view-homework .hw-search-field { grid-column: 1 / -1; }
+  #view-today.today-redesign { padding-top: 16px; }
+}
+
+@media (max-width: 480px) {
+  #view-timeline.timeline-redesign { padding-block: 14px 88px; }
+  #view-timeline .timeline-hero-controls { width: 100%; }
+  #view-timeline .timeline-date-stepper { order: 1; }
+  #view-timeline .timeline-mode-switcher { order: 2; }
+  #view-timeline .timeline-primary-add { order: 3; }
+  #view-timeline .timeline-more-wrap { order: 4; }
+  #view-homework .hw-workspace-shell { padding-block: 18px 100px; }
+  #view-homework .hw-page-actions { grid-template-columns: 1fr 1fr; }
+  #view-homework .hw-toolbar-btn,
+  #view-homework .hw-search-field,
+  #view-homework .hw-sort-control { min-height: var(--sutra-target-min); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .top-nav,
+  .sidebar,
+  .view-tab,
+  .hw-summary-card { transition: none !important; }
+}
+
+@media (forced-colors: active) {
+  .top-nav,
+  .sidebar,
+  .notes-toolbar-overflow-menu,
+  #view-timeline .sutra-calendar-body { border: 1px solid CanvasText !important; }
+}

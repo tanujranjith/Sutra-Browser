@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'">
+  <title>Page not found · Sutra</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/sutra/generated/sutra-icon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/brand/sutra/generated/sutra-icon-16.png">
+  <link rel="shortcut icon" href="assets/brand/sutra/generated/favicon.ico">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/brand/sutra/generated/sutra-icon-180.png">
+  <meta name="application-name" content="Sutra">
+  <meta name="theme-color" content="#07111f">
+  <meta name="robots" content="noindex">
+  <style>
+    :root { --bg: #07111f; --text: #ffffff; --muted: #93a4bd; --accent: #5078f2; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      background:
+        radial-gradient(1100px 700px at 50% -10%, rgba(80,120,242,0.18), transparent 60%),
+        var(--bg);
+      color: var(--text);
+      font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; min-height: 100dvh;
+      padding: max(24px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(24px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+    }
+    main { width: 100%; max-width: 30rem; min-width: 0; text-align: center; }
+    img.logo { width: 64px; height: 64px; border-radius: 16px; margin-bottom: 20px; }
+    .code { font-size: 0.8rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+    h1 { font-size: clamp(1.6rem, 4vw, 2.2rem); margin: 8px 0 12px; }
+    p { color: var(--muted); line-height: 1.6; margin-bottom: 24px; }
+    .actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    a.btn {
+      display: inline-block; padding: 11px 20px; border-radius: 12px;
+      text-decoration: none; font-weight: 600; font-size: 0.95rem;
+      min-height: 44px; line-height: 22px;
+    }
+    a.primary { background: var(--accent); color: #fff; }
+    a.ghost { background: rgba(255,255,255,0.06); color: var(--text); border: 1px solid rgba(255,255,255,0.12); }
+    a.btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+    @media (max-width: 360px) {
+      .actions { display: grid; grid-template-columns: 1fr; }
+      a.btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <img class="logo" src="assets/brand/sutra/generated/sutra-icon-64.png" alt="Sutra" width="64" height="64">
+    <div class="code">Error 404</div>
+    <h1>This page wandered off</h1>
+    <p>The page you were looking for isn't here. Your workspace data is stored locally in your browser and is unaffected.</p>
+    <div class="actions">
+      <a class="btn primary" href="Sutra.html">Open Sutra</a>
+      <a class="btn ghost" href="HomePage.html">Back to home</a>
+    </div>
+  </main>
+</body>
+</html>

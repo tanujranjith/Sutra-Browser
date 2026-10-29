@@ -5,11 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
   <meta name="theme-color" content="#0B0D0F">
-  <title>Sutra Browser — New tab</title>
-  <meta name="description" content="A quiet, art-directed start page for Sutra Browser.">
+  <title>Sutra — New tab</title>
+  <meta name="description" content="A quiet, art-directed start page for Sutra.">
   <link rel="icon" href="../Assets/sutra.ico">
   <link rel="stylesheet" href="css/afterglow.css">
   <link rel="stylesheet" href="css/workspace.css">
+  <link rel="stylesheet" href="css/dashboard.css">
 </head>
 <body>
   <div class="afterglow-shell" data-art="afterglow" data-dock="lower-left">
@@ -17,14 +18,15 @@
 
     <header class="page-controls">
       <span class="canvas-date" id="canvas-date"></span>
+      <span class="session-status" id="session-status">ON THIS DEVICE</span>
       <button class="customize-link" id="btn-customize" type="button">Customize</button>
     </header>
 
     <main class="canvas" aria-label="Sutra new tab">
       <section class="welcome" aria-labelledby="welcome-title">
-        <p class="eyebrow"><span aria-hidden="true">◆</span> YOUR SPACE ON THE WEB</p>
-        <h1 id="welcome-title">Room to think.<br><span>Space to explore.</span></h1>
-        <p class="welcome-description">Pick up a thought. Find something new. Make it yours.</p>
+        <p class="eyebrow"><span aria-hidden="true">◆</span> A LITTLE SPACE FOR WHAT'S NEXT</p>
+        <h1 id="welcome-title">Less searching.<br><span>More discovering.</span></h1>
+        <p class="welcome-description">Your favorite places, open ideas, and next adventure. All within reach.</p>
       </section>
 
       <form class="command-dock" id="search-form" role="search" autocomplete="off">
@@ -33,25 +35,32 @@
         <label class="sr-only" for="search-input">Search or enter address</label>
         <input id="search-input" name="q" type="search" placeholder="Search or enter address"
                autocomplete="off" spellcheck="false" maxlength="2048">
-        <span class="shortcut" aria-hidden="true">Ctrl K</span>
+        <span class="shortcut" aria-hidden="true">Ctrl L</span>
         <button class="submit-button" type="submit" aria-label="Go">
-          <span aria-hidden="true">→</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 12h16m-6-6 6 6-6 6"/></svg>
         </button>
         <div class="suggestions" id="suggestions" role="listbox" aria-label="Search suggestions" hidden></div>
       </form>
       <nav class="quick-access" aria-label="Your browser">
-        <button type="button" data-action="library"><span class="quick-icon" aria-hidden="true">⌕</span><span>Library</span></button>
-        <button type="button" data-action="bookmarks"><span class="quick-icon" aria-hidden="true">☆</span><span>Bookmarks</span></button>
-        <button type="button" data-action="workspaces"><span class="quick-icon" aria-hidden="true">▦</span><span>Workspaces</span></button>
-        <button type="button" data-action="offline"><span class="quick-icon" aria-hidden="true">↓</span><span>Offline reading</span></button>
-        <button type="button" data-action="notes"><span class="quick-icon" aria-hidden="true">✎</span><span>Page notes</span></button>
-        <button type="button" data-action="history"><span class="quick-icon" aria-hidden="true">↶</span><span>History</span></button>
+        <button type="button" data-action="library"><span class="quick-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 4h4v16H4zm6 0h4v16h-4zm7 0 4 15-4 1-4-15"/></svg></span><span>Library</span></button>
+        <button type="button" data-action="bookmarks"><span class="quick-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m12 3 2.8 5.8 6.4.9-4.6 4.5 1.1 6.3-5.7-3-5.7 3 1.1-6.3L2.8 9.7l6.4-.9Z"/></svg></span><span>Bookmarks</span></button>
+        <button type="button" data-action="workspaces"><span class="quick-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 9v12"/></svg></span><span>Workspaces</span></button>
+        <button type="button" data-action="offline"><span class="quick-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></svg></span><span>Offline reading</span></button>
+        <button type="button" data-action="notes"><span class="quick-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M13 4H4v16h16v-9M10 14l1-4 8-8 3 3-8 8Z"/></svg></span><span>Page notes</span></button>
+        <button type="button" data-action="history"><span class="quick-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 11a9 9 0 1 1 2 7M3 4v7h7m2-4v6l4 2"/></svg></span><span>History</span></button>
       </nav>
-      <section class="continue-grid" aria-label="Make more of your browser">
-        <button class="feature-card" type="button" data-action="reading"><span class="card-label">KEEP YOUR CURIOSITY</span><strong>A little reading, for later.</strong><span>Return to your reading list <b aria-hidden="true">↗</b></span></button>
-        <button class="feature-card" type="button" data-action="commands"><span class="card-label">A SHORTCUT TO EVERYTHING</span><strong>Less clicking. More doing.</strong><span>Open the command palette <kbd>Ctrl Shift P</kbd></span></button>
-      </section>
-      <footer class="canvas-footer"><span>Built around your focus.</span><button type="button" data-action="settings">Browser settings <span aria-hidden="true">↗</span></button></footer>
+      <div class="dashboard-grid">
+        <section class="dashboard-section" id="favorite-section" aria-labelledby="favorites-title">
+          <div class="section-heading"><div><p class="section-kicker">MAKE IT YOURS</p><h2 id="favorites-title">Your shortcuts</h2></div><button class="section-action" type="button" data-action="bookmarks">Manage <span aria-hidden="true">↗</span></button></div>
+          <div class="favorite-grid" id="favorite-grid"><div class="dashboard-empty"><span class="empty-symbol" aria-hidden="true">☆</span><strong>A few favorites go a long way.</strong><p>Bookmark the places you love. They'll be right here.</p><button type="button" data-action="bookmarks">Explore bookmarks</button></div></div>
+        </section>
+        <section class="dashboard-section" id="resume-section" aria-labelledby="resume-title">
+          <div class="section-heading"><div><p class="section-kicker">KEEP THE THREAD</p><h2 id="resume-title">Pick up where you left off</h2></div><span class="section-count" id="resume-count"></span></div>
+          <div class="resume-grid" id="resume-grid"><div class="dashboard-empty"><span class="empty-symbol" aria-hidden="true">↗</span><strong>Good ideas don't need a fresh start.</strong><p>Your other open tabs will appear here, ready when you are.</p></div></div>
+        </section>
+      </div>
+      <div class="private-note" id="private-note" hidden><strong>A little more privacy.</strong><span>This window keeps your history and sessions off the record. Your other browser windows stay separate.</span></div>
+      <footer class="canvas-footer"><span>Made for a calmer kind of browsing.</span><div class="footer-actions"><button type="button" data-action="commands">Commands <kbd>Ctrl Shift P</kbd></button><button type="button" data-action="settings">Settings <span aria-hidden="true">↗</span></button></div></footer>
     </main>
 
     <dialog class="customize-dialog" id="customize-dialog" aria-labelledby="customize-title">
@@ -77,6 +86,8 @@
             <option value="bottom-center">Centered</option>
           </select>
         </label>
+        <label class="setting-row"><span>Show favorite shortcuts</span><input id="show-favorites" type="checkbox" checked></label>
+        <label class="setting-row"><span>Show open tabs</span><input id="show-resume" type="checkbox" checked></label>
         <div class="dialog-actions">
           <button class="dialog-reset" id="reset-settings" type="button">Reset</button>
           <button class="dialog-save" value="save">Done</button>

@@ -3,6 +3,9 @@ using Browser.Core.Onboarding;
 using Browser.Core.Bookmarks;
 using Browser.Core.Passwords;
 using Browser.Core.Privacy;
+using Browser.Core.Integration;
+using Browser.Core.Updates;
+using System.Security.Cryptography;
 using Browser.Core.Sessions;
 using Browser.Core.Settings;
 using Browser.Core.Tabs;
@@ -223,7 +226,7 @@ public sealed class SessionAndSettingsTests
         var result=SettingsValidator.Validate(new(){HibernationMinutes=-5,AiMaximumActions=999,AiActionTimeoutSeconds=0,HomePage="not url",OllamaBaseUrl="file:///bad",DarkThemeStartHour=99,WindowWidth=100,ThemeSurfaceColor="invalid",ThemeTextColor="#FFFFFF"});
         Assert.Equal(1,result.HibernationMinutes);Assert.Equal(50,result.AiMaximumActions);Assert.Equal(2,result.AiActionTimeoutSeconds);Assert.Equal("browser://newtab",result.HomePage);Assert.Equal("http://localhost:11434",result.OllamaBaseUrl);Assert.Equal(23,result.DarkThemeStartHour);Assert.Equal(720,result.WindowWidth);
         Assert.Equal(12,result.ToolbarOrder.Length);Assert.Equal("Address",result.ToolbarOrder[4]);
-        Assert.Equal("#F47A22", result.ThemeSurfaceColor);Assert.Equal("#FFFFFF", result.ThemeTextColor);
+        Assert.Equal(Browser.Core.Branding.AppBrand.AccentColor, result.ThemeSurfaceColor);Assert.Equal("#FFFFFF", result.ThemeTextColor);
     }
 
     [Fact]
@@ -429,12 +432,232 @@ public sealed class ContentBlockerTests
         var rules = ContentBlockRuleSet.Parse(BuiltInContentFilters.Rules);
         var selectors = rules.CosmeticSelectorsFor("www.youtube.com");
         Assert.Contains("ytd-promoted-video-renderer", selectors);
-        Assert.Contains(".ytp-ad-skip-button", selectors);
-        Assert.Contains(".ytp-ad-module", selectors);
-        Assert.True(rules.ShouldBlock(new Uri("https://youtubei.googleapis.com/youtubei/v1/next?key=abc")));
+        Assert.DoesNotContain(".ytp-ad-skip-button", selectors);
+        Assert.DoesNotContain(".ad-showing", selectors);
+        Assert.DoesNotContain(".ytp-ad-module", selectors);
+        Assert.False(rules.ShouldBlock(new Uri("https://youtubei.googleapis.com/youtubei/v1/next?key=abc")));
         Assert.False(rules.ShouldBlock(new Uri("https://youtubei.googleapis.com/youtubei/v1/player?key=abc")));
         Assert.True(rules.ShouldBlock(new Uri("https://www.youtube.com/api/stats/ads?something")));
-        Assert.True(rules.ShouldBlock(new Uri("https://www.youtube.com/get_video_info")));
+        Assert.False(rules.ShouldBlock(new Uri("https://www.youtube.com/get_video_info")));
         Assert.False(rules.ShouldBlock(new Uri("https://www.youtube.com/watch?v=dQw4w9WgXcQ")));
+    }
+}
+
+public sealed class SutraIntegrationBoundaryTests
+{
+    [Fact]
+    public void StandardFilterOptionsScopeRulesAndExceptionsWin()
+    {
+        var rules = ContentBlockRuleSet.Parse([
+            "||ads.example.net^$script,third-party,domain=example.com",
+            "@@||ads.example.net/allowed.js$script"
+        ]);
+        Assert.True(rules.ShouldBlock(new Uri("https://ads.example.net/banner.js"), "news.example.com", "script"));
+        Assert.False(rules.ShouldBlock(new Uri("https://ads.example.net/banner.png"), "news.example.com", "image"));
+        Assert.False(rules.ShouldBlock(new Uri("https://ads.example.net/banner.js"), "other.test", "script"));
+        Assert.False(rules.ShouldBlock(new Uri("https://ads.example.net/allowed.js"), "news.example.com", "script"));
+    }
+
+    [Fact]
+    public void StandardSeparatorAndDomainAnchorsMatchOnlyTheIntendedResource()
+    {
+        var rules = ContentBlockRuleSet.Parse(["||ads.example.net/banner*^", "||tracking.example.net/pixel^"]);
+        Assert.True(rules.ShouldBlock(new Uri("https://ads.example.net/banner-1.png")));
+        Assert.True(rules.ShouldBlock(new Uri("https://ads.example.net/banner1png"))); // ^ also matches the end of the URL.
+        Assert.False(rules.ShouldBlock(new Uri("https://ads.example.net/images/banner1png")));
+        Assert.True(rules.ShouldBlock(new Uri("https://tracking.example.net/pixel?id=2")));
+        Assert.False(rules.ShouldBlock(new Uri("https://tracking.example.net/images/pixel")));
+    }
+
+    [Fact]
+    public void CosmeticExceptionsWinRegardlessOfListOrder()
+    {
+        var rules = ContentBlockRuleSet.Parse(["example.com#@#.sponsor", "##.sponsor"]);
+        Assert.DoesNotContain(".sponsor", rules.CosmeticSelectorsFor("news.example.com"));
+    }
+
+    [Fact]
+    public void StandardTypeCaseEndAnchorAndExcludedCosmeticDomainsAreRespected()
+    {
+        var rules = ContentBlockRuleSet.Parse(["||ads.example.net/Upper.js|$script,match-case", "||tracking.example.net^$xmlhttprequest", "~safe.example.com##.ad", "news.example.com,~sports.news.example.com##[id^='ad-']"]);
+        Assert.True(rules.ShouldBlock(new Uri("https://ads.example.net/Upper.js"), "news.example.com", "script"));
+        Assert.False(rules.ShouldBlock(new Uri("https://ads.example.net/upper.js"), "news.example.com", "script"));
+        Assert.False(rules.ShouldBlock(new Uri("https://ads.example.net/Upper.js?v=1"), "news.example.com", "script"));
+        Assert.True(rules.ShouldBlock(new Uri("https://tracking.example.net/t"), "news.example.com", "fetch"));
+        Assert.DoesNotContain(".ad", rules.CosmeticSelectorsFor("safe.example.com"));
+        Assert.Contains(".ad", rules.CosmeticSelectorsFor("news.example.com"));
+        Assert.Contains("[id^='ad-']", rules.CosmeticSelectorsFor("news.example.com"));
+        Assert.DoesNotContain("[id^='ad-']", rules.CosmeticSelectorsFor("sports.news.example.com"));
+        var unsupported = ContentBlockRuleSet.Parse(["||ads.example.net^$removeparam=id", "||ads.example.net^$domain=not-a-domain"]);
+        Assert.False(unsupported.ShouldBlock(new Uri("https://ads.example.net/t")));
+    }
+
+    [Fact]
+    public void ThirdPartyFiltersRespectPublicSuffixesAndBoundedRegexRules()
+    {
+        var rules = ContentBlockRuleSet.Parse(["||ads.vendor.co.uk^$third-party", "/advert[0-9]+\\.js/$script", "||ads.example.net:8443/pixel^"]);
+        Assert.True(rules.ShouldBlock(new Uri("https://ads.vendor.co.uk/pixel"), "news.publisher.co.uk", "image"));
+        Assert.False(rules.ShouldBlock(new Uri("https://ads.vendor.co.uk/pixel"), "www.vendor.co.uk", "image"));
+        Assert.True(rules.ShouldBlock(new Uri("https://example.com/advert42.js"), "example.com", "script"));
+        Assert.False(rules.ShouldBlock(new Uri("https://example.com/advert42.js"), "example.com", "image"));
+        Assert.True(rules.ShouldBlock(new Uri("https://ads.example.net:8443/pixel?id=1")));
+        Assert.Equal("one.github.io", PublicSuffixDomains.RegistrableDomain("one.github.io"));
+        Assert.Equal("city.kawasaki.jp", PublicSuffixDomains.RegistrableDomain("www.city.kawasaki.jp"));
+        Assert.Equal("a.b.ck", PublicSuffixDomains.RegistrableDomain("a.b.ck"));
+    }
+
+    [Theory]
+    [InlineData("/advert[0-9]+\\.js$/")]
+    [InlineData("/advert[0-9]+\\.js$/$script")]
+    public void RegexEndAnchorsDoNotBecomeFilterOptions(string filter)
+    {
+        var rules = ContentBlockRuleSet.Parse([filter]);
+        Assert.Equal(1, rules.NetworkRuleCount);
+        Assert.True(rules.ShouldBlock(new Uri("https://example.com/advert42.js"), "example.com", "script"));
+        Assert.False(rules.ShouldBlock(new Uri("https://example.com/advert42.js?keep=1"), "example.com", "script"));
+    }
+
+    [Theory]
+    [InlineData("Default")]
+    [InlineData("SutraWorkspace")]
+    [InlineData("SutraPrivate")]
+    [InlineData("School")]
+    public void WebsiteProfilesCannotAliasTheSutraWorkspace(string profileName)
+    {
+        Assert.NotEqual(SutraBridgeProtocol.WorkspaceProfileName, Browser.Core.Profiles.ProfileIdentity.WebViewName(profileName));
+    }
+
+    [Fact]
+    public void ElementHideRulesAreScopedPersistentAndUndoable()
+    {
+        var rules = ElementHideRuleSet.Add([], "news.example.com", "article:nth-of-type(2) > .sponsor");
+        var serialized = JsonSerializer.Serialize(rules);
+        var restored = JsonSerializer.Deserialize<ElementHideRule[]>(serialized)!;
+        Assert.Equal(["article:nth-of-type(2) > .sponsor"], ElementHideRuleSet.ForHost(restored, "news.example.com"));
+        Assert.Empty(ElementHideRuleSet.ForHost(restored, "example.com"));
+        Assert.Empty(ElementHideRuleSet.Remove(restored, "news.example.com", "article:nth-of-type(2) > .sponsor"));
+        var twoRules = ElementHideRuleSet.Add(restored, "news.example.com", "#newsletter");
+        var otherSite = ElementHideRuleSet.Add(twoRules, "other.example.com", ".popup");
+        Assert.Equal(2, ElementHideRuleSet.ForHost(otherSite, "news.example.com").Count);
+        Assert.Single(ElementHideRuleSet.ForHost(ElementHideRuleSet.Remove(otherSite, "news.example.com", "#newsletter"), "news.example.com"));
+        Assert.Single(ElementHideRuleSet.ForHost(otherSite, "other.example.com"));
+        Assert.Equal(restored, ElementHideRuleSet.Add(restored, "news.example.com", "body{display:none}"));
+    }
+
+    [Fact]
+    public void NativeBridgeRequiresTrustedOriginVersionAllowlistedActionAndBoundedPayload()
+    {
+        var id = Guid.NewGuid();
+        var valid = JsonSerializer.Serialize(new { version = 1, requestId = id, action = "open.external", payload = new { url = "https://example.com/path" } });
+        Assert.True(SutraBridgeProtocol.TryParse("https://sutra.local/Sutra.html", valid, out var request));
+        Assert.Equal("open.external", request!.Action);
+        Assert.False(SutraBridgeProtocol.TryParse("https://sutra.local.attacker.test/Sutra.html", valid, out _));
+        Assert.False(SutraBridgeProtocol.TryParse("https://sutra.local/Sutra.html", valid.Replace("\"version\":1", "\"version\":2"), out _));
+        var unsafeUrl = JsonSerializer.Serialize(new { version = 1, requestId = id, action = "open.external", payload = new { url = "javascript:alert(1)" } });
+        Assert.False(SutraBridgeProtocol.TryParse("https://sutra.local/Sutra.html", unsafeUrl, out _));
+        var oversizedSourceAnnotation = JsonSerializer.Serialize(new { version = 1, requestId = id, action = "capture.source", payload = new { title = "A source", url = "https://example.com", excerpt = "", note = new string('x', 2001) } });
+        Assert.False(SutraBridgeProtocol.TryParse("https://sutra.local/Sutra.html", oversizedSourceAnnotation, out _));
+        var unknownAction = JsonSerializer.Serialize(new { version = 1, requestId = id, action = "run.script", payload = new { code = "x" } });
+        Assert.False(SutraBridgeProtocol.TryParse("https://sutra.local/Sutra.html", unknownAction, out _));
+    }
+
+    [Fact]
+    public void BrowserRestoresPreviousTabsByDefault()
+    {
+        Assert.Equal(StartupBehavior.RestorePreviousSession, new BrowserSettings().StartupBehavior);
+    }
+
+    [Fact]
+    public void FilterRecoveryUsesLastKnownGoodWhenCurrentListIsImplausible()
+    {
+        var lastKnownGood = Enumerable.Range(0, 30).Select(i => $"||tracker{i}.example.net^").ToArray();
+        var rules = ContentFilterRecoveryPolicy.Load(BuiltInContentFilters.Rules, ["this is not a filter"], lastKnownGood);
+        Assert.True(rules.ShouldBlock(new Uri("https://tracker12.example.net/pixel")));
+        Assert.Equal(ContentBlockRuleSet.Parse(BuiltInContentFilters.Rules.Concat(lastKnownGood)).NetworkRuleCount, rules.NetworkRuleCount);
+        Assert.True(ContentFilterRecoveryPolicy.Load(BuiltInContentFilters.Rules, null, lastKnownGood).ShouldBlock(new Uri("https://tracker12.example.net/pixel")));
+        Assert.Equal(ContentBlockRuleSet.Parse(BuiltInContentFilters.Rules).NetworkRuleCount, ContentFilterRecoveryPolicy.Load(BuiltInContentFilters.Rules, ["broken"], ["broken"]).NetworkRuleCount);
+    }
+
+    [Theory]
+    [InlineData(false, false, false, false, true)]
+    [InlineData(false, false, true, true, true)]
+    [InlineData(false, false, true, false, false)]
+    [InlineData(true, false, false, true, false)]
+    [InlineData(false, true, false, true, false)]
+    public void DesktopStartsInWorkspaceWhileExtraRestoredWindowsKeepTheirBrowserViews(bool isPrivate, bool hasUrl, bool hasSession, bool isInitialWindow, bool expected)
+    {
+        Assert.Equal(expected, SutraDesktopStartupPolicy.ShouldOpenWorkspace(isPrivate, hasUrl, hasSession, isInitialWindow));
+    }
+
+    [Fact]
+    public void RestoredWindowsKeepTheirPersistenceIdentityAcrossRestarts()
+    {
+        var original = SutraDesktopStartupPolicy.ResolveWindowId(null);
+        Assert.NotEqual(Guid.Empty, original);
+        Assert.Equal(original, SutraDesktopStartupPolicy.ResolveWindowId(original));
+        Assert.NotEqual(Guid.Empty, SutraDesktopStartupPolicy.ResolveWindowId(Guid.Empty));
+        Assert.NotEqual(original, SutraDesktopStartupPolicy.ResolveWindowId(null));
+    }
+
+    [Fact]
+    public void PdfImportRequiresAnExactNativeImportOriginAndToken()
+    {
+        var id = Guid.NewGuid();
+        string Message(string url) => JsonSerializer.Serialize(new { version = 1, requestId = id, action = "capture.pdf", payload = new { title = "Paper", fileName = "Paper.pdf", importUrl = url, sourceUrl = "" } });
+        Assert.True(SutraBridgeProtocol.TryParse(SutraBridgeProtocol.TrustedOrigin, Message($"https://sutra.local/__desktop_import/{Guid.NewGuid():N}.pdf"), out _));
+        Assert.False(SutraBridgeProtocol.TryParse(SutraBridgeProtocol.TrustedOrigin, Message("file:///C:/secret.pdf"), out _));
+        Assert.False(SutraBridgeProtocol.TryParse(SutraBridgeProtocol.TrustedOrigin, Message($"https://sutra.local.attacker.test/__desktop_import/{Guid.NewGuid():N}.pdf"), out _));
+        Assert.False(SutraBridgeProtocol.TryParse(SutraBridgeProtocol.TrustedOrigin, Message("https://sutra.local/__desktop_import/arbitrary.pdf"), out _));
+    }
+
+    [Fact]
+    public void RestorePolicyRejectsPrivateWindowsAndCrashLoopRestores()
+    {
+        var settings = new BrowserSettings { StartupBehavior = StartupBehavior.RestorePreviousSession };
+        Assert.False(MultiWindowSessionPolicy.ShouldRestoreAutomatically(settings, isPrivate: true, hasLaunchSession: false, hasInitialUrl: false, crashNeedsReview: false));
+        Assert.True(MultiWindowSessionPolicy.ShouldRestoreAutomatically(settings, isPrivate: false, hasLaunchSession: false, hasInitialUrl: false, crashNeedsReview: false));
+        var now = DateTimeOffset.UtcNow;
+        var recovery = StartupRecoveryPolicy.Begin(JsonSerializer.Serialize(new StartupRecoveryState(1, now.AddMinutes(-1))), previousShutdownWasClean: false, now);
+        Assert.True(recovery.NeedsReview);
+        Assert.False(MultiWindowSessionPolicy.ShouldRestoreAutomatically(settings, isPrivate: false, hasLaunchSession: false, hasInitialUrl: false, crashNeedsReview: recovery.NeedsReview));
+    }
+
+    [Fact]
+    public void UpdateManifestRequiresValidSignatureAndReleaseAsset()
+    {
+        using var signer = RSA.Create(2048);
+        var unsigned = new BrowserUpdateManifest("0.4.12", "https://github.com/tanujranjith/Sutra-Browser/releases/download/v1/SutraBrowserSetup.exe", new string('a', 64), new string('b', 40), DateTimeOffset.UtcNow.ToString("O"), "");
+        var signature = Convert.ToBase64String(signer.SignData(System.Text.Encoding.UTF8.GetBytes(unsigned.SignedPayload), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1));
+        var signed = unsigned with { Signature = signature };
+        Assert.True(signed.Verify(signer, new Uri("https://github.com")));
+        Assert.False((signed with { Sha256 = new string('c', 64) }).Verify(signer, new Uri("https://github.com")));
+        Assert.False((signed with { InstallerUrl = "https://evil.example/SutraBrowserSetup.exe" }).Verify(signer, new Uri("https://github.com")));
+    }
+
+    [Fact]
+    public void ExtensionManifestSummaryIsBoundedAndIncludesHostPermissions()
+    {
+        const string manifest = """{"manifest_version":3,"name":"Reader","version":"1.2.0","permissions":["storage"],"host_permissions":["https://*.example.com/*"]}""";
+        Assert.True(BrowserExtensionManifestPolicy.TryParse(manifest, out var summary));
+        Assert.Equal("Reader", summary!.Name);
+        Assert.Contains("storage", summary.Permissions);
+        Assert.Contains("https://*.example.com/*", summary.Permissions);
+        Assert.False(BrowserExtensionManifestPolicy.TryParse("{}", out _));
+        Assert.False(BrowserExtensionManifestPolicy.TryParse(new string('x', BrowserExtensionManifestPolicy.MaximumManifestBytes + 1), out _));
+    }
+
+    [Theory]
+    [InlineData("\"3\"")]
+    [InlineData("null")]
+    [InlineData("true")]
+    [InlineData("[]")]
+    [InlineData("{}")]
+    [InlineData("3.5")]
+    [InlineData("2147483648")]
+    public void ExtensionManifestRejectsInvalidVersionTypes(string version)
+    {
+        var json = "{\"manifest_version\":" + version + ",\"name\":\"Reader\",\"version\":\"1.2.0\"}";
+        Assert.False(BrowserExtensionManifestPolicy.TryParse(json, out var summary));
+        Assert.Null(summary);
     }
 }

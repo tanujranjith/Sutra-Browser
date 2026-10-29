@@ -114,43 +114,6 @@ public sealed partial class MainWindow
         ShowStatus("Focus mode off", InfoBarSeverity.Success);
     }
 
-    private async Task ToggleReaderModeAsync()
-    {
-        var tab = _vm.SelectedTab;
-        var web = CurrentWebView();
-        if (tab is null || web?.CoreWebView2 is null || !Uri.TryCreate(tab.Url, UriKind.Absolute, out var uri) || uri.Scheme is not ("http" or "https"))
-        {
-            ShowStatus("Reader mode is available on web pages.", InfoBarSeverity.Warning);
-            return;
-        }
-        if (_readerTabs.Remove(tab.Id))
-        {
-            web.Reload();
-            ShowStatus("Reader mode closed");
-            return;
-        }
-
-        const string script = """
-            (()=>{
-              const source=document.querySelector('article')||document.querySelector('main');
-              if(!source)return false;
-              const copy=source.cloneNode(true);
-              copy.querySelectorAll('script,style,nav,aside,form,button,input,select,textarea,iframe,[aria-hidden=true]').forEach(x=>x.remove());
-              const title=(document.querySelector('h1')?.innerText||document.title||'Reader view').trim();
-              document.head.innerHTML=`<meta name="viewport" content="width=device-width"><title>${title.replaceAll('<','&lt;')}</title><style>html{color-scheme:light dark}body{max-width:760px;margin:48px auto;padding:0 28px;font:19px/1.7 system-ui;color:CanvasText;background:Canvas}h1{font-size:2.1em;line-height:1.15}img,video{max-width:100%;height:auto}a{color:LinkText}pre{overflow:auto;padding:16px;background:color-mix(in srgb,CanvasText 8%,Canvas)}@media(max-width:700px){body{margin:24px auto;padding:0 18px;font-size:17px}}</style>`;
-              document.body.replaceChildren(Object.assign(document.createElement('h1'),{textContent:title}),copy);
-              return true;
-            })()
-            """;
-        try
-        {
-            var result = await web.ExecuteScriptAsync(script);
-            if (result == "true") { _readerTabs.Add(tab.Id); ShowStatus("Reader mode is on. Choose Reader mode again to exit.", InfoBarSeverity.Success); }
-            else ShowStatus("No article content was detected on this page.", InfoBarSeverity.Warning);
-        }
-        catch { ShowStatus("Reader mode could not process this page.", InfoBarSeverity.Warning); }
-    }
-
     private void TranslateCurrentPage()
     {
         var url = _vm.SelectedTab?.Url;

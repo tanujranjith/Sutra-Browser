@@ -1,0 +1,758 @@
+/* ===================================================================
+   Sutra — Glass Theme  (formerly "Liquid Glass")
+   ------------------------------------------------------------------
+   One Apple-flavoured glass theme. The component skin (window chrome,
+   segmented tabs, page rows, document editor, float-in animations)
+   lives in styles/themes/macos26-redesign.css §1–§20, re-keyed to this theme.
+   THIS file loads AFTER it and owns: the design tokens, the canvas,
+   the layered glass-surface treatment, the dock-like micro-interactions,
+   and the user-tunable frost.
+
+   Backward compatibility: every rule targets BOTH the new canonical
+   `[data-theme="glass"]` and the legacy `[data-theme="liquidglass"]`
+   attribute value, so workspaces saved before the rename still render.
+
+   Frost strength is live-tunable: applyGlassBlur() (src/core/app.js)
+   writes `--glass-blur-amount` (+ legacy `--liquid-glass-blur`) onto
+   :root from the Settings → Glass intensity slider. The theme token
+   `--glass-blur` below reads that live value.
+
+   Crispness contract: distortion / refraction is applied ONLY to the
+   decorative canvas layers (body ::before/::after) via the
+   #sutra-glass-distortion SVG filter — never to text, inputs, or icons.
+   =================================================================== */
+
+/* ─── 1. DESIGN TOKENS ─────────────────────────────────────────────
+   These override the skin's §1 token block (same selector, later file). */
+body[data-theme="glass"],
+body[data-theme="liquidglass"] {
+    /* Typography — system SF stack on Apple devices */
+    --font-heading: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", "Segoe UI", sans-serif;
+    --font-body:    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", "Segoe UI", sans-serif;
+
+    /* Base backgrounds — Apple silver with the faintest cool cast */
+    --bg-primary:   #f4f6fa;
+    --bg-secondary: #e7eaf1;
+    --bg-hover:     rgba(0, 0, 0, 0.04);
+    --bg-elevated:  rgba(255, 255, 255, 0.86);
+
+    /* Text — Apple ink scale */
+    --text-primary:   #1d1d1f;
+    --text-secondary: #5f6168;
+    --text-muted:     #93959c;
+
+    --border: rgba(120, 130, 150, 0.18);
+
+    /* Accent — Apple system blue */
+    --accent:        #0a84ff;
+    --accent-rgb:    10, 132, 255;
+    --accent-strong: #0071e3;
+    --accent-soft:   rgba(10, 132, 255, 0.12);
+
+    /* Editor */
+    --editor-bg: rgba(255, 255, 255, 0.92);
+    --code-bg:   rgba(0, 0, 0, 0.04);
+
+    /* ---- Core glass control tokens (the public knobs) -------------- */
+    /* Live frost amount, fed by the Settings slider via :root. */
+    --glass-blur:            var(--glass-blur-amount, 18px);
+    /* Saturation boost that makes the backdrop colour pop through frost. */
+    --glass-saturate:        180%;
+    /* Base translucency of a glass fill (0 = clear, 1 = opaque). */
+    --glass-opacity:         0.4;
+    /* Bright 1px rim that reads as the lit edge of a glass slab. */
+    --glass-rim:             rgba(255, 255, 255, 0.55);
+    /* Inner top highlight — the specular line where light enters. */
+    --glass-inner-highlight: rgba(255, 255, 255, 0.85);
+    /* Soft floating shadow. */
+    --glass-shadow:          0 8px 30px rgba(20, 27, 45, 0.12);
+    --glass-shadow-lg:       0 22px 60px rgba(20, 27, 45, 0.18);
+    /* Refraction strength of the background caustics (SVG scale=18). */
+    --glass-distortion-scale: 18;
+    /* Visibility of the moving specular sheen layers. */
+    --glass-specular-opacity: 0.5;
+
+    /* Derived fills built from --glass-opacity so the slider can scale them. */
+    --glass-fill:        rgba(255, 255, 255, var(--glass-opacity));
+    --glass-fill-strong: rgba(255, 255, 255, calc(var(--glass-opacity) + 0.16));
+    --glass-fill-soft:   rgba(255, 255, 255, calc(var(--glass-opacity) - 0.18));
+
+    /* See-through chrome bars (top nav, toolbar): ONE flat translucent fill
+       (top == bottom) so every bar is a single uniform shade — a gradient
+       fades each bar's bottom edge and reads as a stack of separate sections.
+       Legibility comes from the backdrop blur+saturate, not an opaque fill. */
+    --glass-chrome-top:    rgba(255, 255, 255, 0.54);
+    --glass-chrome-bottom: rgba(255, 255, 255, 0.54);
+    --glass-chrome-edge:   rgba(72, 98, 138, 0.20);
+    --glass-chrome-fill:   rgba(255, 255, 255, 0.54);
+    --glass-sidebar-fill:  rgba(224, 236, 250, 0.72);
+    --glass-document-fill: rgba(255, 255, 255, 0.86);
+    --glass-surface-edge:  rgba(72, 98, 138, 0.18);
+    --glass-surface-highlight: rgba(255, 255, 255, 0.78);
+
+    /* Legacy skin token names (consumed by macos26-redesign.css §5+) */
+    --glass-01:     var(--glass-fill);
+    --glass-02:     var(--glass-fill-strong);
+    --glass-border: var(--glass-rim);
+
+    /* Shadows — soft, neutral, floating */
+    --shadow-soft:    var(--glass-shadow);
+    --shadow-soft-lg: var(--glass-shadow-lg);
+
+    /* Surface tokens */
+    --surface-bg:            rgba(0, 0, 0, 0.03);
+    --surface-bg-hover:      rgba(0, 0, 0, 0.05);
+    --surface-bg-active:     rgba(0, 0, 0, 0.08);
+    --surface-border:        rgba(0, 0, 0, 0.06);
+    --surface-border-strong: rgba(0, 0, 0, 0.12);
+    --surface-bg-elevated:   rgba(255, 255, 255, 0.72);
+    --surface-inset:         rgba(0, 0, 0, 0.04);
+    --code-inline-bg:        rgba(0, 0, 0, 0.05);
+    --code-block-bg:         rgba(0, 0, 0, 0.03);
+
+    /* Neumorphic fallbacks */
+    --neumo-bg:           rgba(255, 255, 255, 0.62);
+    --neumo-shadow-light: rgba(255, 255, 255, 0.85);
+    --neumo-shadow-dark:  rgba(20, 27, 45, 0.08);
+    --neumo-inset-dark:   rgba(0, 0, 0, 0.05);
+    --neumo-inset-light:  rgba(255, 255, 255, 0.80);
+
+    /* Sidebar / buttons */
+    --sidebar-bg:      rgba(255, 255, 255, 0.46);
+    --button-bg:       rgba(255, 255, 255, 0.62);
+    --button-bg-hover: rgba(255, 255, 255, 0.86);
+    --button-border:   rgba(120, 130, 150, 0.20);
+    --button-text:     var(--text-primary);
+
+    /* Skin-private surfaces (consumed by macos26-redesign.css) */
+    --mac-doc-surface:    var(--glass-document-fill);
+    --mac-toolbar-bg:     var(--glass-chrome-fill);
+    --mac-nav-bg:         var(--glass-chrome-fill);
+    --mac-sidebar-tint:   var(--glass-sidebar-fill);
+    --mac-selected-bg:    rgba(10, 132, 255, 0.10);
+    --mac-selected-line:  rgba(10, 132, 255, 0.34);
+    --sidebar-flow-start: rgba(255, 255, 255, 0.44);
+    --sidebar-flow-mid:   rgba(255, 255, 255, 0.44);
+    --sidebar-flow-edge:  rgba(255, 255, 255, 0.44);
+
+    /* Gradient tokens consumed by body[data-theme-key] in styles.css */
+    --theme-gradient-start: #fbfcff;
+    --theme-gradient-mid:   #eef1f7;
+    --theme-gradient-end:   #e2e7ef;
+
+    /* Spring easings for the dock-like micro-interactions. The denser
+       a control, the gentler its bounce. */
+    --glass-spring:        cubic-bezier(0.175, 0.885, 0.32, 1.55);
+    --glass-spring-bounce: cubic-bezier(0.175, 0.885, 0.32, 2.2);
+
+    /* Generous, lensy radii */
+    --radius:      14px;
+    --radius-lg:   22px;
+    --radius-pill: 999px;
+}
+
+/* ─── 2. CANVAS ────────────────────────────────────────────────────
+   A dimensional aqueous field: a silver base, two cool light pools,
+   and a faint aqua cast — built entirely from local CSS gradients
+   (no external images, offline-friendly). */
+body[data-theme="glass"],
+body[data-theme="liquidglass"] {
+    position: relative;
+    overflow-x: hidden;
+    /* Four large, overlapping colour pools spread across the FULL viewport
+       (not just corners) so translucent glass surfaces sitting anywhere on
+       screen — dashboard cards included, not only the chrome bars — have
+       real colour to blur and reveal. Radii are deliberately larger than
+       the viewport so they blend into one continuous field. */
+    background:
+        radial-gradient(1500px 1100px at 18% 12%, rgba(10, 132, 255, 0.18), transparent 60%),
+        radial-gradient(1400px 1050px at 84% 18%, rgba(255, 150, 205, 0.11), transparent 58%),
+        radial-gradient(1600px 1150px at 55% 96%, rgba(120, 205, 255, 0.20), transparent 62%),
+        radial-gradient(1300px 1000px at 92% 90%, rgba(10, 132, 255, 0.14), transparent 58%),
+        linear-gradient(176deg, #f3f6fb 0%, #e7eef8 50%, #dbe7f5 100%);
+    background-attachment: fixed;
+    background-color: #e7eef8;
+}
+
+/* ─── 2c. SCROLL CONTAINMENT (double-scrollbar fix) ────────────────
+   The app scrolls inside inner containers (.main-content / each .view),
+   never the document root. With non-overlay scrollbars (Windows) the root
+   can still reserve a phantom thin bar right next to the content's bar —
+   the "dual scrollbar". Pin the root + body fully closed so only the real
+   inner scroller ever shows a bar. */
+html:has(body[data-theme="glass"]),
+html:has(body[data-theme="liquidglass"]) {
+    overflow: hidden;
+}
+body[data-theme="glass"],
+body[data-theme="liquidglass"] {
+    overflow: hidden;
+}
+
+/* The skin styles every ::-webkit-scrollbar; keep the notes formatting
+   toolbar's horizontal-overflow scrollbar hidden (it overflows by design
+   and uses a chevron, not a bar) so it can't read as a second scrollbar. */
+body[data-theme="glass"] .toolbar::-webkit-scrollbar,
+body[data-theme="liquidglass"] .toolbar::-webkit-scrollbar {
+    width: 0 !important;
+    height: 0 !important;
+    display: none !important;
+}
+
+/* Two decorative light layers keep the glass feeling liquid (both
+   pointer-events:none, behind the app at z-index 0):
+   ::before — a clean bright specular blob that drifts.
+   ::after  — the WATERY REFRACTION: overlapping caustic light pools warped
+              by the #sutra-glass-distortion SVG filter. Its visibility is
+              driven by the Glass → Refraction slider (`--glass-refraction`,
+              0-40): at 0 it fades out entirely, at 40 it ripples clearly.
+   Neither touches text — refraction stays on this decorative layer only. */
+body[data-theme="glass"]::before,
+body[data-theme="glass"]::after,
+body[data-theme="liquidglass"]::before,
+body[data-theme="liquidglass"]::after {
+    content: "";
+    position: fixed;
+    z-index: 0;
+    pointer-events: none;
+    will-change: transform, opacity;
+}
+
+body[data-theme="glass"]::before,
+body[data-theme="liquidglass"]::before {
+    width: 56vw;
+    height: 56vw;
+    top: -20vw;
+    left: -14vw;
+    border-radius: 50%;
+    background: radial-gradient(circle at 38% 38%,
+        rgba(255, 255, 255, 0.66),
+        rgba(255, 255, 255, 0.18) 44%,
+        transparent 70%);
+    opacity: var(--glass-specular-opacity);
+    animation: glass-drift-a 32s ease-in-out infinite alternate;
+}
+
+body[data-theme="glass"]::after,
+body[data-theme="liquidglass"]::after {
+    inset: -8vmax;
+    border-radius: 0;
+    background:
+        radial-gradient(34% 26% at 22% 22%, rgba(255, 255, 255, 0.60), transparent 60%),
+        radial-gradient(32% 26% at 74% 30%, rgba(150, 205, 255, 0.55), transparent 60%),
+        radial-gradient(30% 24% at 60% 78%, rgba(255, 255, 255, 0.50), transparent 60%),
+        radial-gradient(28% 22% at 14% 72%, rgba(175, 215, 255, 0.48), transparent 60%),
+        radial-gradient(26% 22% at 88% 82%, rgba(255, 255, 255, 0.42), transparent 60%);
+    /* The watery refraction — turbulence-warped caustics. Slider-driven. */
+    filter: url(#sutra-glass-distortion);
+    opacity: clamp(0, calc(var(--glass-refraction, 18) / 40 * 0.45), 0.45);
+    animation: glass-caustic-drift 28s ease-in-out infinite alternate;
+}
+
+@keyframes glass-drift-a {
+    from { transform: translate3d(0, 0, 0) scale(1); }
+    to   { transform: translate3d(8vw, 6vh, 0) scale(1.16); }
+}
+
+@keyframes glass-caustic-drift {
+    from { transform: translate3d(0, 0, 0) scale(1.03); }
+    to   { transform: translate3d(-4vw, 3vh, 0) scale(1.10); }
+}
+
+/* Motion governance: prefers-reduced-motion and Sutra's own intensity
+   setting both freeze the drift (the static caustics remain — subtle). */
+@media (prefers-reduced-motion: reduce) {
+    body[data-theme="glass"]::before,
+    body[data-theme="glass"]::after,
+    body[data-theme="liquidglass"]::before,
+    body[data-theme="liquidglass"]::after {
+        animation: none;
+    }
+}
+
+body[data-theme="glass"][data-motion-intensity="off"]::before,
+body[data-theme="glass"][data-motion-intensity="off"]::after,
+body[data-theme="glass"][data-motion-intensity="reduced"]::before,
+body[data-theme="glass"][data-motion-intensity="reduced"]::after,
+body[data-theme="liquidglass"][data-motion-intensity="off"]::before,
+body[data-theme="liquidglass"][data-motion-intensity="off"]::after,
+body[data-theme="liquidglass"][data-motion-intensity="reduced"]::before,
+body[data-theme="liquidglass"][data-motion-intensity="reduced"]::after {
+    animation: none;
+}
+
+body.motion-off[data-theme="glass"]::before,
+body.motion-off[data-theme="glass"]::after,
+body.motion-off[data-theme="liquidglass"]::before,
+body.motion-off[data-theme="liquidglass"]::after {
+    animation: none;
+}
+
+/* Keep the app above the light sheens. */
+body[data-theme="glass"] .app-container,
+body[data-theme="liquidglass"] .app-container {
+    z-index: 1;
+}
+
+/* ─── 2b. SIDEBAR ENTRANCE (double-scrollbar fix) ──────────────────
+   macos26-redesign.css §17 floats chrome in with `macosFloatIn`, which
+   uses transform: translateY(10px). On the FULL-HEIGHT .sidebar — a
+   direct flex child of .app-container — that downward translate pushes
+   the sidebar's bottom edge ~10px past the viewport for the duration of
+   the entrance (and it re-plays on every page/view navigation), which
+   flashes a stray second scrollbar on every page. Override ONLY the
+   sidebar's keyframe with a translate-free entrance so it can never
+   overflow vertically. Duration/easing/fill are inherited from §17.
+   `from` keeps opacity above 0 so a frozen (background-tab) animation
+   can't leave the sidebar invisible. */
+body[data-theme="glass"] .sidebar,
+body[data-theme="liquidglass"] .sidebar {
+    animation-name: glass-sidebar-in !important;
+}
+
+@keyframes glass-sidebar-in {
+    from { opacity: 0.4; transform: scale(0.992); }
+    to   { opacity: 1;   transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body[data-theme="glass"] .sidebar,
+    body[data-theme="liquidglass"] .sidebar {
+        animation: none !important;
+    }
+}
+
+/* ─── 3. THE GLASS-SURFACE TREATMENT ───────────────────────────────
+   A reusable pattern (`.glass-surface` for new markup) and the same
+   stack applied to the major chrome panels. The depth comes from four
+   stacked layers expressed as fill + border + box-shadow, so NO
+   pseudo-element is required and existing ::before/::after decorations
+   are never clobbered:
+     1. translucent fill            (--glass-fill)
+     2. lit rim                     (inset hairline + border)
+     3. inner top highlight         (inset 0 1px)
+     4. floating drop shadow        (--glass-shadow)
+   Frost (backdrop blur+saturate) sits behind, text stays crisp on top. */
+body[data-theme="glass"] .glass-surface,
+body[data-theme="liquidglass"] .glass-surface,
+body[data-theme="glass"] .modal-content,
+body[data-theme="liquidglass"] .modal-content,
+body[data-theme="glass"] .theme-panel,
+body[data-theme="liquidglass"] .theme-panel,
+body[data-theme="glass"] .chatbot-panel,
+body[data-theme="liquidglass"] .chatbot-panel,
+body[data-theme="glass"] .all-tasks-drawer,
+body[data-theme="liquidglass"] .all-tasks-drawer {
+    background: var(--glass-fill) !important;
+    border: 1px solid var(--glass-rim) !important;
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    box-shadow:
+        inset 0 1px 0 var(--glass-inner-highlight),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.18),
+        inset 0 -16px 30px -22px rgba(255, 255, 255, 0.55),
+        var(--glass-shadow-lg) !important;
+}
+
+/* ─── 3b. SEE-THROUGH CHROME BARS ──────────────────────────────────
+   The top nav (tab bar) and the notes toolbar are sticky/fixed chrome
+   that page content already scrolls *underneath*. Make them genuinely
+   see-through frosted glass — a light, gradient fill kept legible by the
+   strong backdrop blur+saturate, with no hard separating border — so you
+   can watch text, icons, and the aqueous canvas flow behind them. The
+   chrome-fill tokens are tuned lighter than the surface fills on purpose.
+   styles.css globally strips backdrop-filter from .glass-panel (scroll
+   stability); the top nav never lifts, so frost is re-asserted here. */
+body[data-theme="glass"] .top-nav,
+body[data-theme="liquidglass"] .top-nav {
+    background:
+        linear-gradient(180deg, var(--glass-chrome-top), var(--glass-chrome-bottom)) !important;
+    border: 1px solid var(--glass-chrome-edge) !important;
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) !important;
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) !important;
+    /* No drop shadow — the bar should sit flush with the page (part of the
+       same glass surface), not hover as a separate floating card. */
+    box-shadow: inset 0 1px 0 var(--glass-inner-highlight) !important;
+}
+
+body[data-theme="glass"] .toolbar-wrapper,
+body[data-theme="liquidglass"] .toolbar-wrapper {
+    background:
+        linear-gradient(180deg, var(--glass-chrome-top), var(--glass-chrome-bottom)) !important;
+    border: 1px solid var(--glass-chrome-edge) !important;
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) !important;
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) !important;
+    box-shadow: inset 0 1px 0 var(--glass-inner-highlight) !important;
+}
+
+/* Drop the inner segmented-tab pill's dark tint + border so the tab strip
+   doesn't read as a darker recessed section inside the nav — the tabs sit
+   directly on the one uniform glass surface. */
+body[data-theme="glass"] .view-tabs,
+body[data-theme="liquidglass"] .view-tabs {
+    background: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+}
+
+/* The backdrop the bars frost over: keep the scroll surfaces transparent
+   so the canvas (and content) shows THROUGH the chrome instead of a flat
+   opaque fill. main-content carries an opaque editor fill by default. */
+body[data-theme="glass"] .main-content,
+body[data-theme="liquidglass"] .main-content {
+    background: transparent !important;
+}
+
+/* A view is a scroll canvas, not a card. The macOS compatibility skin also
+   applies its shared glass layer to `.view`, which creates a full-viewport
+   backdrop-filter behind the cards and every other glass surface. That is both
+   needlessly expensive and prone to browser compositing glitches while a view
+   scrolls. Keep the translucent fill and let the smaller, purposeful surfaces
+   below carry the frost. */
+body[data-theme="glass"] .view,
+body[data-theme="liquidglass"] .view {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+}
+
+/* The desktop skin refinement (macos26-redesign.css, min-width:1025px)
+   sets a near-opaque bluish nav + toolbar; re-assert the see-through glass
+   fill at the same breakpoint so the upgrade wins on desktop too. */
+@media (min-width: 1025px) {
+    body[data-theme="glass"] .top-nav,
+    body[data-theme="liquidglass"] .top-nav,
+    body[data-theme="glass"] #view-notes .toolbar-wrapper,
+    body[data-theme="liquidglass"] #view-notes .toolbar-wrapper {
+        background:
+            linear-gradient(180deg, var(--glass-chrome-top), var(--glass-chrome-bottom)) !important;
+        border: 1px solid var(--glass-chrome-edge) !important;
+        -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) !important;
+        backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) !important;
+        /* flush, not floating — beat the skin's higher-specificity desktop
+           #view-notes shadow so the toolbar matches the nav */
+        box-shadow: inset 0 1px 0 var(--glass-inner-highlight) !important;
+    }
+}
+
+/* ─── 3c. PAGE CONTENT SCROLLS BEHIND THE TAB BAR ──────────────────
+   The Notes editor scrolled inside #view-notes, which sits BELOW the
+   sticky tab bar — so content never slid behind the bar. Make the main
+   column the single scroll container instead (the nav is sticky INSIDE
+   it, the toolbar is fixed over it), so page content scrolls UP behind
+   the frosted nav + toolbar. The editor keeps a top pad so the first
+   line clears the fixed toolbar at rest.
+   Scoped to desktop + single-pane: split view needs each pane to scroll
+   on its own, and mobile uses a different chrome. */
+@media (min-width: 1025px) {
+    body[data-theme="glass"]:not(.notes-split-active) #view-notes,
+    body[data-theme="liquidglass"]:not(.notes-split-active) #view-notes {
+        overflow: visible !important;
+        height: auto !important;
+        min-height: 0 !important;
+    }
+    body[data-theme="glass"]:not(.notes-split-active) .main-content,
+    body[data-theme="liquidglass"]:not(.notes-split-active) .main-content {
+        scroll-padding-top: 160px !important;
+    }
+    /* Pull the editor up so the top gap matches the other themes (the nav now
+       takes column space, which would otherwise add ~24px of dead space). */
+    body[data-theme="glass"]:not(.notes-split-active) #view-notes #notesEditorContainer,
+    body[data-theme="liquidglass"]:not(.notes-split-active) #view-notes #notesEditorContainer {
+        margin-top: -24px !important;
+    }
+    /* …but when the assistant is enabled, its .view-flow-row chip row sits
+       between the toolbar and the editor. The -24px pull above was tuned for the
+       no-assistant layout; with the chip row present it yanks the opaque editor
+       card UP over the bottom of the chips, clipping them. Cancel the pull in
+       that case (the chip row already fills the gap the -24px was compensating
+       for), so the card sits below the chips like every other theme. */
+    body[data-theme="glass"]:not(.notes-split-active) #view-notes > .view-flow-row ~ #notesEditorContainer,
+    body[data-theme="liquidglass"]:not(.notes-split-active) #view-notes > .view-flow-row ~ #notesEditorContainer {
+        margin-top: 0 !important;
+    }
+}
+
+/* A reusable opt-in lens for new components: a decorative refraction
+   layer that sits BEHIND content (negative z-index) so text stays crisp. */
+body[data-theme="glass"] .glass-lens,
+body[data-theme="liquidglass"] .glass-lens {
+    position: relative;
+    isolation: isolate;
+}
+body[data-theme="glass"] .glass-lens::before,
+body[data-theme="liquidglass"] .glass-lens::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    background:
+        linear-gradient(150deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.06) 40%, transparent 70%),
+        var(--glass-fill);
+    box-shadow:
+        inset 0 1px 0 var(--glass-inner-highlight),
+        inset 0 0 0 1px var(--glass-rim);
+    pointer-events: none;
+}
+
+/* ─── 4. SECONDARY SURFACES / CONTROLS ─────────────────────────────
+   Theme-panel segmented buttons (not covered by the skin). */
+body[data-theme="glass"] .mode-btn,
+body[data-theme="liquidglass"] .mode-btn {
+    background: var(--button-bg);
+    border: 1px solid var(--button-border);
+    color: var(--button-text);
+}
+
+body[data-theme="glass"] .mode-btn:hover,
+body[data-theme="liquidglass"] .mode-btn:hover {
+    background: var(--button-bg-hover);
+}
+
+body[data-theme="glass"] .mode-btn.active,
+body[data-theme="liquidglass"] .mode-btn.active {
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--accent-strong);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.9),
+        0 1px 3px rgba(20, 27, 45, 0.10),
+        0 0 0 0.5px rgba(0, 0, 0, 0.06);
+}
+
+/* Theme preset cards become little glass tiles with a top specular. */
+body[data-theme="glass"] .preset-card,
+body[data-theme="liquidglass"] .preset-card {
+    position: relative;
+    overflow: hidden;
+    transition:
+        transform 240ms var(--glass-spring),
+        box-shadow 240ms var(--glass-spring),
+        border-color 200ms ease;
+}
+body[data-theme="glass"] .preset-card::after,
+body[data-theme="liquidglass"] .preset-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(150deg,
+        rgba(255, 255, 255, 0.55) 0%,
+        rgba(255, 255, 255, 0.10) 16%,
+        transparent 42%);
+    opacity: 0.7;
+}
+
+/* ─── 5. DOCK-LIKE MICRO-INTERACTIONS ──────────────────────────────
+   Slight scale, a brightening rim, and a glass-spring ease on the
+   interactive surfaces. Bounce is gentle on dense controls and a touch
+   springier on the prominent theme cards. Press = glass compressing in. */
+body[data-theme="glass"] .preset-card:hover,
+body[data-theme="liquidglass"] .preset-card:hover {
+    transform: translateY(-3px) scale(1.025);
+    border-color: rgba(255, 255, 255, 0.85);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.9),
+        0 12px 30px rgba(20, 27, 45, 0.16);
+    transition:
+        transform 320ms var(--glass-spring-bounce),
+        box-shadow 320ms var(--glass-spring-bounce),
+        border-color 200ms ease;
+}
+body[data-theme="glass"] .preset-card:active,
+body[data-theme="liquidglass"] .preset-card:active {
+    transform: translateY(-1px) scale(0.99);
+    transition: transform 120ms ease;
+}
+
+/* Floating control buttons + command-style buttons — dock lift. */
+body[data-theme="glass"] .theme-switcher-btn,
+body[data-theme="liquidglass"] .theme-switcher-btn,
+body[data-theme="glass"] .chatbot-btn,
+body[data-theme="liquidglass"] .chatbot-btn,
+body[data-theme="glass"] .sidebar-toggle-btn,
+body[data-theme="liquidglass"] .sidebar-toggle-btn {
+    transition:
+        transform 260ms var(--glass-spring),
+        box-shadow 200ms ease,
+        background 180ms ease !important;
+}
+body[data-theme="glass"] .theme-switcher-btn:hover,
+body[data-theme="liquidglass"] .theme-switcher-btn:hover,
+body[data-theme="glass"] .chatbot-btn:hover,
+body[data-theme="liquidglass"] .chatbot-btn:hover,
+body[data-theme="glass"] .sidebar-toggle-btn:hover {
+    transform: translateY(-2px) scale(1.06) !important;
+}
+body[data-theme="glass"] .theme-switcher-btn:active,
+body[data-theme="liquidglass"] .theme-switcher-btn:active,
+body[data-theme="glass"] .chatbot-btn:active,
+body[data-theme="liquidglass"] .chatbot-btn:active,
+body[data-theme="glass"] .sidebar-toggle-btn:active {
+    transform: translateY(0) scale(0.94) !important;
+    transition: transform 110ms ease !important;
+}
+
+/* Toolbar buttons are dense — a soft lift, no scale bounce. */
+body[data-theme="glass"] .toolbar-btn:hover,
+body[data-theme="liquidglass"] .toolbar-btn:hover {
+    transform: translateY(-1px) !important;
+    transition: transform 200ms var(--glass-spring),
+                background 140ms ease, color 140ms ease !important;
+}
+body[data-theme="glass"] .toolbar-btn:active,
+body[data-theme="liquidglass"] .toolbar-btn:active {
+    transform: translateY(0) scale(0.97) !important;
+    transition: transform 100ms ease !important;
+}
+
+/* Pill / neumo / storage buttons compress on press. */
+body[data-theme="glass"] .neumo-btn:active,
+body[data-theme="liquidglass"] .neumo-btn:active,
+body[data-theme="glass"] .storage-btn:active,
+body[data-theme="liquidglass"] .storage-btn:active,
+body[data-theme="glass"] .quick-app-btn:active,
+body[data-theme="liquidglass"] .quick-app-btn:active {
+    transform: scale(0.96) !important;
+    transition: transform 110ms ease !important;
+}
+
+/* Clear, accessible keyboard focus on every glassy control. */
+body[data-theme="glass"] .preset-card:focus-visible,
+body[data-theme="liquidglass"] .preset-card:focus-visible,
+body[data-theme="glass"] .mode-btn:focus-visible,
+body[data-theme="liquidglass"] .mode-btn:focus-visible,
+body[data-theme="glass"] .toolbar-btn:focus-visible,
+body[data-theme="liquidglass"] .toolbar-btn:focus-visible,
+body[data-theme="glass"] .neumo-btn:focus-visible,
+body[data-theme="liquidglass"] .neumo-btn:focus-visible,
+body[data-theme="glass"] .theme-switcher-btn:focus-visible,
+body[data-theme="liquidglass"] .theme-switcher-btn:focus-visible,
+body[data-theme="glass"] .chatbot-btn:focus-visible,
+body[data-theme="liquidglass"] .chatbot-btn:focus-visible,
+body[data-theme="glass"] #glassBlurSlider:focus-visible,
+body[data-theme="liquidglass"] #glassBlurSlider:focus-visible {
+    outline: none;
+    box-shadow:
+        0 0 0 2px rgba(255, 255, 255, 0.9),
+        0 0 0 4px rgba(var(--accent-rgb), 0.55) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body[data-theme="glass"] .preset-card,
+    body[data-theme="liquidglass"] .preset-card,
+    body[data-theme="glass"] .preset-card:hover,
+    body[data-theme="liquidglass"] .preset-card:hover,
+    body[data-theme="glass"] .theme-switcher-btn:hover,
+    body[data-theme="liquidglass"] .theme-switcher-btn:hover,
+    body[data-theme="glass"] .chatbot-btn:hover,
+    body[data-theme="liquidglass"] .chatbot-btn:hover,
+    body[data-theme="glass"] .sidebar-toggle-btn:hover,
+    body[data-theme="liquidglass"] .sidebar-toggle-btn:hover,
+    body[data-theme="glass"] .toolbar-btn:hover,
+    body[data-theme="liquidglass"] .toolbar-btn:hover {
+        transform: none !important;
+        transition: background 120ms ease, color 120ms ease, box-shadow 120ms ease !important;
+    }
+}
+
+/* ─── 6. GLASS INTENSITY CONTROL (theme panel) ─────────────────────
+   Layout works in any theme; the block is only unhidden while the Glass
+   preset is active (syncPresetCardsWithTheme). */
+.glass-options[hidden] {
+    display: none !important;
+}
+
+.glass-options {
+    margin-top: 14px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: var(--surface-bg, rgba(255, 255, 255, 0.3));
+    border: 1px solid var(--surface-border, rgba(255, 255, 255, 0.5));
+}
+
+.glass-options-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+}
+
+.glass-blur-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.glass-blur-row label {
+    font-size: 13px;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+.glass-blur-row input[type="range"] {
+    flex: 1;
+    min-width: 0;
+    accent-color: var(--accent, #0a84ff);
+}
+
+.glass-blur-value {
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-secondary);
+    min-width: 40px;
+    text-align: right;
+}
+
+.glass-options-hint {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* ─── 7. ACCESSIBILITY & PERFORMANCE FALLBACKS ─────────────────────
+   When the platform can't (or shouldn't) do translucency, fall back to
+   near-opaque fills so text never floats unreadably over the canvas. */
+@supports not ((-webkit-backdrop-filter: blur(2px)) or (backdrop-filter: blur(2px))) {
+    body[data-theme="glass"],
+    body[data-theme="liquidglass"] {
+        --glass-opacity: 0.95;
+        --glass-fill:        rgba(248, 249, 252, 0.97);
+        --glass-fill-strong: rgba(252, 253, 255, 0.99);
+    }
+    /* Without backdrop blur the moving caustics read as noise — drop them. */
+    body[data-theme="glass"]::before,
+    body[data-theme="glass"]::after,
+    body[data-theme="liquidglass"]::before,
+    body[data-theme="liquidglass"]::after {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    body[data-theme="glass"],
+    body[data-theme="liquidglass"] {
+        --glass-opacity: 0.96;
+        --glass-fill:        rgba(248, 249, 252, 0.98);
+        --glass-fill-strong: rgba(252, 253, 255, 1);
+        --glass-specular-opacity: 0.18;
+    }
+}
+
+@media (prefers-contrast: more) {
+    body[data-theme="glass"],
+    body[data-theme="liquidglass"] {
+        --glass-opacity: 0.97;
+        --glass-fill:        rgba(250, 251, 253, 0.99);
+        --glass-fill-strong: #ffffff;
+        --glass-rim:             rgba(60, 70, 90, 0.45);
+        --glass-inner-highlight: rgba(255, 255, 255, 0.9);
+        --text-secondary: #3a3c42;
+        --text-muted:     #5a5c63;
+        --border: rgba(60, 70, 90, 0.45);
+    }
+}

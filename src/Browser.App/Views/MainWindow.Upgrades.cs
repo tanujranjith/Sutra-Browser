@@ -1,3 +1,4 @@
+using Browser.Core.Branding;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text.Json;
@@ -8,6 +9,7 @@ using Browser.Core.Sessions;
 using Browser.Core.Settings;
 using Browser.Core.Tabs;
 using Browser.Data.Models;
+using Browser.Platform.Windows.Updates;
 using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
@@ -23,6 +25,7 @@ namespace Browser.App;
 
 public sealed partial class MainWindow
 {
+    private static int _updateCheckStarted;
     private sealed record PaletteCommand(string Name, string Hint, Symbol Icon, Func<Task> Run);
 
     private void ConfigureNavigationOverlays()
@@ -53,48 +56,6 @@ public sealed partial class MainWindow
         _contentGrid.Children.Add(_tabSwitcherOverlay);
     }
 
-    private void ShowFindBar()
-    {
-        var input = new TextBox { PlaceholderText = "Find in page", Width = 300 };
-        var result = new TextBlock { Text = "", MinWidth = 60, VerticalAlignment = VerticalAlignment.Center, Opacity = .65 };
-        async Task Find(bool backwards)
-        {
-            var web = CurrentWebView();
-            if (web?.CoreWebView2 is null || string.IsNullOrWhiteSpace(input.Text)) return;
-            try
-            {
-                var query = JsonSerializer.Serialize(input.Text);
-                var script = $$"""
-                    (()=>{
-                      const q={{query}};
-                      const body=(document.body?.innerText||'').toLocaleLowerCase();
-                      const needle=q.toLocaleLowerCase();
-                      let count=0,at=0;
-                      while(needle && (at=body.indexOf(needle,at))>=0){count++;at+=needle.length;}
-                      window.find(q,false,{{(backwards ? "true" : "false")}},true,false,true,false);
-                      return count;
-                    })()
-                    """;
-                var count = await web.ExecuteScriptAsync(script);
-                result.Text = count == "0" ? "No matches" : $"{count} on page";
-            }
-            catch { result.Text = "Unavailable"; }
-        }
-        input.KeyDown += async (_, e) =>
-        {
-            if (e.Key == Windows.System.VirtualKey.Enter) { await Find(false); e.Handled = true; }
-            else if (e.Key == Windows.System.VirtualKey.Escape) { _findBar.Visibility = Visibility.Collapsed; e.Handled = true; }
-        };
-        var previous = IconButton(Symbol.Up, "Previous match"); previous.Click += async (_, _) => await Find(true);
-        var next = IconButton(Symbol.Forward, "Next match"); next.Click += async (_, _) => await Find(false);
-        var close = IconButton(Symbol.Cancel, "Close find bar"); close.Click += (_, _) => _findBar.Visibility = Visibility.Collapsed;
-        var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
-        row.Children.Add(input); row.Children.Add(result); row.Children.Add(previous); row.Children.Add(next); row.Children.Add(close);
-        _findBar.Child = row;
-        _findBar.Visibility = Visibility.Visible;
-        input.Focus(FocusState.Keyboard);
-    }
-
     private void CycleTabWithPreview(int amount)
     {
         if (_vm.Tabs.Count < 2) return;
@@ -104,8 +65,10 @@ public sealed partial class MainWindow
         _ = ActivateTabAsync(next);
 
         var panel = new StackPanel { Spacing = 5, Width = 390 };
-        panel.Children.Add(new TextBlock { Text = "Switch tabs", FontSize = 12, Opacity = .58, Margin = new(6, 2, 6, 5) });
-        foreach (var tab in _vm.Tabs.Take(8))
+        panel.Children.Add(new TextBlock { Text = $"Switch tabs · {index + 1} of {_vm.Tabs.Count}", FontSize = 12, Opacity = .58, Margin = new(6, 2, 6, 5) });
+        var preview = TabPreviewPolicy.Window(_vm.Tabs.Count, index);
+        if (preview.Start > 0) panel.Children.Add(new TextBlock { Text = $"↑ {preview.Start} earlier tabs", FontSize = 11, Opacity = .6 });
+        foreach (var tab in _vm.Tabs.Skip(preview.Start).Take(preview.Count))
         {
             var row = new Border
             {
@@ -115,6 +78,8 @@ public sealed partial class MainWindow
             };
             panel.Children.Add(row);
         }
+        var remaining = _vm.Tabs.Count - preview.Start - preview.Count;
+        if (remaining > 0) panel.Children.Add(new TextBlock { Text = $"↓ {remaining} later tabs", FontSize = 11, Opacity = .6 });
         _tabSwitcherOverlay.Child = panel;
         _tabSwitcherOverlay.Visibility = Visibility.Visible;
         // One reusable timer plus an expiry lease stored in fields: rapid Ctrl+Tab
@@ -136,36 +101,54 @@ public sealed partial class MainWindow
         _tabSwitcherTimer.Start();
     }
 
+    private bool _commandPaletteOpen;
+
     private async Task ShowCommandPaletteAsync()
     {
+        if (_commandPaletteOpen || _isWindowClosed) return;
+        _commandPaletteOpen = true;
+        try
+        {
         var commands = BuildPaletteCommands();
-        var search = new TextBox { PlaceholderText = "Type a command or tab name", MinWidth = 520 };
-        var list = new ListView { MaxHeight = 430, SelectionMode = ListViewSelectionMode.Single };
+        var search = new TextBox { PlaceholderText = "Search tabs and commands…", MaxLength = 160, Width = Math.Max(240, Math.Min(560, _root.ActualWidth - 100)) };
+        AutomationProperties.SetName(search, "Search tabs and commands");
+        var list = new ListView { MaxHeight = 360, SelectionMode = ListViewSelectionMode.Single, HorizontalContentAlignment = HorizontalAlignment.Stretch };
+        var empty = new TextBlock { Text = "No results. Try a website, tab title, or action such as downloads.", TextWrapping = TextWrapping.Wrap, FontSize = 13, Opacity = .65, Margin = new(8, 24, 8, 24), Visibility = Visibility.Collapsed };
+        ContentDialog? dialog = null;
         void Load()
         {
             list.Items.Clear();
             var query = search.Text?.Trim() ?? "";
-            // Ranking lives in Browser.Core so exact/prefix matches beat arbitrary
-            // substrings deterministically; the result count stays bounded here.
-            foreach (var command in commands
-                .Select(x => (Command: x, Rank: TextMatchRanking.Rank(x.Name, x.Hint, query)))
-                .Where(x => x.Rank != TextMatchRanking.NoMatch)
-                .OrderByDescending(x => x.Rank)
-                .ThenBy(x => x.Command.Name, StringComparer.OrdinalIgnoreCase)
-                .Take(18))
-                list.Items.Add(new ListViewItem { Tag = command.Command, Content = ManagerRow(command.Command.Name, command.Command.Hint) });
-            foreach (var tab in _vm.Tabs
-                .Select(x => (Tab: x, Rank: TextMatchRanking.Rank(x.Title, x.Url, query)))
-                .Where(x => query.Length > 0 && x.Rank != TextMatchRanking.NoMatch)
-                .OrderByDescending(x => x.Rank)
-                .ThenBy(x => x.Tab.Title, StringComparer.OrdinalIgnoreCase)
-                .Take(8))
+            var tabsOnly = query.StartsWith('/');
+            var commandsOnly = query.StartsWith('>');
+            if (tabsOnly || commandsOnly) query = query[1..].Trim();
+            var results = new List<(PaletteCommand Command, int Rank)>();
+            if (!commandsOnly)
+                foreach (var tab in _vm.Tabs.OrderByDescending(tab => tab.LastActivatedAt))
+                {
+                    var rank = TextMatchRanking.Rank(tab.Title, tab.Url, query);
+                    if (rank < 0) continue;
+                    var captured = tab;
+                    results.Add((new PaletteCommand(tab.Title, $"Open tab · {tab.Url}", Symbol.Go, async () => await ActivateTabAsync(captured)), query.Length == 0 ? 100 : rank + 20));
+                }
+            if (!tabsOnly)
+                foreach (var command in commands)
+                {
+                    if (query.Length == 0 && (command.Name == "Sutra Save" || command.Name == Browser.Core.Privacy.KillSwitchPolicy.Command)) continue;
+                    var rank = TextMatchRanking.Rank(command.Name, command.Hint, query);
+                    if (rank >= 0) results.Add((command, rank));
+                }
+            foreach (var result in results.OrderByDescending(item => item.Rank).Take(18))
             {
-                var captured = tab.Tab;
-                var command = new PaletteCommand($"Switch to: {tab.Tab.Title}", tab.Tab.Url, Symbol.Go, async () => await ActivateTabAsync(captured));
-                list.Items.Add(new ListViewItem { Tag = command, Content = ManagerRow(command.Name, command.Hint) });
+                var row = new Grid { ColumnSpacing = 12, Margin = new(2, 4, 2, 4) };
+                row.ColumnDefinitions.Add(new() { Width = new(26) }); row.ColumnDefinitions.Add(new() { Width = new(1, GridUnitType.Star) });
+                row.Children.Add(new Viewbox { Width = 16, Height = 16, VerticalAlignment = VerticalAlignment.Center, Child = new SymbolIcon(result.Command.Icon) });
+                var copy = ManagerRow(result.Command.Name, result.Command.Hint); Grid.SetColumn(copy, 1); row.Children.Add(copy);
+                list.Items.Add(new ListViewItem { Tag = result.Command, Content = row });
             }
             if (list.Items.Count > 0) list.SelectedIndex = 0;
+            empty.Visibility = list.Items.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+            if (dialog is not null) dialog.IsPrimaryButtonEnabled = list.Items.Count > 0;
         }
         void MoveSelection(int delta)
         {
@@ -185,8 +168,9 @@ public sealed partial class MainWindow
                     // selected result. Escape is handled by the dialog's Cancel.
             }
         };
-        var content = new StackPanel { Spacing = 10 }; content.Children.Add(search); content.Children.Add(list);
-        var dialog = new ContentDialog { Title = "Command palette", Content = content, PrimaryButtonText = "Run", CloseButtonText = "Cancel", DefaultButton = ContentDialogButton.Primary, XamlRoot = _root.XamlRoot };
+        var content = new StackPanel { Spacing = 12 }; content.Children.Add(search); content.Children.Add(list); content.Children.Add(empty);
+        content.Children.Add(new TextBlock { Text = "↑ ↓  Choose     Enter  Open     /  Tabs     >  Commands", FontSize = 11, Opacity = .55, TextWrapping = TextWrapping.Wrap });
+        dialog = new ContentDialog { Title = "What would you like to do?", Content = content, PrimaryButtonText = "Open", CloseButtonText = "Cancel", DefaultButton = ContentDialogButton.Primary, XamlRoot = _root.XamlRoot };
         list.DoubleTapped += async (_, _) =>
         {
             if (list.SelectedItem is ListViewItem item && item.Tag is PaletteCommand selected)
@@ -199,6 +183,8 @@ public sealed partial class MainWindow
         Load(); search.Loaded += (_, _) => search.Focus(FocusState.Keyboard);
         var result = await dialog.ShowAsync();
         if (result == ContentDialogResult.Primary && list.SelectedItem is ListViewItem chosen && chosen.Tag is PaletteCommand picked) await picked.Run();
+        }
+        finally { _commandPaletteOpen = false; }
     }
 
     private List<PaletteCommand> BuildPaletteCommands() =>
@@ -209,6 +195,12 @@ public sealed partial class MainWindow
         new("Sutra Save", "Ctrl+Alt+Z · keep a fresh tab and close the rest", Symbol.Save, SutraSaveAsync),
         new(Browser.Core.Privacy.KillSwitchPolicy.Command, "Ctrl+Alt+Shift+K · close all windows and clear history immediately", Symbol.Cancel, () => ((App)Application.Current).RunKillSwitchAsync()),
         new("Reopen closed tab", "Ctrl+Shift+T", Symbol.OpenFile, () => { ReopenClosed(); return Task.CompletedTask; }),
+        new("Recently closed tabs", "Search and reopen selected tabs from this window", Symbol.Undo, ShowRecentlyClosedAsync),
+        new("Search shortcuts", "Edit local aliases and preview a search address", Symbol.Find, ShowSearchAliasesAsync),
+        new("Keyboard shortcuts", "Reference, customize, and check conflicts", Symbol.Keyboard, ShowKeyboardShortcutsAsync),
+        new("Page zoom", "Adjust page size and reset to 100%", Symbol.ZoomIn, ShowPageZoomAsync),
+        new("Reader appearance", "Text size, reading width, and theme", Symbol.Read, ShowReaderSettingsAsync),
+        new("Review duplicate bookmarks", "Review exact copies in the same folder; undo available", Symbol.OutlineStar, ReviewBookmarkDuplicatesAsync),
         new("Search open tabs", "Titles and URLs", Symbol.Find, SearchTabsAsync),
         new("Organize tabs by site", "Create tab groups after approval", Symbol.Tag, () => SuggestDomainGroupsAsync(true)),
         new("Search across page text", "Awake tabs only; remains local", Symbol.Find, SearchAcrossTabsAsync),
@@ -227,8 +219,7 @@ public sealed partial class MainWindow
         new("Browser health", "Memory, tabs, and diagnostics", Symbol.Repair, ShowPerformanceDashboardAsync),
         new("Clean up inactive tabs", "Hibernate safe inactive tabs and reclaim memory", Symbol.Clear, CleanUpTabsAsync),
         new("Web panels", "Open a frequently used website in the lazy sidebar", Symbol.DockRight, ShowWebPanelsAsync),
-        new("Customize browser", "Theme, layout, and toolbar", Symbol.Setting, ShowCustomizationAsync),
-        new("Settings", "Privacy, AI, and browser behavior", Symbol.Setting, ShowSettingsAsync),
+        new("Settings", "Sutra, appearance, privacy, and browser preferences", Symbol.Setting, ShowSettingsAsync),
         new("Toggle reader mode", "Simplify the current article", Symbol.Document, ToggleReaderModeAsync),
         new("Open clean copy", "Open the page without common tracking parameters", Symbol.OpenFile, () => { OpenCleanCopy(); return Task.CompletedTask; }),
         new("Toggle focus mode", "Hide browser chrome · Ctrl+Shift+F", Symbol.FullScreen, () => { ToggleFocusMode(); return Task.CompletedTask; }),
@@ -262,6 +253,9 @@ public sealed partial class MainWindow
         _isReplacingTabs = true;
         try
         {
+            foreach (var id in _videoMiniPlayers.Keys.ToArray())
+                await CloseVideoMiniPlayerAsync(id, restoreTab: false);
+            CancelAllPendingTabWebViewInitializations();
             foreach (var web in _webViews.Values.ToList()) { try { DetachWebView(web); web.Close(); } catch { } }
             // Every native manager page is disappearing with the tab list: retire their lifecycle callbacks first.
             foreach (var pageClosed in _nativePageClosedHandlers.Values.ToList()) { try { pageClosed(); } catch { } }
@@ -428,6 +422,7 @@ public sealed partial class MainWindow
             ("Copy clean link", "Remove common tracking parameters before copying.", Symbol.Copy, CopyCleanLinkAsync),
             ("Reader mode", "Create a focused local article view when possible.", Symbol.Document, ToggleReaderModeAsync),
             ("Add page note", "Attach an optional quotation and note to this page. Unavailable in private windows.", Symbol.Edit, () => { _ = ShowPageNoteDialogAsync(null); return Task.CompletedTask; }),
+            ("Annotate selection in Sutra", "Save a quotation or PDF passage as a Sutra note linked to this source.", Symbol.Edit, AddResearchAnnotationToSutraAsync),
             ("Open page notes", "Search and edit notes saved on pages.", Symbol.Document, ShowNotesManagerAsync)
         };
         for (var i = 0; i < actions.Length; i++)
@@ -498,7 +493,7 @@ public sealed partial class MainWindow
             try
             {
                 shell = Activator.CreateInstance(shellType); dynamic shortcut = shellType.InvokeMember("CreateShortcut", System.Reflection.BindingFlags.InvokeMethod, null, shell, [path])!; shortcutObject = shortcut;
-                shortcut.TargetPath = Environment.ProcessPath ?? Path.Combine(AppContext.BaseDirectory, "Sutra.App.exe");
+                shortcut.TargetPath = Environment.ProcessPath ?? Path.Combine(AppContext.BaseDirectory, AppBrand.ExecutableName);
                 shortcut.Arguments = $"\"{tab.Url.Replace("\"", "")}\"";
                 shortcut.WorkingDirectory = AppContext.BaseDirectory; shortcut.IconLocation = icon; shortcut.Description = $"Open {tab.Title} in Sutra"; shortcut.Save();
             }
@@ -534,6 +529,7 @@ public sealed partial class MainWindow
 
     private async Task ToggleUtilitySidebarAsync()
     {
+        if (_workspaceSidePanelOpen) { CloseSutraSidePanel(); return; }
         if (_utilitySidebar.Visibility == Visibility.Visible)
         {
             // A visible sidebar may host a live web-panel WebView; release it
@@ -628,6 +624,7 @@ public sealed partial class MainWindow
     {
         foreach (var accelerator in _customAccelerators) _root.KeyboardAccelerators.Remove(accelerator);
         _customAccelerators.Clear();
+        if (ShortcutConflictPolicy.Validate(_vm.Settings.CustomShortcuts).Count > 0) return;
         foreach (var (command, text) in _vm.Settings.CustomShortcuts)
         {
             if (!ShortcutDefinition.TryParse(text, out var parsed)) continue;
@@ -639,7 +636,7 @@ public sealed partial class MainWindow
             if (parsed.Alt) modifiers |= Windows.System.VirtualKeyModifiers.Menu;
             var captured = command;
             var accelerator = new KeyboardAccelerator { Key = key, Modifiers = modifiers };
-            accelerator.Invoked += (_, e) => { RunCustomShortcut(captured); e.Handled = true; };
+            accelerator.Invoked += (_, e) => { if (_root.IsHitTestVisible) RunCustomShortcut(captured); e.Handled = true; };
             _customAccelerators.Add(accelerator); _root.KeyboardAccelerators.Add(accelerator);
         }
     }
@@ -668,17 +665,29 @@ public sealed partial class MainWindow
         };
         var inputs = new Dictionary<string, TextBox>();
         var stack = new StackPanel { Spacing = 12, MaxWidth = 620, HorizontalAlignment = HorizontalAlignment.Left };
+        var feedback = new TextBlock { TextWrapping = TextWrapping.Wrap };
         foreach (var (command, label) in labels)
         {
             var input = new TextBox { Header = label, PlaceholderText = "Example: Ctrl+Alt+M", Text = _vm.Settings.CustomShortcuts.GetValueOrDefault(command, "") };
             inputs[command] = input; stack.Children.Add(input);
+            input.TextChanged += (_, _) => feedback.Text = string.Join("\n", ShortcutConflictPolicy.Validate(inputs.ToDictionary(pair => pair.Key, pair => pair.Value.Text)));
         }
         stack.Children.Add(new TextBlock { Text = "These are additional shortcuts. Standard browser shortcuts remain available. Supported keys are A-Z, 0-9, and F1-F12 with Ctrl, Shift, or Alt.", Opacity = .62, TextWrapping = TextWrapping.Wrap });
+        stack.Children.Add(feedback);
+        var reset = ActionButton("Reset custom shortcuts", Symbol.Refresh, () => { foreach (var input in inputs.Values) input.Text = ""; });
+        stack.Children.Add(reset);
+        var reference = new StackPanel { Spacing = 8 };
+        foreach (var pair in ShortcutConflictPolicy.BuiltIn) reference.Children.Add(ManagerRow(pair.Value, pair.Key));
+        reference.Children.Add(ManagerRow("Switch tabs / previous tab", "Ctrl+Tab / Ctrl+Shift+Tab"));
+        reference.Children.Add(ManagerRow("Back / forward / fullscreen", "Alt+Left / Alt+Right / F11"));
+        stack.Children.Add(new Expander { Header = "Built-in shortcut reference", Content = reference, HorizontalAlignment = HorizontalAlignment.Stretch });
         var save = new Button { Content = "Save shortcuts", CornerRadius = new(8) };
         save.Click += async (_, _) =>
         {
             var requested = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             foreach (var (command, input) in inputs) if (!string.IsNullOrWhiteSpace(input.Text)) requested[command] = input.Text;
+            var conflicts = ShortcutConflictPolicy.Validate(requested);
+            if (conflicts.Count > 0) { feedback.Text = string.Join("\n", conflicts); return; }
             var updated = SettingsValidator.Validate(_vm.Settings with { CustomShortcuts = requested });
             if (updated.CustomShortcuts.Count != requested.Count) { ShowStatus("One or more shortcuts are invalid.", InfoBarSeverity.Warning); return; }
             _vm.Settings = updated; await SaveSettingsSafeAsync(); ApplyCustomKeyboardShortcuts(); HidePage(); ShowStatus("Keyboard shortcuts saved", InfoBarSeverity.Success);
@@ -811,12 +820,53 @@ public sealed partial class MainWindow
         string runtime;
         try { runtime = (await _environment.GetAsync()).BrowserVersionString; }
         catch { runtime = "Unavailable"; }
+        var updateService = new BrowserUpdateService(_paths);
+        BrowserUpdateCheck updateCheck;
+        try { updateCheck = await updateService.CheckAsync(); }
+        catch { updateCheck = new(false, "The update feed could not be checked.", null); }
         var panel = new StackPanel { Spacing = 12, MaxWidth = 680 };
         panel.Children.Add(MetricCard("Sutra version", Browser.Core.Branding.AppBrand.Version));
         panel.Children.Add(MetricCard("WebView2 Runtime", runtime));
-        panel.Children.Add(new TextBlock { Text = "This unpackaged development build has no trusted application update feed configured. WebView2 Evergreen is serviced by Microsoft through Windows. Sutra will not claim it is current without a signed release channel.", TextWrapping = TextWrapping.Wrap, Opacity = .72 });
+        var status = new TextBlock { Text = updateCheck.Status, TextWrapping = TextWrapping.Wrap, Opacity = .78 };
+        panel.Children.Add(status);
+        panel.Children.Add(new TextBlock { Text = $"Signed releases are checked automatically. Verified updates install after you restart {AppBrand.Name}. WebView2 Evergreen is serviced separately by Microsoft.", TextWrapping = TextWrapping.Wrap, Opacity = .66 });
+        Button check = null!;
+        check = ActionButton("Check for updates", Symbol.Sync, async () =>
+        {
+            check.IsEnabled = false;
+            var result = await updateService.CheckAsync();
+            status.Text = result.Status;
+            check.IsEnabled = true;
+            if (result.IsAvailable && result.Manifest is not null)
+            {
+                Button stage = null!;
+                stage = ActionButton($"Download {AppBrand.Name} {result.Manifest.Version}", Symbol.Download, async () =>
+                {
+                    stage.IsEnabled = false;
+                    var staged = await updateService.DownloadAndStageAsync();
+                    status.Text = staged.Status;
+                    ShowStatus(staged.Status, staged.Manifest is null ? InfoBarSeverity.Warning : InfoBarSeverity.Success, 7000);
+                    stage.IsEnabled = true;
+                });
+                panel.Children.Add(stage);
+            }
+        });
+        panel.Children.Add(check);
         var runtimePage = ActionButton("WebView2 information", Symbol.Globe, async () => await Launcher.LaunchUriAsync(new Uri("https://developer.microsoft.com/microsoft-edge/webview2/")));
         panel.Children.Add(runtimePage);
         ShowPage("Updates", "Installed component versions and update-channel status.", panel);
+    }
+
+    private async Task CheckForUpdatesQuietlyAsync()
+    {
+        if (Interlocked.Exchange(ref _updateCheckStarted, 1) != 0) return;
+        try
+        {
+            var result = await new BrowserUpdateService(_paths).DownloadAndStageAsync(_windowLifetimeCts.Token);
+            if (result.Status.Contains("downloaded and will install", StringComparison.OrdinalIgnoreCase))
+                DispatcherQueue.TryEnqueue(() => ShowStatus(result.Status, InfoBarSeverity.Success, 9000));
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Automatic update check failed: {ex.GetType().Name}"); }
     }
 }

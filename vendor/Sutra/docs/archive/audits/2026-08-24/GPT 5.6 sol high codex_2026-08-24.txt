@@ -1,0 +1,1112 @@
+Sutra Full Audit
+Audit scope and limitations
+This was strictly read-only. I made no edits, created no files, ran no generators or tests that could write artifacts, and made no Git changes.
+Final repository state:
+Branch: main
+
+Commit: 0b25a8906604721dad3798d2db0e01b2249d1884
+
+Working tree: clean
+
+Staged changes: none
+
+Because Playwright writes to .tmp/playwright-results, I did not run browser tests. The UI assessment is based on current markup/styles/scripts and existing repository screenshots, not a fresh live-browser certification.
+Executive Summary
+Sutra is an unusually ambitious and unusually safety-conscious local-first application. Its persistence, backup, synchronization, privacy boundaries, migrations, and failure recovery are substantially more mature than most projects of this size.
+The central problem is architectural scale. Sutra is no longer merely a static app with a few classic scripts. It is a large application platform being operated through an 85,392-line central closure, 371 recognized globals, ordered script loading, mirrored state, late monkey patches, and a 2 MB CSS cascade. The architecture still works, but it now makes almost every significant change harder to reason about than it should be.
+As a product, Sutra’s calm visual language and student-centered daily loop are strong. Home, Homework, Create, Timeline, Review, Focus, and mobile navigation can feel coherent. However, the product still exposes signs of accumulated breadth: enormous settings, too many specialized academic centers, terminology drift, dense toolbars, inconsistent dialog patterns, and overlapping navigation concepts.
+Area
+	Approximate rating
+	Assessment
+	
+Engineering / Codebase
+	6.5/10
+	Excellent safety work inside an excessively complex runtime
+	
+Architecture
+	5/10
+	Appropriate origins, increasingly inappropriate scale
+	
+Reliability
+	8/10
+	Strong persistence and recovery design, weakened by state multiplicity
+	
+Maintainability
+	4/10
+	The largest current weakness
+	
+UI
+	7.5/10
+	Polished visual system with accumulated chrome and density
+	
+UX
+	6.5/10
+	Strong daily loop, too much product breadth still leaks through
+	
+Performance
+	4.5/10
+	Heavy unconditional startup and offline payload
+	
+Testing
+	7.5/10
+	Broad and meaningful, but the default gate is narrower than the suite
+	
+Security / Privacy
+	7.5/10
+	Strong local-first boundaries; remote runtime scripts and CSP weaken it
+	
+Product Coherence
+	6.5/10
+	Clear direction, incomplete consolidation
+	
+No Critical-severity vulnerability was established from static inspection. Several High-severity architectural and security-hardening concerns remain.
+What Is GOOD
+1. Persistence and data-loss prevention
+This is Sutra’s strongest engineering work.
+The canonical IndexedDB adapter provides conditional writes, transaction-level journaling, connection invalidation, retry behavior, and committed-write semantics. The main save path snapshots the live workspace before writing, serializes commits through a FIFO queue, performs atomic compare-and-write, advances the canonical hash only at the committed boundary, and verifies readback.
+Evidence:
+[workspace-db.js](C:/Users/tanuj.DESKTOP-BOL1R68.000/Desktop/Sutra/src/persistence/workspace-db.js)
+
+[workspace-coordinator.js](C:/Users/tanuj.DESKTOP-BOL1R68.000/Desktop/Sutra/src/persistence/workspace-coordinator.js)
+
+[app.js save transaction (line 7183)](C:/Users/tanuj.DESKTOP-BOL1R68.000/Desktop/Sutra/src/core/app.js:7183)
+
+[app.js startup fail-closed handling (line 7745)](C:/Users/tanuj.DESKTOP-BOL1R68.000/Desktop/Sutra/src/core/app.js:7745)
+
+Particularly strong details include:
+Preventing a stale tab from overwriting a newer workspace.
+
+Blocking writes if the canonical startup read fails.
+
+Detecting stale service-worker/migration skew and entering a read-only recovery state.
+
+Writing a pre-migration recovery copy before a required migration.
+
+Keeping a bounded session journal for an unlocked note during lifecycle transitions, while explicitly excluding locked note content.
+
+Tracking persistence health and last confirmed save information visibly.
+
+This should be preserved and treated as foundational infrastructure, not casually simplified during refactoring.
+2. Backup, restore, and sync boundaries
+The .sutra backup design is production-minded:
+AES-256-GCM envelope.
+
+PBKDF2-SHA-256 with 600,000 iterations.
+
+Random salt and IV.
+
+Authenticated envelope metadata.
+
+Minimum passphrase length.
+
+Upper KDF bounds to prevent crafted imports from freezing the browser.
+
+Vendored JSZip for core recovery.
+
+Size, archive-entry, and decompression limits.
+
+Secret stripping and attachment completeness rules.
+
+See [backup encryption and validation (line 54920)](C:/Users/tanuj.DESKTOP-BOL1R68.000/Desktop/Sutra/src/core/app.js:54920) and [untrusted import limits (line 60916)](C:/Users/tanuj.DESKTOP-BOL1R68.000/Desktop/Sutra/src/core/app.js:60916).
+Sutra Sync also demonstrates unusually careful design:
+Sync and backup are correctly treated as separate systems.
+
+Ciphertext-only server model.
+
+Account-namespaced local operational state.
+
+Atomic device identity.
+
+Deterministic record-level merging.
+
+Durable alternate-branch storage before applying conflicts.
+
+Stable operation IDs and retry-safe pushes.
+
+Content-addressed encrypted attachment transport.
+
+Revocation and next-contact wipe paths that fail closed.
+
+Server-derived ownership rather than trusting client ownership fields.
+
+The Supabase schema explicitly revokes table/function access and selectively grants authenticated RPC access. See [sync-schema.sql (line 750)](C:/Users/tanuj.DESKTOP-BOL1R68.000/Desktop/Sutra/supabase/sync-schema.sql:750).
+This is production-grade thinking.
+3. DOM safety and plugin isolation
+[SutraDOMSafety](C:/Users/tanuj.DESKTOP-BOL1R68.000/Desktop/Sutra/src/core/dom-safety.js) is a real security boundary, not a superficial escaping helper. It uses:
+Element and attribute allowlists.
+
+URL protocol validation.
+
+Strict data-image handling.
+
+Style property/value filtering.
+
+Removal of event handlers, srcdoc, forms, scripts, SVG, MathML, and active embed surfaces.
+
+Sandboxed rendering for user HTML.
+
+Namespacing of user identifiers and classes.
+
+Fail-closed text fallback.
+
+The plugin runtime is also correctly isolated with a sandbox lacking allow-same-origin, a restrictive internal CSP, capability tokens, event.source checks, permission checks, and a bounded operation allowlist.
+That architecture should remain even if the rest of the customization system is simplified.
+4. Explicit persistence inventory and compatibility discipline
+[persistence-inventory.json](C:/Users/tanuj.DESKTOP-BOL1R68.000/Desktop/Sutra/docs/architecture/persistence-inventory.json) is one of the best artifacts in the repository. It covers top-level workspace fields, nested contracts, attachment semantics, localStorage classifications, sync participation, secrets, reconstructed values, and compatibility fields.
+The insistence on:
+Unknown-field preservation.
+
+Versioned, idempotent migrations.
+
+Export/import parity.
+
+Frozen legacy storage identifiers.
+
+Legacy format compatibility.
+
+is exactly right for a local-first product. These constraints make the code harder, but they protect real user data and should not be weakened.
+5. Test breadth and failure-oriented coverage
+The test suite is not just large; much of it targets meaningful risks.
+The repository contains approximately:
+539 unit test declarations.
+
+584 end-to-end test declarations.
+
+Desktop Chromium, installed Chrome, Firefox, WebKit, Pixel 7, iPhone 13, iPad, and narrow-desktop projects.
+
+Strong coverage areas include:
+Persistence failures and stale-tab conflicts.
+
+Startup recovery.
+
+Encrypted backup tampering and round trips.
+
+Sync conflicts and revocation wiping.
+
+DOM safety.
+
+Modal accessibility.
+
+Mobile navigation.
+
+Locked-note privacy.
+
+Attachment and workspace completeness.
+
+Deployment artifact validation.
+
+[playwright.config.mjs](C:/Users/tanuj.DESKTOP-BOL1R68.000/Desktop/Sutra/playwright.config.mjs) is explicit about which student-critical flows receive device coverage.
+The static guardrails are also valuable. They ratchet unsafe sinks, direct storage writes, globals, inventory parity, shell load order, CSP, migrations, and deployment contents rather than relying exclusively on conventional tests.
+6. Mobile navigation and responsive intent
+The mobile shell is thoughtfully implemented.
+[mobile-nav.js](C:/Users/tanuj.DESKTOP-BOL1R68.000/Desktop/Sutra/src/features/workspace/mobile-nav.js) derives destinations from canonical desktop controls rather than maintaining a competing route registry. It handles:
+Priority destinations.
+
+A bounded bottom navigation.
+
+The All Sections sheet.
+
+Focus trapping and restoration.
+
+Escape and browser Back behavior.
+
+Safe areas.
+
+Reduced motion.
+
+Notification badges.
+
+Touch-oriented controls.
+
+The existing [mobile Home screenshot](C:/Users/tanuj.DESKTOP-BOL1R68.000/Desktop/Sutra/assets/screenshots/mobile-today.png) presents the product’s best mental model: one next action, focus, schedule, review, capture, and visible save confidence.
+7. Product principles are unusually clear
+[AGENTS.md (line 1)](C:/Users/tanuj.DESKTOP-BOL1R68.000/Desktop/Sutra/AGENTS.md:1) clearly defines:
+Local-first and private-by-default operation.
+
+Deterministic core behavior before AI.
+
+Data safety over implementation convenience.
+
+One connected workspace.
+
+Calm defaults with advanced depth.
+
+Compatibility and deployment constraints.
+
+The product’s intended daily loop is coherent and worth preserving.
+What Is MID
+1. The no-build static architecture
+The static/no-framework approach is not inherently a mistake. It provides:
+Straightforward offline operation.
+
+No required backend.
+
+Low deployment complexity.
+
+file:// compatibility.
+
+Few dependency-chain risks.
+
+Inspectable runtime behavior.
+
+However, Sutra has outgrown the level of global coupling that currently accompanies that choice. The right direction is incremental extraction within the existing deployment model, not an automatic framework rewrite.
+Severity: Significant; eventual architectural redesign of boundaries, not necessarily of the platform.
+2. Progressive disclosure mostly hides UI, not implementation
+Advanced features can be hidden from navigation, which improves first impressions. But most of their code and CSS still load unconditionally. The shell currently references:
+105 scripts, approximately 7.87 MiB uncompressed.
+
+44 stylesheets, approximately 2 MiB uncompressed.
+
+The feature manifest only meaningfully gates a small portion of the product. Business and Assistant have explicit entries, while many academic, AP, review, PDF, customization, and workspace systems remain part of the initial runtime.
+Consequence: users receive a calmer menu, but the browser still parses and initializes much of the large application.
+Severity: Significant performance and maintenance issue; incremental loading architecture needed.
+3. Test quantity exceeds default release-gate coverage
+The full test matrix is impressive, but npm run verify runs:
+Static checks.
+
+Unit tests.
+
+Deploy construction/checks.
+
+A selected Chromium smoke group.
+
+Chromium sync tests.
+
+It does not run the full Playwright suite or the Firefox, WebKit, phone, tablet, and narrow-desktop matrices. See [package.json (line 65)](C:/Users/tanuj.DESKTOP-BOL1R68.000/Desktop/Sutra/package.json:65).
+There are also 99 waitForTimeout calls in end-to-end tests. Some are legitimate debounce or lifecycle waits, but repeated fixed delays create flake and increase suite duration.
+There is no visible coverage instrumentation or threshold. Coverage is not everything, but it would help identify untouched branches inside the central runtime.
+Severity: Moderate. The suite is good; the release-confidence story should better reflect it.
+4. The visual system is good but only partially systematized
+Tokens, shared surfaces, focus styling, motion preferences, z-index rules, and touch targets are all present. The product generally has a recognizable visual language.
+At the same time, literal values and cascade overrides remain common:
+2,871 !important declarations.
+
+5,841 color literal/function matches.
+
+431 media queries.
+
+styles/base/styles.css alone is 35,315 physical lines.
+
+styles/responsive/mobile.css contains 587 !important declarations.
+
+This means the design system often acts as a layer over historical styling rather than the source of styling.
+Severity: Significant maintenance debt; gradual consolidation is appropriate.
+5. Native browser dialogs remain embedded in polished workflows
+Sutra has a modal manager and accessible custom dialogs, but native prompt, confirm, and alert calls still appear in Sheets, PDF, Slides, custom tabs, trash, backup, cloud deletion, formula entry, and import workflows.
+Consequences:
+Inconsistent interaction language.
+
+Different focus and keyboard behavior.
+
+Limited styling and explanatory context.
+
+Platform-dependent UX.
+
+Harder automation and accessibility control.
+
+Severity: Moderate; incremental replacement.
+6. Onboarding is thoughtful but cognitively heavy
+The onboarding flow addresses classes, AP subjects, workspace mode, feature selection, themes, daily defaults, AI, backup safety, and tours. Its honesty about local storage and backups is good.
+But it asks new users to make several architectural/product decisions before they have experienced the core value. The late audit-fixes.js addition of an “Explore Home first” path is evidence that the original flow needed an escape hatch.
+Severity: Moderate product-friction issue.
+What Is BAD
+1. The central runtime is a structural monolith
+Severity: High
+Scope: Systemic
+[src/core/app.js](C:/Users/tanuj.DESKTOP-BOL1R68.000/Desktop/Sutra/src/core/app.js) is:
+85,392 physical lines.
+
+4.85 MB.
+
+Approximately 2,715 function declarations/matches.
+
+Responsible for canonical state, hydration, persistence, migrations, Notes, Timeline, customization, cloud providers, backups, import, Assistant bridges, UI rendering, and many feature controllers.
+
+This is no longer just a “large file.” It is an architectural boundary failure.
+The consequences are concrete:
+Private closure-owned helpers force later features to patch public functions.
+
+A change in one area can affect initialization, persistence, routing, or another feature through shared bindings.
+
+Unit testing individual behavior requires extracting or emulating substantial global context.
+
+Merge conflicts and regression radius grow with every feature.
+
+Ownership is unclear: the folder structure looks modular, but much behavior still lives in the central closure.
+
+New engineers must understand load order and hidden state relationships before making safe changes.
+
+The existing extracted pure engines demonstrate the right direction, but the extraction is too small relative to the runtime.
+2. Late monkey patches are functioning as an architectural layer
+Severity: High
+Scope: Systemic
+[audit-fixes.js](C:/Users/tanuj.DESKTOP-BOL1R68.000/Desktop/Sutra/src/features/workspace/audit-fixes.js) captures and replaces window.setActiveView and window.startFocusSession, adds MutationObservers, and repeatedly repairs startup preference state using timeouts at 100, 500, and 1,200 ms.
+Other examples:
+[theme-presets-refresh.js](C:/Users/tanuj.DESKTOP-BOL1R68.000/Desktop/Sutra/src/features/workspace/theme-presets-refresh.js) wraps theme functions.
+
+[help-docs-refresh.js](C:/Users/tanuj.DESKTOP-BOL1R68.000/Desktop/Sutra/src/features/workspace/help-docs-refresh.js) replaces help-content generation and persists regenerated help pages on load.
+
+This is poor long-term engineering even if each patch fixes a real issue. Behavior becomes dependent on script order, wrapper composition, DOM timing, and whether an earlier function has already been defined.
+A file named “audit fixes” should not become a permanent runtime dependency. These repairs need to migrate into their owning modules.
+3. Optional document import executes unpinned third-party code in the host page
+Severity: High
+Scope: Localized implementation with broad impact
+Document import dynamically loads:
+Unversioned Mammoth from https://unpkg.com/mammoth/mammoth.browser.min.js.
+
+XLSX 0.18.5 from cdnjs.
+
+See [external script loading (line 60958)](C:/Users/tanuj.DESKTOP-BOL1R68.000/Desktop/Sutra/src/core/app.js:60958) and [document import calls (line 63758)](C:/Users/tanuj.DESKTOP-BOL1R68.000/Desktop/Sutra/src/core/app.js:63758).
+These scripts execute in the main Sutra page, with access to:
+Workspace data.
+
+IndexedDB.
+
+localStorage.
+
+live credentials held in page memory.
+
+all registered globals.
+
+There is no Subresource Integrity check, and Mammoth is not version-pinned in its URL. Origin allowlisting only says where code may come from; it does not establish which exact code is trusted.
+This contradicts the otherwise excellent local-first and vendored-recovery posture. Both libraries should ultimately be pinned, vendored, and loaded locally.
+4. Startup and offline payload are disproportionate
+Severity: High
+Scope: Systemic performance issue
+The service-worker manifest declares:
+339 critical assets.
+
+Approximately 16.92 MiB of raw local asset bytes.
+
+195 critical entries related to PDF tooling, fonts, fontkit, standard fonts, or character maps.
+
+Only four optional assets.
+
+[sw.js (line 48)](C:/Users/tanuj.DESKTOP-BOL1R68.000/Desktop/Sutra/sw.js:48) installs the entire critical set with one cache.addAll. The all-or-nothing policy protects against a partially cached runtime, but the definition of “critical” is too broad.
+PDF infrastructure is contextual, not startup-critical. Including it in the mandatory installation set:
+Makes first install and each cache generation expensive.
+
+Increases failure probability on weak networks.
+
+Delays offline readiness.
+
+Re-downloads large advanced-feature assets even for students who never use PDF functionality.
+
+Hosted compression reduces network transfer, but it does not remove request count, cache work, or JavaScript/CSS parsing cost.
+5. Source-of-truth drift is present in live code
+Severity: Medium–High
+Scope: Recurring governance problem
+Concrete contradictions include:
+[workspace-normalizers.js (line 43)](C:/Users/tanuj.DESKTOP-BOL1R68.000/Desktop/Sutra/src/state/workspace-normalizers.js:43) says Assistant is deliberately off by default.
+
+[feature-manifest.js (line 14)](C:/Users/tanuj.DESKTOP-BOL1R68.000/Desktop/Sutra/src/config/feature-manifest.js:14) declares defaultEnabled: true.
+
+[app.js (line 3854)](C:/Users/tanuj.DESKTOP-BOL1R68.000/Desktop/Sutra/src/core/app.js:3854) says the Assistant shell is part of every fresh workspace and sets it enabled.
+
+Similarly:
+app.js defaults startup sound to on.
+
+audit-fixes.js programmatically forces it off for fresh workspaces using delayed repair passes.
+
+Tests now expect the forced-off state.
+
+The root product document says conflicts must be reconciled, but [AGENTS.md (line 1)](C:/Users/tanuj.DESKTOP-BOL1R68.000/Desktop/Sutra/AGENTS.md:1) still says it was last verified against f708ec3…, while the audited commit is 0b25a89….
+This produces real risk: contributors can implement “correctly” according to one source and still contradict runtime behavior.
+6. CSS has become cascade archaeology
+Severity: Significant
+Scope: Systemic
+The CSS organization looks modular by directory, but actual ownership is often expressed through later specificity and !important.
+Largest concentrations include:
+styles/base/styles.css: 939 !important declarations.
+
+styles/responsive/mobile.css: 587.
+
+styles/legacy/ui-refresh.css: 225.
+
+styles/themes/macos26-redesign.css: 181.
+
+styles/views/contextual-shell.css: 109.
+
+The responsive stylesheet contains successive numbered audit/fix sections that correct previous behavior through later overrides. This pattern works tactically but makes future changes unpredictable.
+Consequences:
+A component’s final appearance cannot be understood from its nominal stylesheet.
+
+Theme work must counter older hard-coded values.
+
+Responsive bugs are repaired through additional specificity.
+
+Removing obsolete rules becomes dangerous because their effective consumers are unclear.
+
+7. Unsafe-sink and global budgets preserve too much legacy surface
+Severity: Medium–High
+Scope: Systemic risk, not a confirmed exploit
+The guardrail baseline permits:
+353 unsafe DOM sinks in app.js.
+
+15 direct storage writes in app.js.
+
+371 known globals.
+
+The ratchet is valuable—it prevents the problem from getting worse—but it does not make the baseline healthy.
+Sutra has strong sanitization helpers, yet maintaining confidence in hundreds of innerHTML-style paths across a huge closure is expensive. The host CSP also permits 'unsafe-inline', required largely by the shell’s inline handlers. Sutra.html contains hundreds of inline event handlers and style attributes.
+The risk is compounded:
+Many privileged DOM sinks.
+
+Inline script execution allowed by CSP.
+
+Broad optional provider connectivity.
+
+Remote host-page scripts for document import.
+
+This should be treated as defense-in-depth debt even where current input paths are safe.
+8. Canonical state has too many mirrors
+Severity: High
+Scope: Systemic reliability and maintainability issue
+appData is nominally canonical, but runtime code also maintains closure bindings for pages, tasks, order, time blocks, settings, course data, testing data, focus data, business data, and more. Before persistence, [persistAppData (line 8904)](C:/Users/tanuj.DESKTOP-BOL1R68.000/Desktop/Sutra/src/core/app.js:8904) copies these bindings back into appData.
+Additional systems include:
+Homework’s established localStorage source and appData mirror.
+
+Assistant canonical history and compatibility mirrors.
+
+Provider caches.
+
+Focus state.
+
+Sync operational IndexedDB.
+
+Attachment IndexedDB.
+
+Device-local credentials.
+
+Some multiplicity is intentional and well documented, but the overall model creates many opportunities for:
+Hydration order bugs.
+
+Stale mirrors.
+
+Import-time overwrite races.
+
+Save-before-hydrate corruption.
+
+Empty-value-versus-missing-value confusion.
+
+The comments and recent persistence hardening show how much defensive machinery this requires.
+9. There are concrete keyboard-accessibility gaps
+Severity: Medium
+Scope: Localized but repeated pattern
+The theme presets are clickable <div> elements with inline onclick handlers and no visible role, tabindex, or keyboard handler. See [Sutra.html theme presets (line 5837)](C:/Users/tanuj.DESKTOP-BOL1R68.000/Desktop/Sutra/Sutra.html:5837).
+This makes a major appearance-setting control inaccessible through normal keyboard navigation.
+Other non-semantic clickable surfaces remain in overlays and bespoke controls. The shared accessibility infrastructure is strong, but it is not yet consistently applied to legacy markup.
+Architecture Assessment
+Sutra’s actual architecture is:
+A large static HTML shell defines most UI structure.
+
+Classic scripts load in a manually controlled order.
+
+Safety and storage infrastructure initializes first.
+
+A central closure creates canonical state, mirrored runtime bindings, views, and many controllers.
+
+Feature scripts interact through globals and DOM contracts.
+
+Extracted pure engines handle selected academic, sync, persistence, and deterministic operations.
+
+Late compatibility and audit scripts wrap or patch existing behavior.
+
+CSS behavior is determined by shell link order and late override layers.
+
+IndexedDB is canonical for the workspace, with specialized stores and compatibility mirrors alongside it.
+
+What scaled well:
+Static deployment.
+
+Offline operation.
+
+Pure deterministic engines.
+
+Persistence adapters.
+
+Security helpers.
+
+Compatibility.
+
+Explicit load-order documentation.
+
+What is straining:
+Closure-owned state.
+
+Global API surface.
+
+Script-order dependence.
+
+Patch-based feature evolution.
+
+Unconditional loading.
+
+CSS specificity.
+
+Multiple persistence mirrors.
+
+The size of the shell and central runtime.
+
+The static platform can remain. The global-monolith organization should not.
+Code Quality Assessment
+The code’s local quality is often better than its global architecture.
+Strong qualities:
+Comments commonly explain why a safety invariant exists.
+
+Failure cases are considered explicitly.
+
+Naming in newer extracted modules is clear.
+
+Security-sensitive constants are bounded.
+
+Compatibility intent is documented.
+
+Pure engines use injected dependencies and Node-testable designs.
+
+Guardrails encode architectural constraints.
+
+Weak qualities:
+Files are too large to establish meaningful ownership.
+
+The folder structure overstates modularity because core behavior remains in app.js.
+
+Feature fixes wrap functions owned elsewhere.
+
+Repeated render and normalization patterns coexist with many special cases.
+
+Inline handlers tie markup to global functions.
+
+Hundreds of globals and DOM sinks create broad regression surfaces.
+
+“Legacy” and compatibility logic is interleaved with current behavior rather than isolated at boundaries.
+
+An experienced engineer would likely be impressed by the care in individual safety flows and concerned by how difficult it is to predict the full consequence of a seemingly local edit.
+Reliability / Data Integrity Assessment
+Reliability is strong overall.
+Production-grade areas:
+Fail-closed startup reads.
+
+Conditional atomic root writes.
+
+Cross-tab coordination.
+
+Immutable save snapshots.
+
+Readback verification.
+
+Recovery journals.
+
+Migration backups.
+
+Missing-attachment refusal.
+
+Encrypted full backups.
+
+Conflict-aware sync.
+
+Account isolation.
+
+Wipe acknowledgement and lockout.
+
+Visible persistence health.
+
+Import bounds and archive-bomb mitigation.
+
+Primary risks:
+Mirrored state creates more failure modes than the storage adapter itself.
+
+The service worker and classic-script cache stamps can produce version-skew states, though these are handled defensively.
+
+Late patch scripts can mutate behavior after initial render.
+
+Cloud/Drive/Sync notification calls are intentionally isolated from local saving, but their boundary catches can make integration failures harder to observe immediately.
+
+Recent commits concentrate on false conflicts, empty-workspace recovery, storage reliability, and credential persistence. That shows active hardening, but also indicates that state/persistence complexity remains a live maintenance burden.
+
+The data layer is much healthier than the view/state architecture surrounding it.
+Testing Assessment
+The suite provides meaningful confidence, particularly around historically dangerous areas. This is well above average for a static application.
+Best aspects:
+Tests exercise failure, not just happy paths.
+
+Persistence and sync have pure unit-testable components.
+
+Cross-browser projects exist.
+
+Phone-specific critical flows are identified.
+
+Deployment output is verified separately from the repository.
+
+Static checks guard path coupling and global/runtime rules.
+
+Manual operator checks are explicitly distinguished from automation.
+
+Limitations:
+I did not execute tests during this read-only audit.
+
+Default verify does not run the full cross-browser/mobile suite.
+
+Real Supabase authorization verification remains environment/operator-dependent.
+
+99 fixed waits suggest some timing fragility.
+
+Many static checks assert source strings and manifests; useful, but potentially brittle.
+
+There is no obvious coverage report or minimum threshold.
+
+Responsive projects cover a selected test set, not the full UI.
+
+Verdict: strong suite, good engineering culture, incomplete continuous release coverage.
+Performance Assessment
+Likely bottlenecks:
+Initial parsing of 105 scripts and 44 stylesheets.
+
+A 4.85 MB central script.
+
+A 1.01 MB base stylesheet.
+
+Large synchronous hydration and normalization across the workspace.
+
+Broad DOM replacement through HTML rendering.
+
+Many global event bindings and DOM queries.
+
+Service-worker installation of nearly 17 MiB of “critical” assets.
+
+Unconditional loading of advanced feature code.
+
+Large workspaces containing embedded slide image data URLs.
+
+PBKDF2 correctly causes noticeable CPU work for backup/sync operations.
+
+Positive optimizations do exist:
+Debounced persistence.
+
+Detached save snapshots.
+
+DocumentFragment usage.
+
+Lazy media.
+
+Virtualized Sheets regions.
+
+Lazy PDF rendering.
+
+Cache-version discipline.
+
+Network-first navigation with versioned cache-first assets.
+
+The main issue is architectural payload, not isolated micro-optimization.
+Security & Privacy Assessment
+Strong
+No required account or backend.
+
+No telemetry.
+
+Ordinary startup avoids third-party requests.
+
+Same-origin-only service-worker caching.
+
+Encrypted backups and sync.
+
+Ciphertext-only providers.
+
+Secrets excluded from portable workspace data.
+
+Device-local credential vault.
+
+Strong sanitizer and sandbox boundaries.
+
+Explicit Supabase RPC authorization.
+
+Import-size and archive-bomb defenses.
+
+Strict deployment headers.
+
+Honest distinction between a privacy-screen PIN and encryption at rest.
+
+Weak
+Unpinned remote document libraries execute in the privileged host page.
+
+Host CSP allows 'unsafe-inline'.
+
+CSP permits a broad set of provider origins.
+
+Hundreds of DOM sinks make security review expensive.
+
+Hundreds of inline handlers prevent a substantially stricter script policy.
+
+Direct localStorage writes remain despite the documented SafeStorage rule.
+
+Provider API keys necessarily live in the page during use; therefore reducing privileged third-party code is especially important.
+
+Security is thoughtful, but its strongest boundaries are being undermined by legacy host-page architecture.
+UI Audit
+The interface’s strongest qualities are evident in the repository screenshots:
+[Home](C:/Users/tanuj.DESKTOP-BOL1R68.000/Desktop/Sutra/assets/screenshots/today.png)
+
+[Homework](C:/Users/tanuj.DESKTOP-BOL1R68.000/Desktop/Sutra/assets/screenshots/homework.png)
+
+[Notes](C:/Users/tanuj.DESKTOP-BOL1R68.000/Desktop/Sutra/assets/screenshots/notes-editor.png)
+
+[Testing Hub](C:/Users/tanuj.DESKTOP-BOL1R68.000/Desktop/Sutra/assets/screenshots/testing-hub.png)
+
+Strengths:
+Warm, distinctive neutral palette.
+
+Good typography.
+
+Consistent border, radius, and card language.
+
+Clear primary actions.
+
+Calm empty space.
+
+Visible save/backup confidence.
+
+Home exposes a next action rather than only metrics.
+
+Homework’s table and summary cards are legible.
+
+Notes uses the large canvas effectively.
+
+Mobile compresses the product intelligently.
+
+Weaknesses:
+Desktop chrome has accumulated: global navigation, utilities, floating actions, view actions, Assistant/save controls, and persistent status surfaces compete for attention.
+
+The Notes toolbar is dense and horizontally fragile.
+
+Testing Hub’s seven internal destinations feel like a separate application.
+
+Deadline Radar is visually distinctive but can dominate over simpler actionable lists.
+
+Several screens are polished individually but use different interaction conventions.
+
+Some advanced surfaces have large empty canvases surrounded by many controls.
+
+Theme and customization breadth considerably exceeds what most students need.
+
+UX Audit
+The best Sutra mental model is:
+Capture → understand what is due → choose the next action → work in Create or Focus → review → back up.
+Home, Homework, Create, Timeline, Review, and Focus support this reasonably well.
+The UX weakens when users encounter the full breadth:
+Review, Cram, AP Study, Testing Hub, Course Hub, All Due, College, Life, Business, Assistant, customization, cloud providers, plugins, HTML Pages, Slides, Sheets, Canvas, PDFs, and numerous settings.
+
+Similar concepts are sometimes separate surfaces rather than modes within the core loop.
+
+Advanced implementation complexity leaks through setup and settings.
+
+Native prompts appear beside polished custom modals.
+
+Feature availability and defaults are not always governed by one source.
+
+“Today” versus “Home” and “Notes” versus “Create” terminology remains inconsistent.
+
+The public landing page still repeatedly markets “Today” and “Rich Notes,” while current product direction uses Home and Create. See [HomePage.html (line 2546)](C:/Users/tanuj.DESKTOP-BOL1R68.000/Desktop/Sutra/HomePage.html:2546). That makes the product transition feel incomplete.
+Sutra feels cohesive in its daily student workflow and less cohesive when explored as a whole.
+Mobile / Responsive Audit
+Mobile is one of the strongest product adaptations.
+Good:
+Canonical navigation derivation.
+
+Five-item bottom-bar strategy.
+
+Accessible More sheet.
+
+Safe-area support.
+
+Touch-target contracts.
+
+Reduced-motion support.
+
+Month-to-Day Timeline adaptation rather than desktop compression.
+
+Mobile Home prioritizes next action, Focus, schedule, and review.
+
+Contextual Create drawer behavior.
+
+Risks:
+The underlying desktop payload still loads.
+
+The Notes toolbar and advanced editors remain intrinsically dense.
+
+The CSS override history makes narrow-screen regressions likely.
+
+Selected mobile test coverage is strong, but not all advanced features receive real-device projects.
+
+Large settings and customization surfaces cannot become simple merely through single-column reflow.
+
+Mobile is convincingly designed for the core daily loop, less convincingly for the entire feature catalog.
+Consistency Audit
+Major inconsistencies:
+Area
+	Inconsistency
+	
+Product language
+	Today/Home and Notes/Create coexist
+	
+Feature defaults
+	Assistant off/on statements conflict
+	
+Startup preference
+	Core defaults sound on; late patch forces it off
+	
+Dialogs
+	Custom accessible modals mixed with native browser prompts
+	
+State
+	Canonical appData mixed with numerous runtime and storage mirrors
+	
+Architecture
+	Extracted pure engines mixed with closure-owned and monkey-patched behavior
+	
+Styling
+	Tokens coexist with thousands of literal overrides
+	
+Security
+	Vendored backup dependency but remotely loaded document dependencies
+	
+Progressive disclosure
+	UI hidden while implementation remains eagerly loaded
+	
+Accessibility
+	Strong modal/navigation primitives but clickable non-semantic legacy controls
+	
+Documentation
+	Root source-of-truth verification commit is stale
+	
+Technical Debt Map
+Structural
+85k-line app.js.
+
+Closure-owned state and controllers.
+
+Global API surface.
+
+Manual script-order dependency.
+
+Runtime state mirrors.
+
+CSS cascade/specificity architecture.
+
+Significant
+Late monkey patches.
+
+Unconditional feature loading.
+
+Service-worker critical payload.
+
+Inline event handlers and unsafe-inline CSP.
+
+Hundreds of DOM sinks.
+
+Product breadth and navigation overlap.
+
+Native prompt/confirm usage.
+
+Moderate
+Default release gate does not run the full browser/device matrix.
+
+Fixed-duration waits.
+
+Source-of-truth drift.
+
+Landing-page terminology drift.
+
+Inconsistent accessibility in legacy controls.
+
+Direct storage writes outside SafeStorage.
+
+Low or intentional
+Frozen NoteFlow-era storage names.
+
+Compatibility aliases.
+
+Legacy import formats.
+
+Historic data normalization.
+
+Manual script load order itself, provided dependency ownership improves.
+
+Highest-Leverage Improvements
+No changes were made; these are directions only.
+Create a real boundary around workspace state and commits
+Problem: views mutate closure mirrors, which are later copied into appData.
+
+Direction: introduce one explicit workspace-state service with typed-by-contract selectors and mutation commands; keep persistence adapters unchanged.
+
+Impact: reduces race conditions and makes extraction possible.
+
+Scope: Architectural.
+
+Strangle app.js incrementally
+Problem: ownership and regression radius are unmanageable.
+
+Direction: extract one coherent domain at a time behind stable interfaces, beginning with systems that already have tests and few DOM dependencies. Do not perform a framework rewrite.
+
+Impact: largest maintainability gain.
+
+Scope: Architectural, multi-phase.
+
+Eliminate post-load repair modules
+Problem: behavior depends on wrappers, MutationObservers, and delayed retries.
+
+Direction: move each correction into the module that owns the original state or action, then retire the wrapper.
+
+Impact: removes timing and load-order uncertainty.
+
+Scope: Medium–Large.
+
+Vendor and pin all privileged runtime libraries
+Problem: document import executes remote code with workspace access.
+
+Direction: locally vendor exact reviewed versions of Mammoth and XLSX; remove unpkg/cdnjs from host script-src.
+
+Impact: immediate security and offline improvement.
+
+Scope: Medium.
+
+Split the offline manifest into true shell, common features, and contextual assets
+Problem: PDF and advanced assets are installation-critical.
+
+Direction: keep only startup-critical assets in cache.addAll; fetch and cache contextual packs on first use with explicit failure handling.
+
+Impact: faster and more reliable PWA install/update.
+
+Scope: Medium–Large.
+
+Reduce inline handlers and tighten CSP
+Problem: unsafe-inline and global handlers widen XSS impact.
+
+Direction: migrate shell behavior to delegated event listeners, then use a nonce/hash-based or self-only script policy.
+
+Impact: major defense-in-depth gain.
+
+Scope: Large.
+
+Reconcile feature/default sources
+Problem: manifest, normalizers, core defaults, tests, and patch scripts disagree.
+
+Direction: define one executable default-policy source consumed by hydration, navigation, onboarding, and tests.
+
+Impact: fewer regressions and clearer product behavior.
+
+Scope: Medium.
+
+Establish CSS ownership and cascade layers
+Problem: late specificity is the de facto component system.
+
+Direction: map rules to components, introduce explicit cascade layers, retire duplicated legacy rules, and enforce token usage in touched areas.
+
+Impact: faster UI work and fewer theme/mobile regressions.
+
+Scope: Large, incremental.
+
+Align the release gate with risk
+Problem: broad browser/device coverage exists but is outside standard verification.
+
+Direction: run a risk-based Firefox/WebKit/mobile slice on every release and the full matrix on scheduled or pre-release runs; replace fixed waits where possible.
+
+Impact: better confidence without making every local check prohibitively slow.
+
+Scope: Medium.
+
+Consolidate the product’s visible vocabulary and advanced centers
+Problem: legacy names and overlapping academic surfaces weaken the mental model.
+
+Direction: finish Home/Create terminology migration and make advanced systems contextual entry points from the daily loop.
+
+Impact: greater product coherence.
+
+Scope: Medium–Large.
+
+Complete the semantic-control accessibility sweep
+Problem: legacy clickable <div> elements remain.
+
+Direction: use native buttons/inputs wherever interactive; add automated keyboard reachability checks for settings and customization.
+
+Impact: direct accessibility improvement.
+
+Scope: Small–Medium.
+
+Things I Would NOT Change
+The local-first, account-optional product model.
+
+The static deployment requirement.
+
+The deterministic-core-before-AI principle.
+
+Canonical IndexedDB persistence.
+
+Conditional atomic save semantics.
+
+Encrypted .sutra as the primary portable backup.
+
+The separation between backup and incremental sync.
+
+Unknown-field preservation and legacy compatibility.
+
+Frozen old storage identifiers.
+
+The pure sync and academic engines.
+
+The centralized DOM safety layer.
+
+Sandboxed customization.
+
+Deployment allowlisting.
+
+The canonical-navigation-derived mobile shell.
+
+Visible save and backup confidence.
+
+Progressive disclosure as a product principle.
+
+The current product’s warm, calm visual direction.
+
+A wholesale React, TypeScript, module, backend, or cloud rewrite would create enormous compatibility and data-integrity risk. Sutra needs boundary extraction and consolidation, not technological reinvention.
+Final Verdict
+Sutra is healthy where user trust is most directly at stake and unhealthy where engineering changeability is at stake.
+Its persistence, encrypted backup, sync, migration, security-helper, recovery, and deployment systems often feel production-grade. The central runtime, global event architecture, patch modules, eager loading, CSS cascade, and some advanced UI interactions feel prototype-grade—or more precisely, like successful prototype architecture that continued absorbing production features long after its natural limit.
+The current architecture remains viable for shipping incremental improvements, but it is not appropriate for another large phase of feature expansion without structural investment. The next major product risk is not a missing feature. It is the cost and unpredictability of changing the features already present.
+An experienced inheriting engineer would be most concerned by:
+The 85k-line closure.
+
+Mirrored state.
+
+Patch-based behavior.
+
+Script-order coupling.
+
+CSS specificity.
+
+The gap between apparent folders and actual ownership.
+
+Remote privileged document libraries.
+
+The startup/offline payload.
+
+They would be most impressed by:
+Persistence safety.
+
+Backup and sync design.
+
+Compatibility discipline.
+
+Security boundaries.
+
+Failure-oriented tests.
+
+Product principles.
+
+The quality of the core mobile daily loop.
+
+GOOD: Data safety, encrypted backup, sync isolation, migrations, DOM/plugin safety, failure-oriented testing, mobile core workflow.
+MID: Static architecture, feature gating, test release gate, visual system adoption, onboarding, advanced-feature UX.
+BAD: Central monolith, mirrored state, late monkey patches, privileged remote scripts, excessive startup/offline payload, CSS archaeology, source-of-truth drift.
+Biggest strength: Sutra takes ownership of student data and failure recovery seriously.
+Biggest weakness: The runtime architecture makes safe change far more difficult than the product’s folder structure suggests.
+Most important next investment: Incrementally establish explicit state and feature boundaries around the existing reliable persistence core—without rewriting the platform or adding more top-level product surfaces.

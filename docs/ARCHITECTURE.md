@@ -8,6 +8,8 @@ Browser.App (WinUI composition, dialogs, lifecycle)
   ├── Browser.Data (SQLite migrations and repositories)
   ├── Browser.AI (providers, action parser, safety policy, bounded loop)
   └── Browser.Platform.Windows (DPAPI/AES vault, paths, shared WebView environment)
+
+Sutra.Updater (detached x64 installer handoff and install-tree rollback)
 ```
 
 ## Browser lifecycle
@@ -16,7 +18,7 @@ Browser.App (WinUI composition, dialogs, lifecycle)
 
 Closing or hibernating a tab removes and closes its WebView. The tab model remains lightweight. Waking recreates the control with the shared environment, navigates to the saved URL, and restores the best-effort scroll position. Tab groups, pinned state, split-pane membership, ordering, window sizing, and maximized state are persisted. A timer saves the primary session and evaluates conservative hibernation policy; secondary windows do not overwrite that primary session. Background passes (maintenance, hibernation, memory/media refresh) observe a per-window lifetime cancellation token and are tracked so shutdown cancels them and awaits completion before closing the controls they can touch; cancellation is treated as normal shutdown.
 
-Unknown unhandled UI exceptions are not swallowed: only `OperationCanceledException` is contained as a teardown artifact; anything else terminates the process so the next launch shows the crash-recovery notice truthfully. Diagnostics record exception types only.
+UI callback boundaries observe task failures and recheck window/control ownership after asynchronous work. The application-level WinUI handler currently marks unhandled UI exceptions as handled and records bounded diagnostic metadata; startup failures have a separate error surface. Domain termination and unobserved task faults are also recorded. The rotating diagnostic log contains timestamps, fixed categories/codes, exception types, and HRESULT values, never messages, stacks, URLs, or file paths. Actual process exits still participate in startup recovery.
 
 Private windows never load or save the normal session. Their history/search recording, persistent permission decisions, download metadata, password access, and AI action logs are disabled. Favicons are cached in a per-window temporary directory and removed on close. Explicit bookmarks and downloaded files remain because those are deliberate user-created artifacts.
 
@@ -30,7 +32,7 @@ Session and settings saves go through a single non-UI `PersistencePassCoordinato
 
 Page notes attach an optional top-level selection quotation plus text to normalized HTTP/HTTPS targets (fragment-free, credential-free). Note validation and URL normalization live in `Browser.Core.Notes`; notes never reach AI providers or action logs, and private windows can neither create nor persist them. Markdown export escapes active markup. Migration 5 extends the existing `offline_articles` table with inert text and a date index; legacy archive paths are preserved. Core quota/URL policies constrain saves, and the native reader executes no archived HTML or scripts.
 
-Migration 6 adds bounded per-window session snapshots with content fingerprints and recovery into a separate window. Session normalization rejects credential-bearing URLs, executable schemes, remote file shares, oversized imports, duplicate IDs, and orphan group/split references. Cross-window transfer recreates controllers on the destination UI thread after profile/private and activity checks. Versioned recovery does not yet automatically recreate all prior windows at startup.
+Migration 6 adds bounded per-window session snapshots with content fingerprints and recovery into a separate window. Session normalization rejects credential-bearing URLs, executable schemes, remote file shares, oversized imports, duplicate IDs, and orphan group/split references. Cross-window transfer recreates controllers on the destination UI thread after profile/private and activity checks. Normal startup restores saved normal windows sequentially, waiting for startup content and checking resource pressure before each additional window. Deferred window records remain available for a later launch; private and crash-review starts skip automatic restoration.
 
 `StartupRecoveryPolicy` tracks repeated failed normal starts within fifteen minutes and suppresses automatic restoration after two failures. Recovery offers inert tab previews and selected-tab copies. The last primary session is retained while the fresh recovery window is open. Tab cleanup decisions live in `TabCleanupPolicy`; the native preview rechecks live protection and duplicate status before execution.
 
@@ -44,7 +46,23 @@ Streaming providers decode bounded SSE or NDJSON records. Sutra Assistant compar
 
 Settings and sessions are JSON values in `app_state`; malformed settings are replaced or clamped by `SettingsValidator`, and corrupt session entries are ignored by `SessionSerializer`.
 
-Content blocking is a deterministic local request interceptor. `Browser.Core` parses a deliberately small ABP-compatible subset (domain and path/wildcard block/exception rules plus safe CSS selectors); the app applies network responses and cosmetic CSS. Downloaded lists live outside SQLite and update only after an explicit user action. The original list remains active if an update fails.
+Content blocking is a deterministic local request interceptor. `Browser.Core` parses a bounded ABP subset with domain/path/wildcard patterns, non-backtracking regular expressions, exceptions, resource types, domain restrictions, and cosmetic selectors. The bundled Mozilla Public Suffix List supplies site boundaries. Unsupported rule options are skipped. Downloaded lists live outside SQLite, refresh at most daily while protection is enabled, and promote atomically with a last-known-good fallback. Windows share an immutable compiled rule set for each active/backup file version. Exact-host element-picker rules persist only in normal windows.
+
+## Desktop workspace and resource ownership
+
+The pinned upstream frontend lives in `vendor/Sutra`; Browser-owned JavaScript/CSS overlays live in `Browser.App/Views/SutraIntegration`. The workspace uses `https://sutra.local` and a dedicated `SutraWorkspace` profile on the shared WebView environment. Website data-clearing and extension management target website profiles, leaving workspace storage separate. Private windows cannot open or capture into the workspace.
+
+`SutraBridgeProtocol` validates message version, origin, action, payload types, and size bounds. Capture uses upstream Notes/Homework/PDF APIs and acknowledges durable completion. Assistant context becomes a user-sendable draft. PDF transfer uses a bounded temporary same-origin response. The installed workspace bypasses service workers and HTTP asset caches without clearing durable data.
+
+WebView initialization is shared per tab while pending and cancelled when the tab/window closes. Late controllers are closed. Browser-process failures recreate controls; website renderer exits show a tab-local reload surface, while the workspace renderer reloads its document. Auxiliary-process failures do not replace working pages. Native recovery remains subject to interactive Windows verification.
+
+Memory budgets count live controllers and choose only eligible tabs for sleeping. Media/scroll/process queries share in-flight operations so a timeout cannot create a second pending native call. Cache writes drain before private-directory removal, use temporary-file replacement, and revalidate navigation generations. Favicon bytes come from `GetFaviconAsync`; thumbnail previews use bounded JPEG payloads and lazy image decoding. Video pop-outs move the existing WebView instead of creating a second media session.
+
+## Installation and updates
+
+The per-user Inno Setup installer bundles the x64 self-contained app and updater and verifies the Microsoft WebView2 bootstrapper. Signing credentials remain outside source control. Signed installations validate an RSA-signed release manifest, bounded installer download, SHA-256, and the installed publisher identity before staging. The detached updater revalidates the artifact after the parent exits, keeps an install-tree rollback copy, and records failed release hashes to prevent repeated attempts. User data remains outside the install tree. Unsigned development builds do not use automatic updates.
+
+The hourly upstream workflow checks a candidate before promotion, restores the previous vendor copy on failure, and publishes only when explicitly enabled through repository configuration and signing secrets. The pinned upstream runtime-size check currently fails; see [SUTRA-DESKTOP-INTEGRATION.md](SUTRA-DESKTOP-INTEGRATION.md) for the gate and remaining release checks.
 
 ## AI boundary
 

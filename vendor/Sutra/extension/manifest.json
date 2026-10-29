@@ -1,0 +1,26 @@
+{
+    "manifest_version": 3,
+    "name": "Sutra LMS Capture",
+    "version": "1.0.0",
+    "description": "Capture assignments from Canvas (or any LMS page) and send them to Sutra for review and import. Nothing is uploaded anywhere: data moves from your LMS tab to your Sutra tab on this device.",
+    "permissions": ["activeTab", "scripting", "storage", "tabs"],
+    "action": {
+        "default_popup": "popup.html",
+        "default_title": "Capture assignments for Sutra"
+    },
+    "content_scripts": [
+        {
+            "matches": [
+                "https://tanujranjith.github.io/Sutra/*",
+                "http://localhost/*",
+                "http://127.0.0.1/*"
+            ],
+            "js": ["sutra-bridge.js"],
+            "run_at": "document_idle"
+        }
+    ],
+    "options_ui": {
+        "page": "options.html",
+        "open_in_tab": false
+    }
+}

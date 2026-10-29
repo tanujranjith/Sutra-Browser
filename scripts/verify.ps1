@@ -8,12 +8,12 @@ $localSdk = Join-Path $repository '.dotnet\dotnet.exe'
 $sdk = if (Test-Path -LiteralPath $localSdk) { $localSdk } else { (Get-Command dotnet -ErrorAction Stop).Source }
 Push-Location $repository
 try {
-    & $sdk restore SutraBrowser.sln
+    & $sdk restore SutraBrowser.sln -m:1 /nodeReuse:false
     if ($LASTEXITCODE -ne 0) { throw 'Restore failed.' }
-    & $sdk build SutraBrowser.sln -c $Configuration -m:1 --no-restore
+    & $sdk build SutraBrowser.sln -c $Configuration -m:1 --no-restore /nodeReuse:false
     if ($LASTEXITCODE -ne 0) { throw 'Build failed.' }
     $results = Join-Path $repository ('artifacts\test-results\' + $Configuration + '-' + [Guid]::NewGuid().ToString('N'))
-    & $sdk test SutraBrowser.sln -c $Configuration --no-build -m:1 --logger trx --results-directory $results
+    & $sdk test SutraBrowser.sln -c $Configuration --no-build -m:1 /nodeReuse:false --logger trx --results-directory $results
     if ($LASTEXITCODE -ne 0) { throw 'Tests failed.' }
     $testProjects = @(Get-ChildItem -Path 'tests\*\*.csproj')
     $testReports = @(Get-ChildItem -LiteralPath $results -Filter '*.trx' -ErrorAction SilentlyContinue)
@@ -30,9 +30,9 @@ try {
     }
     if ($Publish) {
         $package = Join-Path $repository ('artifacts\releases\' + $Configuration + '-' + [DateTime]::UtcNow.ToString('yyyyMMdd-HHmmss') + '-' + [Guid]::NewGuid().ToString('N').Substring(0, 6))
-        & $sdk publish src/Browser.App/Browser.App.csproj -c $Configuration -r win-x64 --self-contained true -o $package -m:1
+        & $sdk publish src/Browser.App/Browser.App.csproj -c $Configuration -r win-x64 --self-contained true -o $package -m:1 /nodeReuse:false
         if ($LASTEXITCODE -ne 0) { throw 'Publish failed.' }
-        foreach ($required in @('Sutra.App.exe', 'App.xbf', 'Sutra.App.pri', 'SutraUltra\index.html', 'SutraUltra\css\workspace.css')) {
+        foreach ($required in @('Sutra.exe', 'App.xbf', 'Sutra.pri', 'SutraUltra\index.html', 'SutraUltra\css\workspace.css')) {
             if (!(Test-Path -LiteralPath (Join-Path $package $required))) { throw "Published artifact is missing $required." }
         }
         $manifest = Get-ChildItem -LiteralPath $package -File -Recurse | ForEach-Object {

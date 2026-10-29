@@ -47,7 +47,7 @@ public sealed partial class MainWindow
         root.RowDefinitions.Add(new() { Height = new(1, GridUnitType.Star) });
         var heading = new StackPanel { Spacing = 2, Margin = new(4, 2, 4, 0) };
         heading.Children.Add(new TextBlock { Text = "Media", FontSize = 20, FontWeight = FontWeights.SemiBold });
-        heading.Children.Add(new TextBlock { Text = "Control audio and video playing across Sutra tabs.", FontSize = 12, Opacity = .62 });
+        heading.Children.Add(new TextBlock { Text = "Recent tab media · up to 32 sessions", FontSize = 12, Opacity = .62 });
         root.Children.Add(heading);
 
         var list = new StackPanel { Spacing = 10, Padding = new(2, 0, 2, 4) };
@@ -59,7 +59,13 @@ public sealed partial class MainWindow
         var flyout = new Flyout { Content = root, Placement = Microsoft.UI.Xaml.Controls.Primitives.FlyoutPlacementMode.Bottom };
         flyout.ShowAt(_media);
 
-        var sessions = await DiscoverMediaSessionsAsync();
+        using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(_windowLifetimeCts.Token);
+        void Closed(object? sender, object args) => cancellation.Cancel();
+        flyout.Closed += Closed;
+        List<(BrowserTab Tab, MediaSnapshot Media)> sessions;
+        try { sessions = await DiscoverMediaSessionsAsync(cancellation.Token); }
+        finally { flyout.Closed -= Closed; }
+        if (_isWindowClosed || cancellation.IsCancellationRequested) return;
         list.Children.Clear();
         if (sessions.Count == 0)
         {
@@ -74,14 +80,17 @@ public sealed partial class MainWindow
         foreach (var session in sessions) list.Children.Add(BuildMediaCard(session.Tab, session.Media));
     }
 
-    private async Task<List<(BrowserTab Tab, MediaSnapshot Media)>> DiscoverMediaSessionsAsync()
+    private async Task<List<(BrowserTab Tab, MediaSnapshot Media)>> DiscoverMediaSessionsAsync(CancellationToken lifetimeToken = default)
     {
         var sessions = new List<(BrowserTab, MediaSnapshot)>();
-        foreach (var tab in _vm.Tabs)
+        foreach (var tab in _vm.Tabs.OrderByDescending(tab => tab.Id == _vm.SelectedTab?.Id).ThenByDescending(tab => tab.LastActivatedAt).Take(32).ToArray())
         {
+            if (_isWindowClosed || lifetimeToken.IsCancellationRequested || sessions.Count >= 32) break;
             if (!_webViews.TryGetValue(tab.Id, out var web) || web.CoreWebView2 is null) continue;
-            var media = await QueryMediaAsync(web);
-            sessions.AddRange(media.Select(item => (tab, item)));
+            var media = await QueryMediaAsync(web, lifetimeToken);
+            if (!IsCurrentTabWebView(tab, web)) continue;
+            if (media is null) continue;
+            sessions.AddRange(media.Take(32 - sessions.Count).Select(item => (tab, item)));
             if (media.Count == 0 && tab.IsMediaPlaying)
                 sessions.Add((tab, new MediaSnapshot("", "site", tab.Title, "This site is playing media", 0, null, false, tab.IsMuted, false)));
         }
@@ -106,7 +115,7 @@ public sealed partial class MainWindow
         identity.Children.Add(MediaArtwork(tab));
         var copy = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
         copy.Children.Add(new TextBlock { Text = media.Title, FontSize = 14, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis });
-        copy.Children.Add(new TextBlock { Text = string.IsNullOrWhiteSpace(media.Artist) ? DisplayOrigin(tab.Url) : media.Artist, FontSize = 11, Opacity = .65, TextTrimming = TextTrimming.CharacterEllipsis });
+        copy.Children.Add(new TextBlock { Text = $"{DisplayOrigin(tab.Url)} · {tab.Title}", FontSize = 11, Opacity = .65, TextTrimming = TextTrimming.CharacterEllipsis });
         Grid.SetColumn(copy, 1); identity.Children.Add(copy);
         var switchTab = IconButton(Symbol.Go, "Switch to this tab");
         switchTab.Width = switchTab.Height = 32;
@@ -170,19 +179,35 @@ public sealed partial class MainWindow
         return new Border { Width = 42, Height = 42, CornerRadius = new(8), Background = MediaSurfaceBrush(), Child = new SymbolIcon(Symbol.Play) };
     }
 
-    private async Task<IReadOnlyList<MediaSnapshot>> QueryMediaAsync(WebView2 web)
+    private async Task<IReadOnlyList<MediaSnapshot>?> QueryMediaAsync(WebView2 web, CancellationToken lifetimeToken = default)
     {
         try
         {
-            var json = await web.ExecuteScriptAsync(MediaDiscoveryScript);
-            return JsonSerializer.Deserialize<List<MediaSnapshot>>(json, MediaJsonOptions) ?? [];
+            if (_isWindowClosed) return null;
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(_windowLifetimeCts.Token, lifetimeToken);
+            var state = NavigationState(web);
+            var generation = state.AssetGeneration;
+            var result = await state.MediaQuery.RunAsync(async () => (generation, await web.ExecuteScriptAsync(MediaDiscoveryScript)),
+                TimeSpan.FromSeconds(2), linked.Token);
+            if (_isWindowClosed || result.Generation != state.AssetGeneration) return null;
+            var json = result.Json;
+            if (json.Length > 128 * 1024) return null;
+            var snapshots = JsonSerializer.Deserialize<List<MediaSnapshot>>(json, MediaJsonOptions);
+            if (snapshots is null) return null; // ExecuteScript reports a page-script exception as JSON null.
+            return snapshots.Take(64)
+                .Select(media => media with {
+                    DocumentGeneration = result.Generation,
+                    CurrentTime = double.IsFinite(media.CurrentTime) ? Math.Clamp(media.CurrentTime, 0, Browser.Core.Media.MediaTimePolicy.MaximumSeconds) : 0,
+                    Duration = media.Duration is { } duration && double.IsFinite(duration) ? Math.Clamp(duration, 0, Browser.Core.Media.MediaTimePolicy.MaximumSeconds) : null
+                }).ToArray();
         }
-        catch { return []; }
+        catch { return null; }
     }
 
     private async Task ExecuteMediaCommandAsync(BrowserTab tab, MediaSnapshot media, string action, double value = 0)
     {
         if (!_webViews.TryGetValue(tab.Id, out var web) || web.CoreWebView2 is null) return;
+        if (media.DocumentGeneration >= 0 && media.DocumentGeneration != NavigationState(web).AssetGeneration) return;
         if (string.IsNullOrWhiteSpace(media.Id))
         {
             if (action == "mute")
@@ -219,7 +244,7 @@ public sealed partial class MainWindow
             """;
         try
         {
-            var result = await web.ExecuteScriptAsync(script);
+            var result = await web.ExecuteScriptAsync(script).AsTask().WaitAsync(TimeSpan.FromSeconds(3), _windowLifetimeCts.Token);
             if (_isWindowClosed) return;
             if (result.Contains("\"ok\":false", StringComparison.Ordinal)) ShowStatus("This player blocked that media control.", InfoBarSeverity.Warning);
         }
@@ -228,6 +253,8 @@ public sealed partial class MainWindow
 
     private async Task ShowMiniPlayerAsync(BrowserTab tab, MediaSnapshot media)
     {
+        if (_isWindowClosed || !_webViews.TryGetValue(tab.Id, out var currentWeb) ||
+            media.DocumentGeneration >= 0 && media.DocumentGeneration != NavigationState(currentWeb).AssetGeneration) return;
         if (string.IsNullOrWhiteSpace(media.Id))
         {
             ShowStatus("This site does not expose an individual media player.", InfoBarSeverity.Warning);
@@ -235,6 +262,11 @@ public sealed partial class MainWindow
         }
 
         var key = new MiniPlayerKey(tab.Id, media.Id);
+        if (media.Kind == "video")
+        {
+            await ShowVideoMiniPlayerAsync(tab, media);
+            return;
+        }
         if (_miniPlayers.ContainsKey(key))
         {
             ShowStatus("That media player is already open in mini-player.");
@@ -319,8 +351,12 @@ public sealed partial class MainWindow
                 CloseMiniPlayer(player.Key);
                 continue;
             }
-            var media = (await QueryMediaAsync(web)).FirstOrDefault(item => item.Id == player.Key.MediaId);
+            var snapshots = await QueryMediaAsync(web, lifetimeToken);
             if (_isWindowClosed || lifetimeToken.IsCancellationRequested) return;
+            if (!_miniPlayers.TryGetValue(player.Key, out var current) || !ReferenceEquals(current, player) ||
+                FindTab(player.Key.TabId) is not { } liveTab || !IsCurrentTabWebView(liveTab, web)) continue;
+            if (snapshots is null) continue; // A busy renderer is not a removed media element.
+            var media = snapshots.FirstOrDefault(item => item.Id == player.Key.MediaId);
             if (media is null)
             {
                 CloseMiniPlayer(player.Key);
@@ -339,10 +375,12 @@ public sealed partial class MainWindow
         }
     }
 
-    private bool HasMiniPlayerForTab(Guid tabId) => _miniPlayers.Keys.Any(key => key.TabId == tabId);
+    private bool HasMiniPlayerForTab(Guid tabId) => _videoMiniPlayers.ContainsKey(tabId) || _miniPlayers.Keys.Any(key => key.TabId == tabId);
 
     private void CloseMiniPlayersForTab(Guid tabId)
     {
+        if (_videoMiniPlayers.ContainsKey(tabId))
+            ObserveUiCallback("Close video mini-player", () => CloseVideoMiniPlayerAsync(tabId, restoreTab: false));
         foreach (var key in _miniPlayers.Keys.Where(key => key.TabId == tabId).ToList()) CloseMiniPlayer(key);
     }
 
@@ -361,31 +399,62 @@ public sealed partial class MainWindow
     private static string DisplayOrigin(string url) => Uri.TryCreate(url, UriKind.Absolute, out var uri) && !string.IsNullOrWhiteSpace(uri.Host) ? uri.Host : "Local page";
     private static string FormatMediaTime(double? seconds)
     {
-        if (seconds is null || !double.IsFinite(seconds.Value) || seconds < 0) return "--:--";
-        var time = TimeSpan.FromSeconds(seconds.Value);
-        return time.TotalHours >= 1 ? time.ToString(@"h\:mm\:ss") : time.ToString(@"m\:ss");
+        return Browser.Core.Media.MediaTimePolicy.Format(seconds);
     }
 
     private const string MediaDiscoveryScript = """
         (()=>{
           let next=window.__sutraMediaNextId||1;window.__sutraMediaNextId=next;
           const metadata=navigator.mediaSession&&navigator.mediaSession.metadata;
-          const items=[...document.querySelectorAll('audio,video')].filter(media=>media.currentSrc||media.readyState>0||!media.paused);
+          const metadataTitle=String(metadata&&metadata.title||'').slice(0,512);
+          const isYouTube=location.hostname==='youtube.com'||location.hostname.endsWith('.youtube.com');
+          const primary=isYouTube&&document.querySelector('#movie_player video.html5-main-video, #movie_player video');
+          const visible=media=>{
+            if(!media.getClientRects().length)return false;
+            for(let node=media;node;node=node.parentElement){
+              const style=getComputedStyle(node);
+              if(style.display==='none'||style.visibility==='hidden'||Number(style.opacity)===0)return false;
+            }
+            return true;
+          };
+          const score=media=>(!media.paused&&!media.ended?100:0)+(visible(media)?20:0)+(media.currentTime>0?10:0);
+          const found=primary?[primary]:document.querySelectorAll('audio,video');
+          const bounded=[];for(let i=0;i<Math.min(found.length,64);i++)bounded.push(found[i]);
+          const candidates=bounded.filter(media=>{
+            if(!(media.currentSrc||media.readyState>0||!media.paused))return false;
+            if(primary)return media===primary;
+            if(media.closest('ytd-ad-slot-renderer,ytd-display-ad-renderer,ytd-promoted-video-renderer'))return false;
+            return media.tagName==='AUDIO'||visible(media)||!media.paused;
+          });
+          const unique=new Map();
+          for(const media of candidates){
+            // Metadata is shared by all elements in a document. Hidden/preloaded
+            // copies without individual labels represent one playback session.
+            const label=(media.getAttribute('aria-label')||media.getAttribute('title')||'').slice(0,512);
+            const source=media.currentSrc||'';
+            const key=label||metadataTitle
+              ? media.tagName+':'+(label||metadataTitle)
+              : media.tagName+':'+(source.length<=2048?source:candidates.indexOf(media));
+            const previous=unique.get(key);
+            if(!previous||score(media)>score(previous))unique.set(key,media);
+          }
+          const items=[...unique.values()];
           return items.map(media=>{
             if(!media.__sutraMediaId){Object.defineProperty(media,'__sutraMediaId',{value:`sutra-${window.__sutraMediaNextId++}`,configurable:true});}
-            const label=media.getAttribute('aria-label')||media.getAttribute('title')||metadata&&metadata.title||document.title||location.hostname;
+            if(typeof media.__sutraMediaId!=='string'||media.__sutraMediaId.length>128)return null;
+            const label=media.getAttribute('aria-label')||media.getAttribute('title')||(isYouTube?document.title:metadata&&metadata.title)||document.title||location.hostname;
             return {
               id:media.__sutraMediaId,
               kind:media.tagName.toLowerCase(),
-              title:String(label||'Media'),
-              artist:String(metadata&&metadata.artist||''),
+              title:String(label||'Media').slice(0,512),
+              artist:String(metadata&&metadata.artist||'').slice(0,256),
               currentTime:Number.isFinite(media.currentTime)?media.currentTime:0,
               duration:Number.isFinite(media.duration)?media.duration:null,
               paused:media.paused,
               muted:media.muted||media.volume===0,
               isControllable:true
             };
-          });
+          }).filter(Boolean);
         })()
         """;
 
@@ -415,5 +484,6 @@ public sealed partial class MainWindow
         double? Duration,
         bool Paused,
         bool Muted,
-        bool IsControllable);
+        bool IsControllable,
+        int DocumentGeneration = -1);
 }

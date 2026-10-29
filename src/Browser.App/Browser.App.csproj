@@ -4,7 +4,10 @@
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <RootNamespace>Browser.App</RootNamespace>
-    <AssemblyName>Sutra.App</AssemblyName>
+    <AssemblyName>Sutra</AssemblyName>
+    <AssemblyTitle>Sutra</AssemblyTitle>
+    <Product>Sutra</Product>
+    <Description>Sutra desktop application</Description>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <Platforms>x64</Platforms>
     <PlatformTarget>x64</PlatformTarget>
@@ -15,7 +18,7 @@
     <WindowsPackageType>None</WindowsPackageType>
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
     <PublishReadyToRun>false</PublishReadyToRun>
-    <ApplicationIcon>Assets\sutra.ico</ApplicationIcon>
+    <ApplicationIcon>Assets\sutra-browser.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Browser.Core\Browser.Core.csproj" />
@@ -28,8 +31,21 @@
     <PackageReference Include="Microsoft.Web.WebView2" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Assets\sutra.ico" CopyToOutputDirectory="PreserveNewest" />
-    <Content Include="Assets\sutra-icon.png" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\sutra-browser.ico" Link="Assets\sutra.ico" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\vendor\Sutra\assets\brand\sutra\generated\sutra-icon-256.png" Link="Assets\sutra-icon.png" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\..\vendor\Sutra\Sutra.html" Link="Sutra\Sutra.html" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\vendor\Sutra\LICENSE" Link="Sutra\LICENSE" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\vendor\Sutra\NOTICE" Link="Sutra\NOTICE" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\vendor\Sutra\UPSTREAM_COMMIT" Link="Sutra\UPSTREAM_COMMIT" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\vendor\Sutra\manifest.webmanifest" Link="Sutra\manifest.webmanifest" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\vendor\Sutra\sw.js" Link="Sutra\sw.js" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\vendor\Sutra\assets\**\*" Link="Sutra\assets\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\vendor\Sutra\styles\**\*" Link="Sutra\styles\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\vendor\Sutra\src\**\*" Link="Sutra\src\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Views\SutraIntegration\sutra-desktop-bridge.js" Link="SutraIntegration\sutra-desktop-bridge.js" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Views\SutraIntegration\sutra-desktop.css" Link="SutraIntegration\sutra-desktop.css" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <PropertyGroup>
     <CefRuntimeStageDir>$(MSBuildProjectDirectory)\..\..\artifacts\cef\runtime\$(Configuration)</CefRuntimeStageDir>

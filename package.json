@@ -1,0 +1,12 @@
+{
+  "name": "sutra-browser-desktop-checks",
+  "private": true,
+  "scripts": {
+    "test:desktop": "playwright test --config tests/desktop/playwright.config.mjs",
+    "test:desktop:isolated": "node scripts/test-desktop-isolated.mjs",
+    "test:reader": "node scripts/test-reader-view.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.60.0"
+  }
+}
